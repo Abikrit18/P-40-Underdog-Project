@@ -1,11 +1,77 @@
 .navbar-brand.p40-brand {
   font-size: 1.5rem; 
   font-weight: bold; 
-  color: #252c51; 
+  color: 	#f9e9de;
   transition: transform 0.3s ease, color 0.3s ease; 
 }
 
 .navbar-brand.p40-brand:hover {
   transform: translateY(-5px) scale(1.1); 
-  color: #1c6527 !important; 
+  color: 	#cc6c5c !important; 
+}
+
+.custom-navbar {
+  background-color: #5f4c4c; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+}
+
+.nav-link.option{
+  color: #c5aa6a;
+  
+  
+}
+.nav-link.option:hover {
+  background-color: #2c3e50;
+  transform: translateY(-5px) scale(1.1);
+  color: #38943c ;
+  border: solid transparent;
+  padding: 5px 10px;
+  margin: 2px 5px;
+  border-radius: 5px;
+  transition: all 0.3s ease-in-out;
+}
+.navbar .nav-link.dropdown-toggle {
+  
+  color: #c5aa6a !important; /* White text */
+  padding: 5px 10px;
+  margin: 2px 4px;
+  border-radius: 5px;
+  transition: all 0.1s ease-in-out;
+}
+
+.navbar .nav-link.dropdown-toggle:hover {
+  background-color: #2c3e50;
+  transform: scale(1.05);
+}
+/* Change the background color of the dropdown box */
+.custom-dropdown .dropdown-menu {
+  background-color: #2c3e50 !important; 
+  border: 2px solid #c5aa6a; 
+  border-radius: 8px;
+}
+
+/* Change text color for dropdown items */
+.custom-dropdown .dropdown-item {
+  color: white !important;
+}
+
+/* Change dropdown item hover effect */
+.custom-dropdown .dropdown-item:hover {
+  background-color: #874590 !important; 
+  color: #ffffff !important;
+}
+/* Custom Search Button */
+.custom-search-btn {
+  background-color: #c5aa6a !important; 
+  color: rgb(11, 1, 1) !important; 
+  padding: 6px 15px;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Hover Effect */
+.custom-search-btn:hover {
+  background-color: #407543 !important; 
+  transform: scale(1.05);
 }

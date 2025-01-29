@@ -11,9 +11,9 @@ function OffcanvasExample() {
     const expand = 'sm'; 
 
     return (
-        <Navbar expand={expand} className="bg-body-tertiary">
+        <Navbar expand={expand} className="custom-navbar">
             <Container fluid>
-                <Navbar.Brand href="#" className="p40-brand">P-40 Underdog</Navbar.Brand>
+                <Navbar.Brand href="#" className="p40-brand">UnderDogs</Navbar.Brand>
                 <Navbar.Toggle aria-controls={`offcanvasNavbar-expand-${expand}`} />
                 <Navbar.Offcanvas
                     id={`offcanvasNavbar-expand-${expand}`}
@@ -22,22 +22,23 @@ function OffcanvasExample() {
                 >
                     <Offcanvas.Header closeButton>
                         <Offcanvas.Title id={`offcanvasNavbarLabel-expand-${expand}`}>
-                            P-40 Menu
+                            Menu
                         </Offcanvas.Title>
                     </Offcanvas.Header>
                     <Offcanvas.Body>
                         <Nav className="justify-content-end flex-grow-1 pe-3">
-                            <Nav.Link href="#action1">Dogs</Nav.Link>
-                            <Nav.Link href="#action2">Adoption</Nav.Link>
-                            <Nav.Link href="#action3">Donation</Nav.Link>
+                            <Nav.Link href="#action1" className="option">Dogs</Nav.Link>
+                            <Nav.Link href="#action2" className="option">Adoption</Nav.Link>
+                            <Nav.Link href="#action3" className="option">Donation</Nav.Link>
                             <NavDropdown
                                 title="Accounts"
                                 id={`offcanvasNavbarDropdown-expand-${expand}`}
+                                className="custom-dropdown"
                             >
-                                <NavDropdown.Item href="#action4">Marshall</NavDropdown.Item>
-                                <NavDropdown.Item href="#action5">Admin</NavDropdown.Item>
+                                <NavDropdown.Item href="#action4" className="user">Marshall</NavDropdown.Item>
+                                <NavDropdown.Item href="#action5" className="user">Admin</NavDropdown.Item>
                                 <NavDropdown.Divider />
-                                <NavDropdown.Item href="#action6">
+                                <NavDropdown.Item href="#action6" className="user">
                                     Contact
                                 </NavDropdown.Item>
                             </NavDropdown>
@@ -49,7 +50,7 @@ function OffcanvasExample() {
                                 className="me-2"
                                 aria-label="Search"
                             />
-                            <Button variant="outline-success">Search</Button>
+                            <Button className="custom-search-btn">Search</Button>   
                         </Form>
                     </Offcanvas.Body>
                 </Navbar.Offcanvas>
