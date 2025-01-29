@@ -1,50 +1,61 @@
-import React from "react";
-import "bootstrap/dist/css/bootstrap.min.css"; // Ensure Bootstrap CSS is included
-import "bootstrap/dist/js/bootstrap.bundle.min.js"; // For toggling functionality
+import Button from 'react-bootstrap/Button';
+import Container from 'react-bootstrap/Container';
+import Form from 'react-bootstrap/Form';
+import Nav from 'react-bootstrap/Nav';
+import Navbar from 'react-bootstrap/Navbar';
+import NavDropdown from 'react-bootstrap/NavDropdown';
+import Offcanvas from 'react-bootstrap/Offcanvas';
+import '../App.css'; 
 
+function OffcanvasExample() {
+    const expand = 'sm'; 
 
-const Navbar = () => {
     return (
-        <nav className="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-            <div className="container-fluid">
-                <a className="navbar-brand" href="#">
-                    P-40 underdog
-                </a>
-                <button
-                    className="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarNav"
-                    aria-controls="navbarNav"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation"
+        <Navbar expand={expand} className="bg-body-tertiary">
+            <Container fluid>
+                <Navbar.Brand href="#" className="p40-brand">P-40 Underdog</Navbar.Brand>
+                <Navbar.Toggle aria-controls={`offcanvasNavbar-expand-${expand}`} />
+                <Navbar.Offcanvas
+                    id={`offcanvasNavbar-expand-${expand}`}
+                    aria-labelledby={`offcanvasNavbarLabel-expand-${expand}`}
+                    placement="end"
                 >
-                    <span className="navbar-toggler-icon"></span>
-                </button>
-                <div className="collapse navbar-collapse" id="navbarNav">
-                    <ul className="navbar-nav ms-auto">
-                        <li className="nav-item">
-                            <a className="nav-link " aria-current="page" href="#">
-                                Home
-                            </a>
-                        </li>
-
-                        <li className="nav-item">
-                            <a className="nav-link" href="#projects">
-                                Marshall
-                            </a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="#contact">
-                                Admin
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+                    <Offcanvas.Header closeButton>
+                        <Offcanvas.Title id={`offcanvasNavbarLabel-expand-${expand}`}>
+                            P-40 Menu
+                        </Offcanvas.Title>
+                    </Offcanvas.Header>
+                    <Offcanvas.Body>
+                        <Nav className="justify-content-end flex-grow-1 pe-3">
+                            <Nav.Link href="#action1">Dogs</Nav.Link>
+                            <Nav.Link href="#action2">Adoption</Nav.Link>
+                            <Nav.Link href="#action3">Donation</Nav.Link>
+                            <NavDropdown
+                                title="Accounts"
+                                id={`offcanvasNavbarDropdown-expand-${expand}`}
+                            >
+                                <NavDropdown.Item href="#action4">Marshall</NavDropdown.Item>
+                                <NavDropdown.Item href="#action5">Admin</NavDropdown.Item>
+                                <NavDropdown.Divider />
+                                <NavDropdown.Item href="#action6">
+                                    Contact
+                                </NavDropdown.Item>
+                            </NavDropdown>
+                        </Nav>
+                        <Form className="d-flex">
+                            <Form.Control
+                                type="search"
+                                placeholder="Search"
+                                className="me-2"
+                                aria-label="Search"
+                            />
+                            <Button variant="outline-success">Search</Button>
+                        </Form>
+                    </Offcanvas.Body>
+                </Navbar.Offcanvas>
+            </Container>
+        </Navbar>
     );
-};
+}
 
-export default Navbar;
-
+export default OffcanvasExample;
