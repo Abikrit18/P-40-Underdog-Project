@@ -1,11 +1,10 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion } = require('mongodb');
-
+require('dotenv').config();
 const app = express();
 const port = 3000;
 
-// MongoDB connection string
-const uri = "mongodb+srv://anubhavregmi2:Luffy%40123@cluster0.5lweg.mongodb.net/test?retryWrites=true&w=majority";
+const uri=process.env.uri;
 
 // Create a MongoClient instance
 const client = new MongoClient(uri, {
@@ -27,7 +26,7 @@ async function connectToMongoDB() {
         console.log("Successfully connected to MongoDB!");
     } catch (error) {
         console.error("Error connecting to MongoDB:", error);
-        process.exit(1); // Exit the process if the connection fails
+        process.exit(1);
     }
 }
 
@@ -47,7 +46,6 @@ app.get('/api/data', async (req, res) => {
 app.get('/', (req, res) => {
     res.send('Welcome to the Express server with MongoDB integration!');
 });
-
 // Start the server and connect to MongoDB
 app.listen(port, async () => {
     console.log(`Server is running on http://localhost:${port}`);
