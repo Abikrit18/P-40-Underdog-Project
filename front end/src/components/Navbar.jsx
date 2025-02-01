@@ -7,9 +7,14 @@ import NavDropdown from 'react-bootstrap/NavDropdown';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import '../App.css';
 import { Link } from "react-router-dom";
+import { useState } from 'react';
 
 function OffcanvasExample() {
+    const [show, setShow] = useState(false);
     const expand = 'sm';
+
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
 
     return (
         <Navbar expand={expand} className="custom-navbar">
@@ -20,11 +25,13 @@ function OffcanvasExample() {
                     className="navbar-logo"
                 />
                 <Navbar.Brand href="#" className="p40-brand">UnderDogs</Navbar.Brand>
-                <Navbar.Toggle aria-controls={`offcanvasNavbar-expand-${expand}`} />
+                <Navbar.Toggle aria-controls={`offcanvasNavbar-expand-${expand}`} onClick={handleShow} />
                 <Navbar.Offcanvas
                     id={`offcanvasNavbar-expand-${expand}`}
                     aria-labelledby={`offcanvasNavbarLabel-expand-${expand}`}
                     placement="end"
+                    show={show}  // Controls the visibility of the offcanvas
+                    onHide={handleClose}  // Automatically closes the offcanvas
                 >
                     <Offcanvas.Header closeButton>
                         <Offcanvas.Title id={`offcanvasNavbarLabel-expand-${expand}`}>
@@ -33,9 +40,9 @@ function OffcanvasExample() {
                     </Offcanvas.Header>
                     <Offcanvas.Body>
                         <Nav className="justify-content-end flex-grow-1 pe-3">
-                            <Nav.Link as={Link} to="/dogs" className="option">Dogs</Nav.Link>
-                            <Nav.Link as={Link} to="/adoption" className="option">Adoption</Nav.Link>
-                            <Nav.Link as={Link} to="https://fundraise.givesmart.com/f/4yx1/n?vid=1hjs8q" className="option">Donation</Nav.Link>
+                            <Nav.Link as={Link} to="/dogs" className="option" onClick={handleClose}>Dogs</Nav.Link>
+                            <Nav.Link as={Link} to="/adoption" className="option" onClick={handleClose}>Adoption</Nav.Link>
+                            <Nav.Link as={Link} to="https://fundraise.givesmart.com/f/4yx1/n?vid=1hjs8q" className="option" onClick={handleClose}>Donation</Nav.Link>
                             <NavDropdown
                                 title="Accounts"
                                 id={`offcanvasNavbarDropdown-expand-${expand}`}
