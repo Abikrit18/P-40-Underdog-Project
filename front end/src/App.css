@@ -4,6 +4,18 @@
   color: 	#f9e9de;
   transition: transform 0.3s ease, color 0.3s ease; 
 }
+.navbar-logo {
+  width: 40px;  
+  height: auto;
+  border-radius: 50%; 
+}
+
+.p40-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
 
 .navbar-brand.p40-brand:hover {
   transform: translateY(-5px) scale(1.1); 
@@ -25,10 +37,8 @@
   transform: scale(1.05);
   color: #38943c ;
   border: transparent;
-  padding: 5px 10px;
-  margin: 2px 5px;
   border-radius: 5px;
-  
+  transform: scale(1.05);
 }
 .navbar .nav-link.dropdown-toggle {
   
