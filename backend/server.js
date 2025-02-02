@@ -1,12 +1,13 @@
 const express = require('express');
+const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
+
 const app = express();
 const port = 3000;
 
-const uri=process.env.uri;
+const uri = process.env.uri;
 
-// Create a MongoClient instance
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -15,7 +16,7 @@ const client = new MongoClient(uri, {
     },
 });
 
-// Middleware to parse JSON
+app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
@@ -30,24 +31,52 @@ async function connectToMongoDB() {
     }
 }
 
-// API route to fetch data from a collection
-app.get('/api/data', async (req, res) => {
+// Get all dogs
+app.get('/dogs', async (req, res) => {
     try {
-        const collection = client.db("test").collection("example"); // Replace 'test' and 'example' with your DB and collection names
-        const data = await collection.find().toArray();
-        res.json(data);
+        const collection = client.db("underdogs").collection("dogs");
+        const dogs = await collection.find().toArray();
+        res.json(dogs);
     } catch (error) {
         console.error("Error fetching data:", error);
-        res.status(500).json({ error: "Failed to fetch data" });
+        res.status(500).json({ error: "Failed to fetch dogs" });
     }
 });
 
-// Default route
-app.get('/', (req, res) => {
-    res.send('Welcome to the Express server with MongoDB integration!');
+/*
+// Add new dog
+app.post('/dogs', async (req, res) => {
+    try {
+        const collection = client.db("underdogs").collection("dogs");
+        const newDog = req.body;
+        const result = await collection.insertOne(newDog, { writeConcern: { w: 1 } }); // Specify w: 1 for write concern
+        res.json(result.ops[0]);
+    } catch (error) {
+        console.error("Error adding dog:", error);
+        res.status(500).json({ error: "Failed to add dog" });
+    }
 });
-// Start the server and connect to MongoDB
+*/
+
+
+app.post('/dogs', async (req, res) => {
+    try {
+        const collection = client.db("underdogs").collection("dogs");
+        const newDog = req.body;
+        const result = await collection.insertOne(newDog, { writeConcern: { w: 1 } });
+
+        // Instead of result.ops[0], use result.insertedId or return the inserted dog data
+        const insertedDog = await collection.findOne({ _id: result.insertedId });
+        res.json(insertedDog);
+    } catch (error) {
+        console.error("Error adding dog:", error);
+        res.status(500).json({ error: "Failed to add dog" });
+    }
+});
+
+
+// Start server and connect to MongoDB
 app.listen(port, async () => {
     console.log(`Server is running on http://localhost:${port}`);
-    await connectToMongoDB(); // Connect to MongoDB when the server starts
+    await connectToMongoDB();
 });

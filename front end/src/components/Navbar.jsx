@@ -3,6 +3,7 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 
 const navigation = [
+    {name:'Home',href:'/'},
     { name: 'Dogs', href: '/dogs' },
     { name: 'Adoption', href: '/adoption' },
     { name: 'Donation', href: 'https://fundraise.givesmart.com/f/4yx1/n?vid=1hjs8q' },
