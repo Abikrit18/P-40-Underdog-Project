@@ -28,14 +28,13 @@ export default function Navbar() {
                         <div className="flex shrink-0 items-center group">
                             <a href="/" className="group">
                                 <img
-
                                     src="/src/assets/image.png"
-                                    className="h-12 w-auto transform transition-transform duration-300 ease-in-out group-hover:translate-y-[-5px]"
+                                    className="h-14 w-auto transform transition-transform duration-300 ease-in-out group-hover:translate-y-[-5px]"
                                 />
                             </a>
                         </div>
 
-                        {/* Navigation menu (for desktop) */}
+                        
                         <div className="hidden sm:ml-auto sm:flex sm:items-center">
                             <div className="flex space-x-4">
                                 {navigation.map((item) => (
@@ -46,7 +45,7 @@ export default function Navbar() {
                                         className={classNames(
                                             activeNav === item.name
                                                 ? 'bg-gray-900 text-white'
-                                                : 'text-white hover:bg-yellow-200 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]', // default white text, black on hover
+                                                : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]', // default white text, black on hover
                                             'rounded-md px-3 py-2 text-sm font-medium text-decoration-none'
                                         )}
                                     >
@@ -57,9 +56,9 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    {/* Right side buttons */}
+                    
                     <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                        {/* Profile button on both mobile and desktop */}
+                        
                         <Menu as="div" className="relative">
                             <div>
                                 <MenuButton className="relative flex items-center justify-center rounded-full bg-red-900 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-red-900 focus:outline-hidden w-8 h-8">
@@ -71,16 +70,15 @@ export default function Navbar() {
                                         className="h-full w-full rounded-full object-cover"
                                     />
                                 </MenuButton>
-
                             </div>
                             <MenuItems
                                 transition
-                                className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 ring-1 shadow-lg ring-black/5 transition focus:outline-hidden"
+                                className="absolute right-0 z-10 mt-3 w-48 origin-top-right rounded-md bg-gray-900 py-1 ring-1 shadow-lg ring-black/5 transition focus:outline-hidden"
                             >
                                 <MenuItem>
                                     <a
                                         href="#"
-                                        className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden text-decoration-none"
+                                        className="block px-4 py-2 text-sm text-white hover:bg-purple-900 focus:bg-gray-600 data-focus:outline-hidden text-decoration-none"
                                     >
                                         Your Profile
                                     </a>
@@ -88,7 +86,7 @@ export default function Navbar() {
                                 <MenuItem>
                                     <a
                                         href="#"
-                                        className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden text-decoration-none"
+                                        className="block px-4 py-2 text-sm text-white hover:bg-purple-900 focus:bg-gray-600 data-focus:outline-hidden text-decoration-none"
                                     >
                                         Settings
                                     </a>
@@ -96,7 +94,7 @@ export default function Navbar() {
                                 <MenuItem>
                                     <a
                                         href="#"
-                                        className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden text-decoration-none"
+                                        className="block px-4 py-2 text-sm text-white hover:bg-purple-900 focus:bg-gray-600 data-focus:outline-hidden text-decoration-none"
                                     >
                                         Sign out
                                     </a>
@@ -115,7 +113,6 @@ export default function Navbar() {
                 </div>
             </div>
 
-            {/* Mobile menu dropdown */}
             <DisclosurePanel className="sm:hidden">
                 <div className="space-y-1 px-2 pt-2 pb-3">
                     {navigation.map((item) => (
@@ -127,7 +124,7 @@ export default function Navbar() {
                             className={classNames(
                                 activeNav === item.name
                                     ? 'bg-gray-900 text-white'
-                                    : 'text-white hover:bg-yellow-200 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]',
+                                    : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]',
                                 'block rounded-md px-3 py-2 text-base font-medium text-decoration-none'
                             )}
                         >
