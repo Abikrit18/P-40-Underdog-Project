@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 
 const Dogs = () => {
@@ -149,6 +150,15 @@ const Dogs = () => {
           <p className="text-center text-gray-600">No dogs available.</p>
         )}
       </div>
+
+import React from "react";
+
+const Dogs = () => {
+  return (
+    <div>
+      <h1>Available Dogs for Adoption</h1>
+      <p>Here you can find a list of all available dogs for adoption.</p>
+
     </div>
   );
 };
