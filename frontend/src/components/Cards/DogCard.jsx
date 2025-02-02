@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaw, faCalendar, faHeart, faWalking, faNotes } from '@fortawesome/free-solid-svg-icons';
+import { faPaw, faCalendar, faHeart, faWalking } from '@fortawesome/free-solid-svg-icons';
 import './DogCard.css';
 
 function DogCard({dog}) {
