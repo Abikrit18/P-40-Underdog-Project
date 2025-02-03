@@ -1,6 +1,6 @@
 // src/DogList.js
 import React, { useState, useEffect } from 'react';
-import DogCard from './DogCard';
+import DogCard from '../components/dogCard';
 import { Box, Button, TextField, CircularProgress, Container } from '@mui/material';
 import axios from 'axios';
 
@@ -45,18 +45,25 @@ const DogList = () => {
   // Handle delete (you'll need to implement the backend endpoint)
   const handleDelete = async (dog) => {
     try {
-      // await axios.delete(`http://localhost:3000/dogs/${dog._id}`);
-      await fetchDogs();
+        await axios.delete(`http://localhost:3000/dogs/${dog._id}`);
+        await fetchDogs(); // Refresh the list
     } catch (error) {
-      console.error('Error deleting dog:', error);
+        console.error('Error deleting dog:', error);
     }
-  };
+};
 
   // Handle edit (you'll need to implement the backend endpoint)
   const handleEdit = async (dog) => {
-    console.log('Edit dog:', dog);
-    // Implementation for edit would go here
-  };
+    const newName = prompt("Enter new name for the dog:", dog.name);
+    if (newName) {
+        try {
+            await axios.put(`http://localhost:3000/dogs/${dog._id}`, { name: newName });
+            await fetchDogs(); // Refresh the list
+        } catch (error) {
+            console.error('Error updating dog:', error);
+        }
+    }
+};
 
   if (loading) {
     return (
