@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import DogCard from "../components/dogCard";
 
 const Dogs = () => {
   const [dogs, setDogs] = useState([]);
@@ -124,30 +125,19 @@ const Dogs = () => {
           </div>
           {formError && <p className="text-red-600 mt-2">{formError}</p>}
         </div>
+{/* Display List of Dogs */}
+{loading ? (
+  <p className="text-center text-gray-600">Loading...</p>
+) : dogs.length > 0 ? (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {dogs.map((dog) => (
+      <DogCard key={dog._id} dog={dog} />
+    ))}
+  </div>
+) : (
+  <p className="text-center text-gray-600">No dogs available.</p>
+)}
 
-        {/* Display List of Dogs */}
-        {loading ? (
-          <p className="text-center text-gray-600">Loading...</p>
-        ) : dogs.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {dogs.map((dog) => (
-              <div
-                key={dog._id}  // Use unique id if available
-                className="bg-white p-4 rounded-lg shadow-md border border-gray-300"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">{dog.name}</h3>
-                <p className="text-gray-600">
-                  <strong>Age:</strong> {dog.age} years
-                </p>
-                <p className="text-gray-600">
-                  <strong>Color:</strong> {dog.color}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-gray-600">No dogs available.</p>
-        )}
       </div>
     </div>
   );
