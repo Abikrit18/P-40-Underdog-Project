@@ -1,146 +1,126 @@
-import React, { useEffect, useState } from "react";
-import DogCard from "../components/dogCard";
+// src/DogList.js
+import React, { useState, useEffect } from 'react';
+import DogCard from './DogCard';
+import { Box, Button, TextField, CircularProgress, Container } from '@mui/material';
+import axios from 'axios';
 
-const Dogs = () => {
+const DogList = () => {
   const [dogs, setDogs] = useState([]);
-  const [newDog, setNewDog] = useState({ name: "", age: "", color: "" });
-  const [loading, setLoading] = useState(false); // Loading state for data fetching
-  const [error, setError] = useState(null); // Error state for displaying error messages
-  const [formError, setFormError] = useState(""); // Form error state for validation
+  const [loading, setLoading] = useState(true);
+  const [newDog, setNewDog] = useState({
+    name: '',
+    age: '',
+    color: '',
+    picture: ''
+  });
 
-  // Fetch Dogs from Backend
-  const fetchData = async () => {
-    setLoading(true); // Set loading to true before fetching
+  // Fetch dogs from backend
+  const fetchDogs = async () => {
     try {
-      const response = await fetch("http://localhost:3000/dogs");
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const jsonData = await response.json();
-      setDogs(jsonData);
-      setError(null); // Reset error if fetch is successful
+      const response = await axios.get('http://localhost:3000/dogs');
+      setDogs(response.data);
+      setLoading(false);
     } catch (error) {
-      console.error("Error fetching data:", error);
-      setError("Failed to fetch dogs. Please try again later.");
-    } finally {
-      setLoading(false); // Set loading to false after fetching
+      console.error('Error fetching dogs:', error);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData(); // Initial data fetch
+    fetchDogs();
   }, []);
 
-  // Handle Input Change
-  const handleChange = (e) => {
-    setNewDog({ ...newDog, [e.target.name]: e.target.value });
-  };
-
-  // Add New Dog
-  const addDog = async () => {
-    if (!newDog.name || !newDog.age || !newDog.color) {
-      setFormError("All fields are required.");
-      return;
-    }
-
-    setFormError(""); // Clear form error if form is valid
-
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      console.log("Adding new dog:", newDog); // Log the dog object being sent
-      const response = await fetch("http://localhost:3000/dogs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newDog),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text(); // Get the error response text
-        throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
-      }
-
-      // Fetch updated list of dogs after successfully adding a new dog
-      const addedDog = await response.json();
-      setDogs((prevDogs) => [...prevDogs, addedDog]);
-      setNewDog({ name: "", age: "", color: "" }); // Clear form fields
-
-      // Re-fetch the dog data to ensure the frontend is synchronized with the backend
-      fetchData();
+      await axios.post('http://localhost:3000/dogs', newDog);
+      await fetchDogs(); // Refresh the list
+      setNewDog({ name: '', age: '', color: '', picture: '' });
     } catch (error) {
-      console.error("Error adding dog:", error);
-      setError("Failed to add dog. Please try again later.");
+      console.error('Error adding dog:', error);
     }
   };
+
+  // Handle delete (you'll need to implement the backend endpoint)
+  const handleDelete = async (dog) => {
+    try {
+      // await axios.delete(`http://localhost:3000/dogs/${dog._id}`);
+      await fetchDogs();
+    } catch (error) {
+      console.error('Error deleting dog:', error);
+    }
+  };
+
+  // Handle edit (you'll need to implement the backend endpoint)
+  const handleEdit = async (dog) => {
+    console.log('Edit dog:', dog);
+    // Implementation for edit would go here
+  };
+
+  if (loading) {
+    return (
+      <Container style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-4">
-          Available Dogs for Adoption
-        </h1>
-        <p className="text-center text-gray-600 mb-6">
-          Here you can find a list of all available dogs for adoption.
-        </p>
+    <Container>
+      {/* Add Dog Form */}
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd' }}>
+        <TextField
+          label="Name"
+          value={newDog.name}
+          onChange={(e) => setNewDog({ ...newDog, name: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="Age"
+          type="number"
+          value={newDog.age}
+          onChange={(e) => setNewDog({ ...newDog, age: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="Color"
+          value={newDog.color}
+          onChange={(e) => setNewDog({ ...newDog, color: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="Image URL"
+          value={newDog.picture}
+          onChange={(e) => setNewDog({ ...newDog, picture: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <Button type="submit" variant="contained" sx={{ mt: 2 }}>
+          Add Dog
+        </Button>
+      </Box>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-4">
-            {error}
-          </div>
-        )}
-
-        {/* Form to Add New Dog */}
-        <div className="bg-blue-100 p-4 rounded-lg shadow-md mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-3">Add a New Dog</h2>
-          <div className="flex flex-col md:flex-row gap-2">
-            <input
-              type="text"
-              name="name"
-              placeholder="Dog Name"
-              value={newDog.name}
-              onChange={handleChange}
-              className="p-2 border rounded-lg w-full"
-            />
-            <input
-              type="number"
-              name="age"
-              placeholder="Dog Age"
-              value={newDog.age}
-              onChange={handleChange}
-              className="p-2 border rounded-lg w-full"
-            />
-            <input
-              type="text"
-              name="color"
-              placeholder="Dog Color"
-              value={newDog.color}
-              onChange={handleChange}
-              className="p-2 border rounded-lg w-full"
-            />
-            <button
-              onClick={addDog}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-            >
-              Add Dog
-            </button>
-          </div>
-          {formError && <p className="text-red-600 mt-2">{formError}</p>}
-        </div>
-{/* Display List of Dogs */}
-{loading ? (
-  <p className="text-center text-gray-600">Loading...</p>
-) : dogs.length > 0 ? (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    {dogs.map((dog) => (
-      <DogCard key={dog._id} dog={dog} />
-    ))}
-  </div>
-) : (
-  <p className="text-center text-gray-600">No dogs available.</p>
-)}
-
-      </div>
-    </div>
+      {/* Dogs Grid */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+        {dogs.map((dog) => (
+          <DogCard
+            key={dog._id}
+            dog={dog}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+          />
+        ))}
+      </Box>
+    </Container>
   );
 };
 
-export default Dogs;
+export default DogList;
