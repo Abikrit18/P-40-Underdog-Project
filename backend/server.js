@@ -130,10 +130,19 @@ app.delete('/dogs/:id', async (req, res) => {
 app.put('/dogs/:id', async (req, res) => {
     try {
         const collection = client.db("underdogs").collection("dogs");
+        const { name, age, color, image } = req.body;
+        const updateFields = {};
+
+        if (name) updateFields.name = name;
+        if (age) updateFields.age = age;
+        if (color) updateFields.color = color;
+        if (image) updateFields.image = image;
+
         const updateResult = await collection.updateOne(
             { _id: new ObjectId(req.params.id) },
-            { $set: req.body }
+            { $set: updateFields }
         );
+
         if (updateResult.modifiedCount === 1) {
             res.json({ message: "Dog updated successfully" });
         } else {
