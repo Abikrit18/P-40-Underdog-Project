@@ -3,7 +3,7 @@ const cors = require('cors');const { MongoClient, ServerApiVersion, ObjectId } =
 require('dotenv').config();
 
 const app = express();
-const port = 4000;
+const port = 3000;
 
 const uri = process.env.uri;
 
@@ -35,12 +35,13 @@ app.get('/dogs', async (req, res) => {
     try {
         const collection = client.db("underdogs").collection("dogs");
         const dogs = await collection.find().toArray();
-        res.json(dogs);
+        res.json(dogs.map(d => ({ ...d, _id: d._id.toString() }))); // Convert ObjectId to string
     } catch (error) {
         console.error("Error fetching data:", error);
         res.status(500).json({ error: "Failed to fetch dogs" });
     }
 });
+
 
 /*
 // Add new dog
@@ -58,21 +59,21 @@ app.post('/dogs', async (req, res) => {
 */
 
 
+// Add new dog
 app.post('/dogs', async (req, res) => {
     try {
         const collection = client.db("underdogs").collection("dogs");
         const newDog = req.body;
-        const result = await collection.deleteOne({ _id: new ObjectId(req.params.id) });
-
-
-        // Instead of result.ops[0], use result.insertedId or return the inserted dog data
-        const insertedDog = await collection.findOne({ _id: result.insertedId });
-        res.json(insertedDog);
+        const result = await collection.insertOne(newDog);
+        console.log(result);
+        newDog._id = result.insertedId; // Ensure frontend gets _id
+        res.json(newDog);
     } catch (error) {
         console.error("Error adding dog:", error);
         res.status(500).json({ error: "Failed to add dog" });
     }
 });
+
 
 // Delete a dog
 app.delete('/dogs/:id', async (req, res) => {

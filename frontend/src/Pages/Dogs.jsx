@@ -34,23 +34,25 @@ const DogList = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3000/dogs', newDog);
-      await fetchDogs(); // Refresh the list
-      setNewDog({ name: '', age: '', color: '', picture: '' });
+        const response = await axios.post('http://localhost:3000/dogs', newDog);
+        setDogs([...dogs, response.data]); // Update state directly
+        setNewDog({ name: '', age: '', color: '', picture: '' });
     } catch (error) {
-      console.error('Error adding dog:', error);
+        console.error('Error adding dog:', error);
     }
-  };
+};
+
 
   // Handle delete (you'll need to implement the backend endpoint)
   const handleDelete = async (dog) => {
     try {
         await axios.delete(`http://localhost:3000/dogs/${dog._id}`);
-        await fetchDogs(); // Refresh the list
+        setDogs(dogs.filter((d) => d._id !== dog._id)); // Remove from state
     } catch (error) {
         console.error('Error deleting dog:', error);
     }
 };
+
 
   // Handle edit (you'll need to implement the backend endpoint)
   const handleEdit = async (dog) => {
@@ -58,12 +60,13 @@ const DogList = () => {
     if (newName) {
         try {
             await axios.put(`http://localhost:3000/dogs/${dog._id}`, { name: newName });
-            await fetchDogs(); // Refresh the list
+            setDogs(dogs.map(d => d._id === dog._id ? { ...d, name: newName } : d)); // Update state directly
         } catch (error) {
             console.error('Error updating dog:', error);
         }
     }
 };
+
 
   if (loading) {
     return (
