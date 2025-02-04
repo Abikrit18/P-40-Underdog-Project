@@ -1,156 +1,199 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
+import DogCard from '../components/dogCard';
+import { Box, Button, TextField, CircularProgress, Container, Pagination } from '@mui/material';
+import axios from 'axios';
 
-const Dogs = () => {
+const DogList = () => {
   const [dogs, setDogs] = useState([]);
-  const [newDog, setNewDog] = useState({ name: "", age: "", color: "" });
-  const [loading, setLoading] = useState(false); // Loading state for data fetching
-  const [error, setError] = useState(null); // Error state for displaying error messages
-  const [formError, setFormError] = useState(""); // Form error state for validation
+  const [loading, setLoading] = useState(true);
+  const [newDog, setNewDog] = useState({
+    name: '',
+    age: '',
+    color: '',
+    picture: ''
+  });
 
-  // Fetch Dogs from Backend
-  const fetchData = async () => {
-    setLoading(true); // Set loading to true before fetching
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const dogsPerPage = 3;
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      handleImageUpload(file); // Automatically upload when file is selected
+    }
+  };
+
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    setUploadLoading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
     try {
-      const response = await fetch("http://localhost:3000/dogs");
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const jsonData = await response.json();
-      setDogs(jsonData);
-      setError(null); // Reset error if fetch is successful
+      const response = await axios.post('http://localhost:3000/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      setNewDog({ ...newDog, picture: response.data.url });
     } catch (error) {
-      console.error("Error fetching data:", error);
-      setError("Failed to fetch dogs. Please try again later.");
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
     } finally {
-      setLoading(false); // Set loading to false after fetching
+      setUploadLoading(false);
+    }
+  };
+  
+  const fetchDogs = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/dogs');
+      setDogs(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching dogs:', error);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData(); // Initial data fetch
+    fetchDogs();
   }, []);
 
-  // Handle Input Change
-  const handleChange = (e) => {
-    setNewDog({ ...newDog, [e.target.name]: e.target.value });
-  };
-
-  // Add New Dog
-  const addDog = async () => {
-    if (!newDog.name || !newDog.age || !newDog.color) {
-      setFormError("All fields are required.");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newDog.picture) {
+      alert('Please upload an image first');
       return;
     }
-
-    setFormError(""); // Clear form error if form is valid
-
     try {
-      console.log("Adding new dog:", newDog); // Log the dog object being sent
-      const response = await fetch("http://localhost:3000/dogs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newDog),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text(); // Get the error response text
-        throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
-      }
-
-      // Fetch updated list of dogs after successfully adding a new dog
-      const addedDog = await response.json();
-      setDogs((prevDogs) => [...prevDogs, addedDog]);
-      setNewDog({ name: "", age: "", color: "" }); // Clear form fields
-
-      // Re-fetch the dog data to ensure the frontend is synchronized with the backend
-      fetchData();
+      const response = await axios.post('http://localhost:3000/dogs', newDog);
+      setDogs([...dogs, response.data]);
+      setNewDog({ name: '', age: '', color: '', picture: '' });
+      setSelectedFile(null);
     } catch (error) {
-      console.error("Error adding dog:", error);
-      setError("Failed to add dog. Please try again later.");
+      console.error('Error adding dog:', error);
+      alert('Failed to add dog. Please try again.');
     }
   };
 
+  const handleDelete = async (dog) => {
+    try {
+      await axios.delete(`http://localhost:3000/dogs/${dog._id}`);
+      setDogs(dogs.filter((d) => d._id !== dog._id));
+    } catch (error) {
+      console.error('Error deleting dog:', error);
+      alert('Failed to delete dog. Please try again.');
+    }
+  };
+
+  const handleEdit = async (updatedDog) => {
+    try {
+      await axios.put(`http://localhost:3000/dogs/${updatedDog._id}`, updatedDog);
+      setDogs(dogs.map(d => d._id === updatedDog._id ? updatedDog : d));
+    } catch (error) {
+      console.error('Error updating dog:', error);
+      alert('Failed to update dog. Please try again.');
+    }
+  };
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
+
+  const indexOfLastDog = page * dogsPerPage;
+  const indexOfFirstDog = indexOfLastDog - dogsPerPage;
+  const currentDogs = dogs.slice(indexOfFirstDog, indexOfLastDog);
+
+  if (loading) {
+    return (
+      <Container style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-4">
-          Available Dogs for Adoption
-        </h1>
-        <p className="text-center text-gray-600 mb-6">
-          Here you can find a list of all available dogs for adoption.
-        </p>
+    <Container>
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd', borderRadius: 2 }}>
+        <TextField
+          label="Name"
+          value={newDog.name}
+          onChange={(e) => setNewDog({ ...newDog, name: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="Age"
+          type="number"
+          value={newDog.age}
+          onChange={(e) => setNewDog({ ...newDog, age: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <TextField
+          label="Color"
+          value={newDog.color}
+          onChange={(e) => setNewDog({ ...newDog, color: e.target.value })}
+          fullWidth
+          margin="normal"
+          required
+        />
+        <Box sx={{ mt: 2, mb: 2 }}>
+          <input
+            accept="image/*"
+            style={{ display: 'none' }}
+            id="image-upload"
+            type="file"
+            onChange={handleImageChange}
+          />
+          <label htmlFor="image-upload">
+            <Button variant="contained" component="span" disabled={uploadLoading}>
+              {uploadLoading ? 'Uploading...' : 'Choose Image'}
+            </Button>
+          </label>
+          {uploadLoading && <CircularProgress size={24} sx={{ ml: 2 }} />}
+          {newDog.picture && (
+            <Box sx={{ mt: 2 }}>
+              <img src={newDog.picture} alt="Preview" style={{ maxWidth: '200px', borderRadius: '4px' }} />
+            </Box>
+          )}
+        </Box>
+        <Button 
+          type="submit" 
+          variant="contained" 
+          sx={{ mt: 2 }}
+          disabled={!newDog.picture || uploadLoading}
+        >
+          Add Dog
+        </Button>
+      </Box>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-4">
-            {error}
-          </div>
-        )}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
+        {currentDogs.map((dog) => (
+          <DogCard
+            key={dog._id}
+            dog={dog}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+          />
+        ))}
+      </Box>
 
-        {/* Form to Add New Dog */}
-        <div className="bg-blue-100 p-4 rounded-lg shadow-md mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-3">Add a New Dog</h2>
-          <div className="flex flex-col md:flex-row gap-2">
-            <input
-              type="text"
-              name="name"
-              placeholder="Dog Name"
-              value={newDog.name}
-              onChange={handleChange}
-              className="p-2 border rounded-lg w-full"
-            />
-            <input
-              type="number"
-              name="age"
-              placeholder="Dog Age"
-              value={newDog.age}
-              onChange={handleChange}
-              className="p-2 border rounded-lg w-full"
-            />
-            <input
-              type="text"
-              name="color"
-              placeholder="Dog Color"
-              value={newDog.color}
-              onChange={handleChange}
-              className="p-2 border rounded-lg w-full"
-            />
-            <button
-              onClick={addDog}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-            >
-              Add Dog
-            </button>
-          </div>
-          {formError && <p className="text-red-600 mt-2">{formError}</p>}
-        </div>
-
-        {/* Display List of Dogs */}
-        {loading ? (
-          <p className="text-center text-gray-600">Loading...</p>
-        ) : dogs.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {dogs.map((dog) => (
-              <div
-                key={dog._id}  // Use unique id if available
-                className="bg-white p-4 rounded-lg shadow-md border border-gray-300"
-              >
-                <h3 className="text-lg font-semibold text-gray-800">{dog.name}</h3>
-                <p className="text-gray-600">
-                  <strong>Age:</strong> {dog.age} years
-                </p>
-                <p className="text-gray-600">
-                  <strong>Color:</strong> {dog.color}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-gray-600">No dogs available.</p>
-        )}
-      </div>
-    </div>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Pagination
+          count={Math.ceil(dogs.length / dogsPerPage)}
+          page={page}
+          onChange={handlePageChange}
+          color="primary"
+        />
+      </Box>
+    </Container>
   );
 };
 
-export default Dogs;
+export default DogList;
