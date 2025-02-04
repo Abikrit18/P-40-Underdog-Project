@@ -1,5 +1,8 @@
 const express = require('express');
-const cors = require('cors');const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
@@ -17,6 +20,19 @@ const client = new MongoClient(uri, {
 
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Set up Multer for file storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ storage });
 
 // Connect to MongoDB
 async function connectToMongoDB() {
@@ -30,34 +46,25 @@ async function connectToMongoDB() {
     }
 }
 
+// Image Upload Endpoint
+app.post('/upload', upload.single('image'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+    }
+    res.json({ url: `http://localhost:${port}/uploads/${req.file.filename}` });
+});
+
 // Get all dogs
 app.get('/dogs', async (req, res) => {
     try {
         const collection = client.db("underdogs").collection("dogs");
         const dogs = await collection.find().toArray();
-        res.json(dogs.map(d => ({ ...d, _id: d._id.toString() }))); // Convert ObjectId to string
+        res.json(dogs.map(d => ({ ...d, _id: d._id.toString() })));
     } catch (error) {
         console.error("Error fetching data:", error);
         res.status(500).json({ error: "Failed to fetch dogs" });
     }
 });
-
-
-/*
-// Add new dog
-app.post('/dogs', async (req, res) => {
-    try {
-        const collection = client.db("underdogs").collection("dogs");
-        const newDog = req.body;
-        const result = await collection.insertOne(newDog, { writeConcern: { w: 1 } }); // Specify w: 1 for write concern
-        res.json(result.ops[0]);
-    } catch (error) {
-        console.error("Error adding dog:", error);
-        res.status(500).json({ error: "Failed to add dog" });
-    }
-});
-*/
-
 
 // Add new dog
 app.post('/dogs', async (req, res) => {
@@ -65,15 +72,13 @@ app.post('/dogs', async (req, res) => {
         const collection = client.db("underdogs").collection("dogs");
         const newDog = req.body;
         const result = await collection.insertOne(newDog);
-        console.log(result);
-        newDog._id = result.insertedId; // Ensure frontend gets _id
+        newDog._id = result.insertedId;
         res.json(newDog);
     } catch (error) {
         console.error("Error adding dog:", error);
         res.status(500).json({ error: "Failed to add dog" });
     }
 });
-
 
 // Delete a dog
 app.delete('/dogs/:id', async (req, res) => {
@@ -97,7 +102,7 @@ app.put('/dogs/:id', async (req, res) => {
         const collection = client.db("underdogs").collection("dogs");
         const updateResult = await collection.updateOne(
             { _id: new ObjectId(req.params.id) },
-            { $set: req.body }
+            { $set: { name: req.body.name, color: req.body.color, age: req.body.age } }
         );
         if (updateResult.modifiedCount === 1) {
             res.json({ message: "Dog updated successfully" });
@@ -109,7 +114,6 @@ app.put('/dogs/:id', async (req, res) => {
         res.status(500).json({ error: "Failed to update dog" });
     }
 });
-
 
 // Start server and connect to MongoDB
 app.listen(port, async () => {

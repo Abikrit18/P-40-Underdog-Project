@@ -1,7 +1,7 @@
 // src/DogList.js
 import React, { useState, useEffect } from 'react';
 import DogCard from '../components/dogCard';
-import { Box, Button, TextField, CircularProgress, Container } from '@mui/material';
+import { Box, Button, TextField, CircularProgress, Container, Pagination } from '@mui/material';
 import axios from 'axios';
 
 const DogList = () => {
@@ -14,6 +14,36 @@ const DogList = () => {
     picture: ''
   });
 
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [page, setPage] = useState(1);
+  const dogsPerPage = 3;
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setSelectedFile(file);
+  };
+
+  const handleImageUpload = async () => {
+    if (!selectedFile) return;
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
+    try {
+      const response = await axios.post('http://localhost:3000/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      if (response.data.success) {
+        setNewDog({ ...newDog, picture: response.data.url });
+      } else {
+        console.error('Error uploading image:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    }
+  };
+  
   // Fetch dogs from backend
   const fetchDogs = async () => {
     try {
@@ -30,43 +60,48 @@ const DogList = () => {
     fetchDogs();
   }, []);
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-        const response = await axios.post('http://localhost:3000/dogs', newDog);
-        setDogs([...dogs, response.data]); // Update state directly
-        setNewDog({ name: '', age: '', color: '', picture: '' });
+      const response = await axios.post('http://localhost:3000/dogs', newDog);
+      setDogs([...dogs, response.data]);
+      setNewDog({ name: '', age: '', color: '', picture: '' });
+      setSelectedFile(null);
     } catch (error) {
-        console.error('Error adding dog:', error);
+      console.error('Error adding dog:', error);
     }
-};
+  };
 
-
-  // Handle delete (you'll need to implement the backend endpoint)
   const handleDelete = async (dog) => {
     try {
-        await axios.delete(`http://localhost:3000/dogs/${dog._id}`);
-        setDogs(dogs.filter((d) => d._id !== dog._id)); // Remove from state
+      await axios.delete(`http://localhost:3000/dogs/${dog._id}`);
+      setDogs(dogs.filter((d) => d._id !== dog._id));
     } catch (error) {
-        console.error('Error deleting dog:', error);
+      console.error('Error deleting dog:', error);
     }
-};
+  };
 
-
-  // Handle edit (you'll need to implement the backend endpoint)
   const handleEdit = async (dog) => {
     const newName = prompt("Enter new name for the dog:", dog.name);
-    if (newName) {
-        try {
-            await axios.put(`http://localhost:3000/dogs/${dog._id}`, { name: newName });
-            setDogs(dogs.map(d => d._id === dog._id ? { ...d, name: newName } : d)); // Update state directly
-        } catch (error) {
-            console.error('Error updating dog:', error);
-        }
+    const newAge = prompt("Enter new age for the dog:", dog.age);
+    const newColor = prompt("Enter new color for the dog:", dog.color);
+    if (newName && newAge && newColor) {
+      try {
+        await axios.put(`http://localhost:3000/dogs/${dog._id}`, { name: newName, age: newAge, color: newColor });
+        setDogs(dogs.map(d => d._id === dog._id ? { ...d, name: newName, age: newAge, color: newColor } : d));
+      } catch (error) {
+        console.error('Error updating dog:', error);
+      }
     }
-};
+  };
 
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
+
+  const indexOfLastDog = page * dogsPerPage;
+  const indexOfFirstDog = indexOfLastDog - dogsPerPage;
+  const currentDogs = dogs.slice(indexOfFirstDog, indexOfLastDog);
 
   if (loading) {
     return (
@@ -78,7 +113,6 @@ const DogList = () => {
 
   return (
     <Container>
-      {/* Add Dog Form */}
       <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd' }}>
         <TextField
           label="Name"
@@ -105,22 +139,24 @@ const DogList = () => {
           margin="normal"
           required
         />
-        <TextField
-          label="Image URL"
-          value={newDog.picture}
-          onChange={(e) => setNewDog({ ...newDog, picture: e.target.value })}
-          fullWidth
-          margin="normal"
-          required
-        />
+        <Box display="flex" alignItems="center" gap={2}>
+          <TextField
+            label="Image URL"
+            value={newDog.picture}
+            onChange={(e) => setNewDog({ ...newDog, picture: e.target.value })}
+            fullWidth
+            margin="normal"
+          />
+          <input type="file" onChange={handleImageChange} />
+          <Button onClick={handleImageUpload} variant="contained">Upload</Button>
+        </Box>
         <Button type="submit" variant="contained" sx={{ mt: 2 }}>
           Add Dog
         </Button>
       </Box>
 
-      {/* Dogs Grid */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
-        {dogs.map((dog) => (
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
+        {currentDogs.map((dog) => (
           <DogCard
             key={dog._id}
             dog={dog}
@@ -128,6 +164,15 @@ const DogList = () => {
             onEdit={handleEdit}
           />
         ))}
+      </Box>
+
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Pagination
+          count={Math.ceil(dogs.length / dogsPerPage)}
+          page={page}
+          onChange={handlePageChange}
+          color="primary"
+        />
       </Box>
     </Container>
   );
