@@ -20,19 +20,43 @@ const client = new MongoClient(uri, {
 
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Create uploads directory if it doesn't exist
+const uploadDir = path.join(__dirname, 'uploads');
+if (!require('fs').existsSync(uploadDir)) {
+    require('fs').mkdirSync(uploadDir, { recursive: true });
+}
+
+app.use('/uploads', express.static(uploadDir));
 
 // Set up Multer for file storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
+        // Generate unique filename with original extension
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-const upload = multer({ storage });
+// File filter to only allow images
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Not an image! Please upload an image.'), false);
+    }
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    }
+});
 
 // Connect to MongoDB
 async function connectToMongoDB() {
@@ -46,12 +70,19 @@ async function connectToMongoDB() {
     }
 }
 
-// Image Upload Endpoint
-app.post('/upload', upload.single('image'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded" });
+// Image Upload Endpoint - Changed to match frontend expectation
+app.post('/api/upload', upload.single('image'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "No file uploaded" });
+        }
+        // Return URL in the format expected by frontend
+        const imageUrl = `http://localhost:${port}/uploads/${req.file.filename}`;
+        res.json({ url: imageUrl });
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        res.status(500).json({ error: "Failed to upload file" });
     }
-    res.json({ url: `http://localhost:${port}/uploads/${req.file.filename}` });
 });
 
 // Get all dogs
@@ -72,8 +103,7 @@ app.post('/dogs', async (req, res) => {
         const collection = client.db("underdogs").collection("dogs");
         const newDog = req.body;
         const result = await collection.insertOne(newDog);
-        newDog._id = result.insertedId;
-        res.json(newDog);
+        res.json({ ...newDog, _id: result.insertedId.toString() });
     } catch (error) {
         console.error("Error adding dog:", error);
         res.status(500).json({ error: "Failed to add dog" });
@@ -102,7 +132,7 @@ app.put('/dogs/:id', async (req, res) => {
         const collection = client.db("underdogs").collection("dogs");
         const updateResult = await collection.updateOne(
             { _id: new ObjectId(req.params.id) },
-            { $set: { name: req.body.name, color: req.body.color, age: req.body.age } }
+            { $set: req.body }
         );
         if (updateResult.modifiedCount === 1) {
             res.json({ message: "Dog updated successfully" });

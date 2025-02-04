@@ -1,4 +1,3 @@
-// src/DogList.js
 import React, { useState, useEffect } from 'react';
 import DogCard from '../components/dogCard';
 import { Box, Button, TextField, CircularProgress, Container, Pagination } from '@mui/material';
@@ -15,18 +14,23 @@ const DogList = () => {
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const [page, setPage] = useState(1);
   const dogsPerPage = 3;
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    setSelectedFile(file);
+    if (file) {
+      setSelectedFile(file);
+      handleImageUpload(file); // Automatically upload when file is selected
+    }
   };
 
-  const handleImageUpload = async () => {
-    if (!selectedFile) return;
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    setUploadLoading(true);
     const formData = new FormData();
-    formData.append('image', selectedFile);
+    formData.append('image', file);
 
     try {
       const response = await axios.post('http://localhost:3000/api/upload', formData, {
@@ -34,17 +38,15 @@ const DogList = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      if (response.data.success) {
-        setNewDog({ ...newDog, picture: response.data.url });
-      } else {
-        console.error('Error uploading image:', response.data.message);
-      }
+      setNewDog({ ...newDog, picture: response.data.url });
     } catch (error) {
       console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploadLoading(false);
     }
   };
   
-  // Fetch dogs from backend
   const fetchDogs = async () => {
     try {
       const response = await axios.get('http://localhost:3000/dogs');
@@ -62,6 +64,10 @@ const DogList = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!newDog.picture) {
+      alert('Please upload an image first');
+      return;
+    }
     try {
       const response = await axios.post('http://localhost:3000/dogs', newDog);
       setDogs([...dogs, response.data]);
@@ -69,6 +75,7 @@ const DogList = () => {
       setSelectedFile(null);
     } catch (error) {
       console.error('Error adding dog:', error);
+      alert('Failed to add dog. Please try again.');
     }
   };
 
@@ -78,20 +85,17 @@ const DogList = () => {
       setDogs(dogs.filter((d) => d._id !== dog._id));
     } catch (error) {
       console.error('Error deleting dog:', error);
+      alert('Failed to delete dog. Please try again.');
     }
   };
 
-  const handleEdit = async (dog) => {
-    const newName = prompt("Enter new name for the dog:", dog.name);
-    const newAge = prompt("Enter new age for the dog:", dog.age);
-    const newColor = prompt("Enter new color for the dog:", dog.color);
-    if (newName && newAge && newColor) {
-      try {
-        await axios.put(`http://localhost:3000/dogs/${dog._id}`, { name: newName, age: newAge, color: newColor });
-        setDogs(dogs.map(d => d._id === dog._id ? { ...d, name: newName, age: newAge, color: newColor } : d));
-      } catch (error) {
-        console.error('Error updating dog:', error);
-      }
+  const handleEdit = async (updatedDog) => {
+    try {
+      await axios.put(`http://localhost:3000/dogs/${updatedDog._id}`, updatedDog);
+      setDogs(dogs.map(d => d._id === updatedDog._id ? updatedDog : d));
+    } catch (error) {
+      console.error('Error updating dog:', error);
+      alert('Failed to update dog. Please try again.');
     }
   };
 
@@ -113,7 +117,7 @@ const DogList = () => {
 
   return (
     <Container>
-      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd' }}>
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd', borderRadius: 2 }}>
         <TextField
           label="Name"
           value={newDog.name}
@@ -139,18 +143,32 @@ const DogList = () => {
           margin="normal"
           required
         />
-        <Box display="flex" alignItems="center" gap={2}>
-          <TextField
-            label="Image URL"
-            value={newDog.picture}
-            onChange={(e) => setNewDog({ ...newDog, picture: e.target.value })}
-            fullWidth
-            margin="normal"
+        <Box sx={{ mt: 2, mb: 2 }}>
+          <input
+            accept="image/*"
+            style={{ display: 'none' }}
+            id="image-upload"
+            type="file"
+            onChange={handleImageChange}
           />
-          <input type="file" onChange={handleImageChange} />
-          <Button onClick={handleImageUpload} variant="contained">Upload</Button>
+          <label htmlFor="image-upload">
+            <Button variant="contained" component="span" disabled={uploadLoading}>
+              {uploadLoading ? 'Uploading...' : 'Choose Image'}
+            </Button>
+          </label>
+          {uploadLoading && <CircularProgress size={24} sx={{ ml: 2 }} />}
+          {newDog.picture && (
+            <Box sx={{ mt: 2 }}>
+              <img src={newDog.picture} alt="Preview" style={{ maxWidth: '200px', borderRadius: '4px' }} />
+            </Box>
+          )}
         </Box>
-        <Button type="submit" variant="contained" sx={{ mt: 2 }}>
+        <Button 
+          type="submit" 
+          variant="contained" 
+          sx={{ mt: 2 }}
+          disabled={!newDog.picture || uploadLoading}
+        >
           Add Dog
         </Button>
       </Box>
