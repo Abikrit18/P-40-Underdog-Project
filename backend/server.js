@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const fs = require('fs');
 const path = require('path');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
@@ -111,12 +112,36 @@ app.post('/dogs', async (req, res) => {
 });
 
 // Delete a dog
+
+// Update the delete endpoint
 app.delete('/dogs/:id', async (req, res) => {
     try {
         const collection = client.db("underdogs").collection("dogs");
+        
+        // First get the dog document to get the image URL
+        const dog = await collection.findOne({ _id: new ObjectId(req.params.id) });
+        
+        if (!dog) {
+            return res.status(404).json({ error: "Dog not found" });
+        }
+
+        // Delete the image file if it exists
+        if (dog.picture) {
+            const imageUrl = new URL(dog.picture);
+            const filename = path.basename(imageUrl.pathname);
+            const imagePath = path.join(__dirname, 'uploads', filename);
+            
+            // Delete file if it exists
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+            }
+        }
+
+        // Delete the dog document from database
         const result = await collection.deleteOne({ _id: new ObjectId(req.params.id) });
+        
         if (result.deletedCount === 1) {
-            res.json({ message: "Dog deleted successfully" });
+            res.json({ message: "Dog and associated image deleted successfully" });
         } else {
             res.status(404).json({ error: "Dog not found" });
         }
