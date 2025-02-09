@@ -4,7 +4,9 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./Pages/Home";
 import Dogs from "./Pages/Dogs"; 
+import Walk from "./Pages/Walk";
 import Adoption from "./Pages/Adoption";
+import Donation from './Pages/Donation';
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -13,13 +15,15 @@ const App = () => {
     <Router>
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        <div className="flex-grow container mx-auto mt-4 px-4">
+        
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/dogs" element={<Dogs />} />
             <Route path="/adoption" element={<Adoption />}/>
+            <Route path="/walk" element={<Walk />}/>
+            <Route path="/donation" element={<Donation />} />
           </Routes>
-        </div>
+        
         <Footer />
       </div>
     </Router>

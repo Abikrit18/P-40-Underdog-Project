@@ -4,9 +4,10 @@ import { useState } from 'react'
 
 const navigation = [
     {name:'Home',href:'/'},
+    {name:'Walk',href:'/walk'},
     { name: 'Dogs', href: '/dogs' },
     { name: 'Adoption', href: '/adoption' },
-    { name: 'Donation', href: 'https://fundraise.givesmart.com/f/4yx1/n?vid=1hjs8q' },
+    { name: 'Donation', href: '/donation' },
 ]
 
 function classNames(...classes) {
