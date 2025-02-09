@@ -3,29 +3,27 @@ const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const mongoose = require('mongoose');
 require('dotenv').config();
+
+const userRoutes = require('./routes/userRoutes'); // Import user routes
 
 const app = express();
 const port = 3000;
 
-const uri = process.env.uri;
-
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-    },
-});
-
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Connect to MongoDB using Mongoose
+mongoose.connect(process.env.uri)
+    .then(() => console.log('MongoDB connected successfully'))
+    .catch((error) => console.error('MongoDB connection failed:', error));
+
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, 'uploads');
-if (!require('fs').existsSync(uploadDir)) {
-    require('fs').mkdirSync(uploadDir, { recursive: true });
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 app.use('/uploads', express.static(uploadDir));
@@ -36,13 +34,11 @@ const storage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        // Generate unique filename with original extension
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-// File filter to only allow images
 const fileFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
         cb(null, true);
@@ -59,25 +55,12 @@ const upload = multer({
     }
 });
 
-// Connect to MongoDB
-async function connectToMongoDB() {
-    try {
-        await client.connect();
-        await client.db("admin").command({ ping: 1 });
-        console.log("Successfully connected to MongoDB!");
-    } catch (error) {
-        console.error("Error connecting to MongoDB:", error);
-        process.exit(1);
-    }
-}
-
-// Image Upload Endpoint - Changed to match frontend expectation
+// Image Upload Endpoint
 app.post('/api/upload', upload.single('image'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: "No file uploaded" });
         }
-        // Return URL in the format expected by frontend
         const imageUrl = `http://localhost:${port}/uploads/${req.file.filename}`;
         res.json({ url: imageUrl });
     } catch (error) {
@@ -86,85 +69,62 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     }
 });
 
-// Get all dogs
+// Dog-related routes
 app.get('/dogs', async (req, res) => {
     try {
-        const collection = client.db("underdogs").collection("dogs");
+        const collection = mongoose.connection.db.collection('dogs');
         const dogs = await collection.find().toArray();
         res.json(dogs.map(d => ({ ...d, _id: d._id.toString() })));
     } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error('Error fetching dogs:', error);
         res.status(500).json({ error: "Failed to fetch dogs" });
     }
 });
 
-// Add new dog
 app.post('/dogs', async (req, res) => {
     try {
-        const collection = client.db("underdogs").collection("dogs");
+        const collection = mongoose.connection.db.collection('dogs');
         const newDog = req.body;
         const result = await collection.insertOne(newDog);
         res.json({ ...newDog, _id: result.insertedId.toString() });
     } catch (error) {
-        console.error("Error adding dog:", error);
+        console.error('Error adding dog:', error);
         res.status(500).json({ error: "Failed to add dog" });
     }
 });
 
-// Delete a dog
-
-// Update the delete endpoint
 app.delete('/dogs/:id', async (req, res) => {
     try {
-        const collection = client.db("underdogs").collection("dogs");
-        
-        // First get the dog document to get the image URL
-        const dog = await collection.findOne({ _id: new ObjectId(req.params.id) });
-        
-        if (!dog) {
-            return res.status(404).json({ error: "Dog not found" });
-        }
+        const collection = mongoose.connection.db.collection('dogs');
+        const dog = await collection.findOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
+        if (!dog) return res.status(404).json({ error: "Dog not found" });
 
-        // Delete the image file if it exists
         if (dog.picture) {
-            const imageUrl = new URL(dog.picture);
-            const filename = path.basename(imageUrl.pathname);
+            const filename = path.basename(new URL(dog.picture).pathname);
             const imagePath = path.join(__dirname, 'uploads', filename);
-            
-            // Delete file if it exists
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-            }
+            if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
         }
 
-        // Delete the dog document from database
-        const result = await collection.deleteOne({ _id: new ObjectId(req.params.id) });
-        
-        if (result.deletedCount === 1) {
-            res.json({ message: "Dog and associated image deleted successfully" });
-        } else {
-            res.status(404).json({ error: "Dog not found" });
-        }
+        const result = await collection.deleteOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
+        res.json({ message: "Dog and associated image deleted successfully" });
     } catch (error) {
-        console.error("Error deleting dog:", error);
+        console.error('Error deleting dog:', error);
         res.status(500).json({ error: "Failed to delete dog" });
     }
 });
 
-// Edit a dog
 app.put('/dogs/:id', async (req, res) => {
     try {
-        const collection = client.db("underdogs").collection("dogs");
+        const collection = mongoose.connection.db.collection('dogs');
         const { name, age, color, image } = req.body;
         const updateFields = {};
-
         if (name) updateFields.name = name;
         if (age) updateFields.age = age;
         if (color) updateFields.color = color;
         if (image) updateFields.image = image;
 
         const updateResult = await collection.updateOne(
-            { _id: new ObjectId(req.params.id) },
+            { _id: new mongoose.Types.ObjectId(req.params.id) },
             { $set: updateFields }
         );
 
@@ -174,13 +134,29 @@ app.put('/dogs/:id', async (req, res) => {
             res.status(404).json({ error: "Dog not found or no changes made" });
         }
     } catch (error) {
-        console.error("Error updating dog:", error);
+        console.error('Error updating dog:', error);
         res.status(500).json({ error: "Failed to update dog" });
     }
 });
 
-// Start server and connect to MongoDB
-app.listen(port, async () => {
+// Use user routes
+app.use('/users', userRoutes);
+
+// 404 Not Found Handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error('Global Error:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+});
+app.use("/apple", (req, res) => {
+    res.send("404");
+})
+
+// Start server
+app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
-    await connectToMongoDB();
 });

@@ -3,8 +3,8 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 
 const navigation = [
-    {name:'Home',href:'/'},
-    {name:'Walk',href:'/walk'},
+    { name: 'Home', href: '/' },
+    { name: 'Walk', href: '/walk' },
     { name: 'Dogs', href: '/dogs' },
     { name: 'Adoption', href: '/adoption' },
     { name: 'Donation', href: '/donation' },
@@ -36,7 +36,7 @@ export default function Navbar() {
                             </a>
                         </div>
 
-                        
+
                         <div className="hidden sm:ml-auto sm:flex sm:items-center">
                             <div className="flex space-x-4">
                                 {navigation.map((item) => (
@@ -58,9 +58,9 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    
+
                     <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                        
+
                         <Menu as="div" className="relative">
                             <div>
                                 <MenuButton className="relative flex items-center justify-center rounded-full bg-red-900 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-red-900 focus:outline-hidden w-8 h-8">
@@ -95,10 +95,10 @@ export default function Navbar() {
                                 </MenuItem>
                                 <MenuItem>
                                     <a
-                                        href="#"
+                                        href="/login"
                                         className="block px-4 py-2 text-sm text-white hover:bg-purple-900 focus:bg-gray-600 data-focus:outline-hidden text-decoration-none"
                                     >
-                                        Sign out
+                                        Log in
                                     </a>
                                 </MenuItem>
                             </MenuItems>
