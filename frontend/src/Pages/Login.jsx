@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
     const [firstName, setFirstName] = useState('');
@@ -6,29 +7,41 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isRegistering, setIsRegistering] = useState(false);
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         const endpoint = isRegistering
-            ? 'http://localhost:3000/users/register'  // Signup endpoint
-            : 'http://localhost:3000/users/login';   // Login endpoint
-
+            ? 'http://localhost:3000/users/register'
+            : 'http://localhost:3000/users/login';
+    
         const bodyData = isRegistering
             ? { firstName, lastName, email, password }
             : { email, password };
-
+    
         try {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyData),
             });
-
+    
             const data = await response.json();
-            console.log('Response:', data);  // Log the full response
-
             if (response.ok) {
-                alert(isRegistering ? 'Registration successful!' : 'Login successful!');
+                if (isRegistering) {
+                    // Clear form fields to avoid autofill
+                    setFirstName('');
+                    setLastName('');
+                    setEmail('');
+                    setPassword('');
+                    alert('Registration successful!')
+                    setIsRegistering(false);
+                    // Redirect to login page
+                    navigate('/login');
+                } else {
+                    alert('Login successful!');
+                    navigate('/profile');
+                }
             } else {
                 alert(data.error || 'An error occurred');
             }
@@ -56,6 +69,7 @@ export default function Login() {
                                     id="firstName"
                                     value={firstName}
                                     onChange={(e) => setFirstName(e.target.value)}
+                                    autoComplete='off'
                                     className="mt-1 block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-indigo-500"
                                     required
                                 />
@@ -69,6 +83,7 @@ export default function Login() {
                                     id="lastName"
                                     value={lastName}
                                     onChange={(e) => setLastName(e.target.value)}
+                                    autoComplete='off'
                                     className="mt-1 block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-indigo-500"
                                     required
                                 />
@@ -84,6 +99,7 @@ export default function Login() {
                             id="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            autoComplete='off'
                             className="mt-1 block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-indigo-500"
                             required
                         />
@@ -97,6 +113,7 @@ export default function Login() {
                             id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            autoComplete='new-password'
                             className="mt-1 block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring focus:ring-indigo-500"
                             required
                         />

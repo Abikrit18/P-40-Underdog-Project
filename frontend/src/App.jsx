@@ -8,6 +8,7 @@ import Walk from "./Pages/Walk";
 import Adoption from "./Pages/Adoption";
 import Donation from './Pages/Donation';
 import Login from './Pages/Login';
+import Profile from './Pages/profile';
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -24,6 +25,7 @@ const App = () => {
             <Route path="/walk" element={<Walk />}/>
             <Route path="/donation" element={<Donation />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         
         <Footer />
