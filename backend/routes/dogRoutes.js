@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require("path");
 const router = express.Router();
+const fs = require("fs");
 
 router.get('/', async (req, res) => {
     try {
@@ -25,6 +27,7 @@ router.post('/', async (req, res) => {
     }
 });
 
+/** 
 router.delete('/:id', async (req, res) => {
     try {
         const collection = mongoose.connection.db.collection('dogs');
@@ -43,7 +46,45 @@ router.delete('/:id', async (req, res) => {
         console.error('Error deleting dog:', error);
         res.status(500).json({ error: 'Failed to delete dog' });
     }
+});*/
+
+router.delete('/:id', async (req, res) => {
+    try {
+        if (!mongoose.connection.readyState) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        const db = mongoose.connection.db;
+        if (!db) {
+            return res.status(500).json({ error: 'Database instance is undefined' });
+        }
+
+        const collection = db.collection('dogs');
+        const dog = await collection.findOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
+
+        if (!dog) {
+            return res.status(404).json({ error: 'Dog not found' });
+        }
+
+        if (dog.picture && !dog.picture.startsWith("http")) {
+            const filename = path.basename(dog.picture);
+            const imagePath = path.join(__dirname, '../uploads', filename);
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+                console.log(`Deleted file: ${imagePath}`);
+            }
+        }
+
+        await collection.deleteOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
+
+        res.json({ message: 'Dog and associated image deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting dog:', error);
+        res.status(500).json({ error: 'Failed to delete dog' });
+    }
 });
+
+
 
 router.put('/:id', async (req, res) => {
     try {
