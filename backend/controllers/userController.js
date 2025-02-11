@@ -1,5 +1,8 @@
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
+
+import User from '../models/User.js';
+import bcrypt from 'bcrypt';
+
+
 
 const registerUser = async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
@@ -35,4 +38,14 @@ const loginUser = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser };
+const getUsers = async (req, res) => {
+    try {
+        const users = await User.find({}, '-password'); // Exclude passwords
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+};
+
+export { registerUser, loginUser, getUsers };
