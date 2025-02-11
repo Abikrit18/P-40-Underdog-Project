@@ -3,11 +3,7 @@ const mongoose = require('mongoose');
 
 const path = require('path'); 
 const fs = require('fs');
-
-const path = require("path");
-
 const router = express.Router();
-const fs = require("fs");
 
 // --------------------------
 // HELPER: Delete the image file
@@ -84,88 +80,35 @@ router.post('/', async (req, res) => {
 });
 
 
-// --------------------------
-// DELETE: Remove a dog by ID
-// --------------------------
-
-/** 
 
 router.delete('/:id', async (req, res) => {
   try {
-    // Validate ID
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ error: 'Invalid Dog ID' });
-    }
+      const db = mongoose.connection.db;
+      const collection = db.collection('dogs');
 
-    const dogId = new mongoose.Types.ObjectId(req.params.id);
-    const collection = mongoose.connection.db.collection('dogs');
+      const dog = await collection.findOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
 
-    // Find the dog
-    const dog = await collection.findOne({ _id: dogId });
-    if (!dog) {
-      return res.status(404).json({ error: 'Dog not found' });
-    }
+      if (!dog) {
+          return res.status(404).json({ error: 'Dog not found' });
+      }
 
+      // Delete the image file if it exists
+      if (dog.picture) {
+          const deleted = deleteImageFile(dog.picture);
+          if (deleted) {
+              console.log('Image deleted successfully');
+          } else {
+              console.log('No image deleted or image not found');
+          }
+      }
 
-    // Delete the image file if the dog has a picture
-    let imageDeleted = false;
-    if (dog.picture) {
-      imageDeleted = deleteImageFile(dog.picture);
-    }
+      await collection.deleteOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
 
-    // Delete the document from DB
-    await collection.deleteOne({ _id: dogId });
-
-    res.json({ 
-      message: 'Dog and associated image deleted successfully',
-      imageDeleted
-    });
+      res.json({ message: 'Dog and associated image deleted successfully' });
   } catch (error) {
-    console.error('Error deleting dog:', error);
-    res.status(500).json({ error: 'Failed to delete dog' });
+      console.error('Error deleting dog:', error);
+      res.status(500).json({ error: 'Failed to delete dog' });
   }
-});
-
-// --------------------------
-// PUT: Update an existing dog
-// --------------------------
-
-});*/
-
-router.delete('/:id', async (req, res) => {
-    try {
-        if (!mongoose.connection.readyState) {
-            return res.status(500).json({ error: 'Database not connected' });
-        }
-
-        const db = mongoose.connection.db;
-        if (!db) {
-            return res.status(500).json({ error: 'Database instance is undefined' });
-        }
-
-        const collection = db.collection('dogs');
-        const dog = await collection.findOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
-
-        if (!dog) {
-            return res.status(404).json({ error: 'Dog not found' });
-        }
-
-        if (dog.picture && !dog.picture.startsWith("http")) {
-            const filename = path.basename(dog.picture);
-            const imagePath = path.join(__dirname, '../uploads', filename);
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-                console.log(`Deleted file: ${imagePath}`);
-            }
-        }
-
-        await collection.deleteOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
-
-        res.json({ message: 'Dog and associated image deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting dog:', error);
-        res.status(500).json({ error: 'Failed to delete dog' });
-    }
 });
 
 
