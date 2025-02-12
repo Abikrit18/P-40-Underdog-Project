@@ -1,0 +1,27 @@
+{
+  "name": "p-40-underdog-project",
+  "version": "1.0.0",
+  "description": "Principle of Software Engineering Project",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "nodemon backend/server.js",
+    "frontend": "cd frontend && cd src && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abikrit18/P-40-Underdog-Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Abikrit18/P-40-Underdog-Project/issues"
+  },
+  "homepage": "https://github.com/Abikrit18/P-40-Underdog-Project#readme",
+  "dependencies": {
+    "concurrently": "^9.1.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
