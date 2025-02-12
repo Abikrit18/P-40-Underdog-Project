@@ -58,6 +58,13 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
+    // Validate picture URL
+    try {
+      new URL(picture);
+    } catch (urlError) {
+      return res.status(400).json({ error: 'Invalid picture URL format' });
+    }
+
     const collection = mongoose.connection.db.collection('dogs');
     const newDog = { name, age, color, picture };
     const result = await collection.insertOne(newDog);
@@ -112,6 +119,15 @@ router.put('/:id', async (req, res) => {
 
     if (Object.keys(updateFields).length === 0) {
       return res.status(400).json({ error: 'No valid update fields provided' });
+    }
+
+    // Validate picture URL
+    if (picture) {
+      try {
+        new URL(picture);
+      } catch (urlError) {
+        return res.status(400).json({ error: 'Invalid picture URL format' });
+      }
     }
 
     const collection = mongoose.connection.db.collection('dogs');
