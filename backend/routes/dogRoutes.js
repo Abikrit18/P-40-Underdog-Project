@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, verifyAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -36,7 +36,7 @@ function deleteImageFile(imageUrl) {
   }
 }
 
-// GET: Fetch all dogs
+// GET: Fetch all dogs (public)
 router.get('/', async (req, res) => {
   try {
     const collection = mongoose.connection.db.collection('dogs');
@@ -51,13 +51,16 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST: Add a new dog
+// POST: Add a new dog (admin only)
 router.post('/', verifyToken, async (req, res) => {
   try {
     const collection = mongoose.connection.db.collection('dogs');
 
     // Destructure dog info from request body
     const { name, age, color, picture } = req.body;
+    if (!name || !age || !color || !picture)
+      return res.status(400).json({ error: 'All fields are required.' });
+
     const newDog = { name, age, color, picture };
     const result = await collection.insertOne(newDog);
 
@@ -69,9 +72,9 @@ router.post('/', verifyToken, async (req, res) => {
 });
 
 // --------------------------
-// DELETE: Remove a dog by ID
+// DELETE: Remove a dog by ID (admin only)
 // --------------------------
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyToken, async (req, res) => {
   try {
     // Validate ID
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -107,9 +110,9 @@ router.delete('/:id', async (req, res) => {
 });
 
 // --------------------------
-// PUT: Update an existing dog
+// PUT: Update an existing dog (admin only)
 // --------------------------
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyToken, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: 'Invalid Dog ID' });

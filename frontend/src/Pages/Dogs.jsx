@@ -52,7 +52,11 @@ const DogList = () => {
   
   const fetchDogs = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/dogs');
+      const response = await axios.get('http://localhost:3000/dogs', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       setDogs(response.data);
       setLoading(false);
     } catch (error) {
@@ -74,14 +78,10 @@ const DogList = () => {
     try {
       const response = await axios.post('http://localhost:3000/dogs', newDog,  
       {headers: {
-        
-          
         Authorization: `Bearer ${localStorage.getItem('token')}`,
-      
-    },});
+      }});
       setDogs([...dogs, response.data]);
       setNewDog({ name: '', age: '', color: '', picture: '' });
-      setSelectedFile(null);
     } catch (error) {
       console.error('Error adding dog:', error);
       alert('Failed to add dog. Please try again.');
@@ -90,9 +90,13 @@ const DogList = () => {
 
   const handleDelete = async (dog) => {
     try {
-      await axios.delete(`http://localhost:3000/dogs/${dog._id}`);
-      setDogs(dogs.filter((d) => d._id !== dog._id));
-    } catch (error) {
+      await axios.delete(`http://localhost:3000/dogs/${dog._id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });    
+      setDogs(prevDogs => prevDogs.filter((d) => d._id !== dog._id));
+    } catch (error) { 
       console.error('Error deleting dog:', error);
       alert('Failed to delete dog. Please try again.');
     }
@@ -100,7 +104,11 @@ const DogList = () => {
 
   const handleEdit = async (updatedDog) => {
     try {
-      await axios.put(`http://localhost:3000/dogs/${updatedDog._id}`, updatedDog);
+      await axios.put(`http://localhost:3000/dogs/${updatedDog._id}`, updatedDog, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       setDogs(dogs.map(d => d._id === updatedDog._id ? updatedDog : d));
     } catch (error) {
       console.error('Error updating dog:', error);

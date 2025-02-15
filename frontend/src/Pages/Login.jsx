@@ -40,7 +40,6 @@ export default function Login() {
                     navigate('/login');
                 } else {
                     alert('Login successful!');
-                    console.log(data.token);
                     localStorage.setItem('token', data.token);
                     navigate('/profile');
                 }
