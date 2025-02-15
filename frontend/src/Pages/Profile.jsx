@@ -1,40 +1,55 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
     const navigate = useNavigate();
-    // useRef to store the inactivity timer across renders
-    const inactivityTimer = useRef(null);
-    const INACTIVITY_LIMIT = 1 * 60 * 1000; // 2 minutes in milliseconds
-
-    const resetTimer = useCallback(() => {
-        if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-        inactivityTimer.current = setTimeout(() => {
-            alert('Session timed out due to inactivity');
-            navigate('/login');
-        }, INACTIVITY_LIMIT);
-    }, [navigate]);
 
     useEffect(() => {
-        // Set the initial timer when the component mounts.
-        resetTimer();
+        // Check if token exists
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+            return;
+        }
 
-        // List of events that count as user activity.
-        const events = ['mousemove', 'keydown', 'mousedown', 'touchstart'];
-        events.forEach((event) => window.addEventListener(event, resetTimer));
+        // Set up token expiry check
+        const checkTokenExpiry = () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No token found');
+                }
 
-        // Cleanup the event listeners and timeout on unmount.
-        return () => {
-            events.forEach((event) => window.removeEventListener(event, resetTimer));
-            if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+                // Get payload from token
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                
+                // Check if token has expired
+                if (payload.exp * 1000 < Date.now()) {
+                    throw new Error('Token expired');
+                }
+            } catch (error) {
+                console.log('Token validation failed:', error.message);
+                localStorage.removeItem('token');
+                navigate('/login');
+            }
         };
+
+        // Check token immediately
+        checkTokenExpiry();
+
+        // Set up periodic checks
+        const interval = setInterval(checkTokenExpiry, 10000); // Check every 10 seconds
+
+        return () => clearInterval(interval);
     }, [navigate]);
 
     return (
         <div className="p-4">
             <h1 className="text-3xl font-bold">Profile Page</h1>
             <p>Welcome to your profile. You can browse your profile data here.</p>
-            {/* Add more profile-related elements and navigation as needed */}
+            <p className="text-sm text-gray-500 mt-2">
+                Note: Your session will expire after 2 minutes of inactivity
+            </p>
         </div>
     );
 }

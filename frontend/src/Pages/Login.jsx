@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
     const [firstName, setFirstName] = useState('');
@@ -8,6 +9,7 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [isRegistering, setIsRegistering] = useState(false);
     const navigate = useNavigate();
+    const { setIsLoggedIn } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -41,6 +43,7 @@ export default function Login() {
                 } else {
                     alert('Login successful!');
                     localStorage.setItem('token', data.token);
+                    setIsLoggedIn(true); // Update auth context
                     navigate('/profile');
                 }
             } else {

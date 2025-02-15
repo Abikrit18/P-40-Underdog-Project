@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 const generateToken = (user) => {
-    return jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 };
 
 const registerUser = async (req, res) => {
@@ -34,7 +34,7 @@ const loginUser = async (req, res) => {
         if (!isPasswordValid) return res.status(400).json({ error: 'Invalid email or password' });
 
         const token = generateToken(user);
-        res.status(200).json({ 
+        res.status(200).json({
             message: 'Login successful',
             token,
             userId: user._id,

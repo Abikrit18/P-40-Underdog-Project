@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DogCard from '../components/dogCard';
 import { Box, Button, TextField, CircularProgress, Container, Pagination } from '@mui/material';
 import axios from 'axios';
+import { decodeToken } from "react-jwt";
 
 const DogList = () => {
   const [dogs, setDogs] = useState([]);
@@ -17,6 +18,7 @@ const DogList = () => {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [page, setPage] = useState(1);
   const dogsPerPage = 3;
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -35,10 +37,10 @@ const DogList = () => {
     try {
       const response = await axios.post('http://localhost:3000/api/upload', formData, {
         headers: {
-        
-          
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          
+
+
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+
         },
       });
       setNewDog({ ...newDog, picture: response.data.url });
@@ -49,7 +51,7 @@ const DogList = () => {
       setUploadLoading(false);
     }
   };
-  
+
   const fetchDogs = async () => {
     try {
       const response = await axios.get('http://localhost:3000/dogs', {
@@ -66,6 +68,15 @@ const DogList = () => {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded  = decodeToken(token);
+        setIsAdmin(decoded.role === 'admin');
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
     fetchDogs();
   }, []);
 
@@ -76,10 +87,12 @@ const DogList = () => {
       return;
     }
     try {
-      const response = await axios.post('http://localhost:3000/dogs', newDog,  
-      {headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      }});
+      const response = await axios.post('http://localhost:3000/dogs', newDog,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          }
+        });
       setDogs([...dogs, response.data]);
       setNewDog({ name: '', age: '', color: '', picture: '' });
     } catch (error) {
@@ -94,9 +107,9 @@ const DogList = () => {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
-      });    
+      });
       setDogs(prevDogs => prevDogs.filter((d) => d._id !== dog._id));
-    } catch (error) { 
+    } catch (error) {
       console.error('Error deleting dog:', error);
       alert('Failed to delete dog. Please try again.');
     }
@@ -134,73 +147,74 @@ const DogList = () => {
 
   return (
     <Container>
-      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd', borderRadius: 2 }}>
-        <TextField
-          label="Name"
-          value={newDog.name}
-          onChange={(e) => setNewDog({ ...newDog, name: e.target.value })}
-          fullWidth
-          margin="normal"
-          required
-        />
-        <TextField
-          label="Age"
-          type="number"
-          value={newDog.age}
-          onChange={(e) => setNewDog({ ...newDog, age: e.target.value })}
-          fullWidth
-          margin="normal"
-          required
-        />
-        <TextField
-          label="Color"
-          value={newDog.color}
-          onChange={(e) => setNewDog({ ...newDog, color: e.target.value })}
-          fullWidth
-          margin="normal"
-          required
-        />
-        <Box sx={{ mt: 2, mb: 2 }}>
-          <input
-            accept="image/*"
-            style={{ display: 'none' }}
-            id="image-upload"
-            type="file"
-            onChange={handleImageChange}
+      {isAdmin && (
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd', borderRadius: 2 }}>
+          <TextField
+            label="Name"
+            value={newDog.name}
+            onChange={(e) => setNewDog({ ...newDog, name: e.target.value })}
+            fullWidth
+            margin="normal"
+            required
           />
-          <label htmlFor="image-upload">
-            <Button variant="contained" component="span" disabled={uploadLoading}>
-              {uploadLoading ? 'Uploading...' : 'Choose Image'}
-            </Button>
-          </label>
-          {uploadLoading && <CircularProgress size={24} sx={{ ml: 2 }} />}
-          {newDog.picture && (
-            <Box sx={{ mt: 2 }}>
-              <img src={newDog.picture} alt="Preview" style={{ maxWidth: '200px', borderRadius: '4px' }} />
-            </Box>
-          )}
+          <TextField
+            label="Age"
+            type="number"
+            value={newDog.age}
+            onChange={(e) => setNewDog({ ...newDog, age: e.target.value })}
+            fullWidth
+            margin="normal"
+            required
+          />
+          <TextField
+            label="Color"
+            value={newDog.color}
+            onChange={(e) => setNewDog({ ...newDog, color: e.target.value })}
+            fullWidth
+            margin="normal"
+            required
+          />
+          <Box sx={{ mt: 2, mb: 2 }}>
+            <input
+              accept="image/*"
+              style={{ display: 'none' }}
+              id="image-upload"
+              type="file"
+              onChange={handleImageChange}
+            />
+            <label htmlFor="image-upload">
+              <Button variant="contained" component="span" disabled={uploadLoading}>
+                {uploadLoading ? 'Uploading...' : 'Choose Image'}
+              </Button>
+            </label>
+            {uploadLoading && <CircularProgress size={24} sx={{ ml: 2 }} />}
+            {newDog.picture && (
+              <Box sx={{ mt: 2 }}>
+                <img src={newDog.picture} alt="Preview" style={{ maxWidth: '200px', borderRadius: '4px' }} />
+              </Box>
+            )}
+          </Box>
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{ mt: 2 }}
+            disabled={!newDog.picture || uploadLoading}
+          >
+            Add Dog
+          </Button>
         </Box>
-        <Button 
-          type="submit" 
-          variant="contained" 
-          sx={{ mt: 2 }}
-          disabled={!newDog.picture || uploadLoading}
-        >
-          Add Dog
-        </Button>
-      </Box>
-
+      )}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
         {currentDogs.map((dog) => (
           <DogCard
             key={dog._id}
             dog={dog}
-            onDelete={handleDelete}
-            onEdit={handleEdit}
+            onDelete={isAdmin ? handleDelete : null}
+            onEdit={isAdmin ? handleEdit : null}
+            isAdmin={isAdmin}
           />
         ))}
       </Box>
-
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <Pagination
           count={Math.ceil(dogs.length / dogsPerPage)}

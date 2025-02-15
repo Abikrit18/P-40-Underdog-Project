@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST: Add a new dog (admin only)
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const collection = mongoose.connection.db.collection('dogs');
 
@@ -74,7 +74,7 @@ router.post('/', verifyToken, async (req, res) => {
 // --------------------------
 // DELETE: Remove a dog by ID (admin only)
 // --------------------------
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     // Validate ID
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -112,7 +112,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
 // --------------------------
 // PUT: Update an existing dog (admin only)
 // --------------------------
-router.put('/:id', verifyToken, async (req, res) => {
+router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: 'Invalid Dog ID' });
