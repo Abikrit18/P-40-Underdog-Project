@@ -31,12 +31,15 @@ const DogList = () => {
     setUploadLoading(true);
     const formData = new FormData();
     formData.append('image', file);
-
+    console.log(localStorage.getItem('token'));
     try {
       const response = await axios.post('http://localhost:3000/api/upload', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+        
+          
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          
+        },
       });
       setNewDog({ ...newDog, picture: response.data.url });
     } catch (error) {
@@ -69,7 +72,13 @@ const DogList = () => {
       return;
     }
     try {
-      const response = await axios.post('http://localhost:3000/dogs', newDog);
+      const response = await axios.post('http://localhost:3000/dogs', newDog,  
+      {headers: {
+        
+          
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      
+    },});
       setDogs([...dogs, response.data]);
       setNewDog({ name: '', age: '', color: '', picture: '' });
       setSelectedFile(null);

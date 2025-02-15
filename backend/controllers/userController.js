@@ -1,5 +1,10 @@
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+
+const generateToken = (user) => {
+    return jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+};
 
 const registerUser = async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
@@ -28,7 +33,14 @@ const loginUser = async (req, res) => {
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) return res.status(400).json({ error: 'Invalid email or password' });
 
-        res.json({ message: 'Login successful', userId: user._id });
+        const token = generateToken(user);
+        res.status(200).json({ 
+            message: 'Login successful',
+            token,
+            userId: user._id,
+            email: user.email,
+            role: user.role,
+        });
     } catch (error) {
         console.error('Error during login:', error);  // Log the full error for debugging
         res.status(500).json({ error: 'Failed to log in. Please try again later.' });
