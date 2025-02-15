@@ -6,8 +6,8 @@ import axios from "axios";
 
 const Walk = () => {
     const navigate = useNavigate();
-    const [dogs, setDogs] = useState([]);
-    const [selectedDog, setSelectedDog] = useState("");
+    const [marshalls, setMarshalls] = useState([]);
+    const [selectedMarshall, setSelectedMarshall] = useState("");
     const [date, setDate] = useState(new Date());
     const [time, setTime] = useState("");
     const [timeSlotsByDate, setTimeSlotsByDate] = useState({});
@@ -15,15 +15,16 @@ const Walk = () => {
     const [newTime, setNewTime] = useState("");
 
     useEffect(() => {
-        const fetchDogs = async () => {
+        const fetchMarshalls = async () => {
             try {
-                const response = await axios.get("http://localhost:3000/dogs");
-                setDogs(response.data);
+                const response = await axios.get("http://localhost:3000/users");
+                const marshallUsers = response.data.filter(user => user.role === "Marshall"); // Filter users with role "marshall"
+                setMarshalls(marshallUsers);
             } catch (error) {
-                console.error("Error fetching dog names:", error);
+                console.error("Error fetching Marshalls:", error);
             }
         };
-        fetchDogs();
+        fetchMarshalls();
     }, []);
 
     const formatDate = (date) => date.toISOString().split("T")[0];
@@ -67,12 +68,28 @@ const Walk = () => {
         setTimeSlotsByDate(updatedSlots);
     };
 
-    const handleSchedule = () => {
-        if (selectedDog && time) {
-            alert(`Walk scheduled for ${selectedDog} on ${date.toDateString()} at ${time}`);
-            navigate("/");
+    const handleSchedule = async () => {
+        if (selectedMarshall && time) {
+            const walkData = {
+                firstName: "John",  // Replace this with actual input values
+                lastName: "Doe",
+                email: "johndoe@example.com",
+                marshall: selectedMarshall,
+                date: date.toISOString(),
+                time,
+            };
+    
+            try {
+                const response = await axios.post("http://localhost:3000/walks", walkData);
+                alert("Walk scheduled successfully!");
+                console.log(response.data);  // Optional: Check the response
+                navigate("/");
+            } catch (error) {
+                console.error("Error scheduling walk:", error);
+                alert("Failed to schedule walk. Please try again.");
+            }
         } else {
-            alert("Please select a dog and time slot to schedule a walk.");
+            alert("Please select a marshall and time slot to schedule a walk.");
         }
     };
 
@@ -84,15 +101,17 @@ const Walk = () => {
             <h1 className="text-3xl font-bold text-blue-700">Walk our Dogs</h1>
 
             <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md text-center border-4 border-blue-200">
-                <label className="block text-lg font-medium text-gray-700">Select a Dog</label>
+                <label className="block text-lg font-medium text-gray-700">Select a Marshall</label>
                 <select
                     className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={selectedDog}
-                    onChange={(e) => setSelectedDog(e.target.value)}
+                    value={selectedMarshall}
+                    onChange={(e) => setSelectedMarshall(e.target.value)}
                 >
-                    <option value="">-- Choose a Dog --</option>
-                    {dogs.map((dog, index) => (
-                        <option key={index} value={dog.name}>{dog.name}</option>
+                    <option value="">-- Choose a Marshall --</option>
+                    {marshalls.map((marshall, index) => (
+                        <option key={index} value={`${marshall.firstName} ${marshall.lastName}`}>
+                            {marshall.firstName} {marshall.lastName}
+                        </option>
                     ))}
                 </select>
 

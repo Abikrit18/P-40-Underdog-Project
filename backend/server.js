@@ -8,6 +8,7 @@ require('dotenv').config();
 const userRoutes = require('./routes/userRoutes');
 const dogRoutes = require('./routes/dogRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const walkRoutes = require('./routes/walkRoutes');
 
 const app = express();
 const port = 3000;
@@ -30,7 +31,7 @@ app.use('/uploads', express.static(uploadDir));
 app.use('/users', userRoutes);
 app.use('/dogs', dogRoutes);
 app.use('/api/upload', uploadRoutes);
-
+app.use('/walks', walkRoutes);
 // 404 Handler
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
