@@ -32,16 +32,38 @@ const upload = multer({
     }
 });
 
+// POST: Upload a single image
 router.post('/', upload.single('image'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
         const imageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
-        res.json({ url: imageUrl });
+        // Return both URL and filename so frontend can request deletion if necessary.
+        res.json({ url: imageUrl, filename: req.file.filename });
     } catch (error) {
         console.error('Error uploading file:', error);
         res.status(500).json({ error: 'Failed to upload file' });
+    }
+});
+
+// DELETE: Remove an unconfirmed image by filename
+router.delete('/', (req, res) => {
+    try {
+        const { filename } = req.body;
+        if (!filename) {
+            return res.status(400).json({ error: 'No filename provided' });
+        }
+        const filePath = path.join(uploadDir, filename);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            return res.json({ message: 'File deleted successfully' });
+        } else {
+            return res.status(404).json({ error: 'File not found' });
+        }
+    } catch (error) {
+        console.error('Error deleting file:', error);
+        res.status(500).json({ error: 'Error deleting file' });
     }
 });
 

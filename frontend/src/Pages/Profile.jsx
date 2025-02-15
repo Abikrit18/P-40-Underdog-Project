@@ -5,7 +5,7 @@ export default function Profile() {
     const navigate = useNavigate();
     // useRef to store the inactivity timer across renders
     const inactivityTimer = useRef(null);
-    const INACTIVITY_LIMIT = 2 * 60 * 1000; // 2 minutes in milliseconds
+    const INACTIVITY_LIMIT = 1 * 60 * 1000; // 2 minutes in milliseconds
 
     const resetTimer = useCallback(() => {
         if (inactivityTimer.current) clearTimeout(inactivityTimer.current);

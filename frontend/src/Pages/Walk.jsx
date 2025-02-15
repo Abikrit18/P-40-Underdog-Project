@@ -151,7 +151,7 @@ const Walk = () => {
                 </div>
 
 
-                <label className="block text-lg font-medium text-white mt-12 ml-16">Available Times for {formattedDate}</label>
+                <label className="block text-lg font-medium text-white mt-12 ml-14">Available Times for {formattedDate}</label>
                 {availableTimes.length > 0 ? (
                     <ul className="mt-4 space-y-2 mr-8">
                         {availableTimes.map((slot, index) => (
@@ -175,7 +175,7 @@ const Walk = () => {
                         ))}
                     </ul>
                 ) : (
-                    <p className="text-gray-200 mt-2 ml-16">No available time slots for this date.</p>
+                    <p className="text-gray-200 mt-4 ml-30"> No time added </p>
                 )}
             </div>
         </div>

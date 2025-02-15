@@ -1,23 +1,18 @@
 const express = require('express');
 const mongoose = require('mongoose');
-
-const path = require('path'); 
+const path = require('path');
 const fs = require('fs');
+const { verifyToken, verifyAdmin } = require('../middleware/auth');
+
 const router = express.Router();
 
-// --------------------------
-// HELPER: Delete the image file
-// --------------------------
+// Helper: Delete the image file
 function deleteImageFile(imageUrl) {
   try {
-    if (!imageUrl) {
-      console.log('No image URL provided');
-      return false;
-    }
+    if (!imageUrl) return false;
 
     let filename;
     try {
-      // Extract filename from the URL
       filename = path.basename(new URL(imageUrl).pathname);
     } catch (urlError) {
       console.error('Invalid image URL format:', urlError);
@@ -41,9 +36,7 @@ function deleteImageFile(imageUrl) {
   }
 }
 
-// --------------------------
-// GET: Fetch all dogs
-// --------------------------
+// GET: Fetch all dogs (public)
 router.get('/', async (req, res) => {
   try {
     const collection = mongoose.connection.db.collection('dogs');
@@ -52,71 +45,75 @@ router.get('/', async (req, res) => {
     // Convert ObjectId to string
     const responseDogs = dogs.map(d => ({ ...d, _id: d._id.toString() }));
     res.json(responseDogs);
-
   } catch (error) {
     console.error('Error fetching dogs:', error);
     res.status(500).json({ error: 'Failed to fetch dogs' });
   }
 });
 
-// --------------------------
-// POST: Add a new dog
-// --------------------------
-router.post('/', async (req, res) => {
+// POST: Add a new dog (admin only)
+router.post('/', verifyToken, async (req, res) => {
   try {
     const collection = mongoose.connection.db.collection('dogs');
 
     // Destructure dog info from request body
     const { name, age, color, picture } = req.body;
-    const newDog = { name, age, color, picture };
+    if (!name || !age || !color || !picture)
+      return res.status(400).json({ error: 'All fields are required.' });
 
+    const newDog = { name, age, color, picture };
     const result = await collection.insertOne(newDog);
 
     res.json({ ...newDog, _id: result.insertedId.toString() });
   } catch (error) {
     console.error('Error adding dog:', error);
-    res.status(500).json({ error: 'Failed to add dog' });
+    res.status(500).json({ error: 'Failed to add dog.' });
   }
 });
 
-
-
-router.delete('/:id', async (req, res) => {
-  try {
-      const db = mongoose.connection.db;
-      const collection = db.collection('dogs');
-
-      const dog = await collection.findOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
-
-      if (!dog) {
-          return res.status(404).json({ error: 'Dog not found' });
-      }
-
-      // Delete the image file if it exists
-      if (dog.picture) {
-          const deleted = deleteImageFile(dog.picture);
-          if (deleted) {
-              console.log('Image deleted successfully');
-          } else {
-              console.log('No image deleted or image not found');
-          }
-      }
-
-      await collection.deleteOne({ _id: new mongoose.Types.ObjectId(req.params.id) });
-
-      res.json({ message: 'Dog and associated image deleted successfully' });
-  } catch (error) {
-      console.error('Error deleting dog:', error);
-      res.status(500).json({ error: 'Failed to delete dog' });
-  }
-});
-
-
-
-
-router.put('/:id', async (req, res) => {
+// --------------------------
+// DELETE: Remove a dog by ID (admin only)
+// --------------------------
+router.delete('/:id', verifyToken, async (req, res) => {
   try {
     // Validate ID
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid Dog ID' });
+    }
+
+    const dogId = new mongoose.Types.ObjectId(req.params.id);
+    const collection = mongoose.connection.db.collection('dogs');
+
+    // Find the dog
+    const dog = await collection.findOne({ _id: dogId });
+    if (!dog) {
+      return res.status(404).json({ error: 'Dog not found' });
+    }
+
+    // Delete the image file if the dog has a picture
+    let imageDeleted = false;
+    if (dog.picture) {
+      imageDeleted = deleteImageFile(dog.picture);
+    }
+
+    // Delete the document from DB
+    await collection.deleteOne({ _id: dogId });
+
+    res.json({ 
+      message: 'Dog and associated image deleted successfully',
+      imageDeleted
+    });
+  } catch (error) {
+    console.error('Error deleting dog:', error);
+    res.status(500).json({ error: 'Failed to delete dog' });
+  }
+});
+
+// --------------------------
+// PUT: Update an existing dog (admin only)
+// --------------------------
+router.put('/:id', verifyToken, async (req, res) => {
+  try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: 'Invalid Dog ID' });
     }
