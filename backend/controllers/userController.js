@@ -62,19 +62,27 @@ const userProfile = async (req, res) => {
     try {
         let user = await User.findById(req.params.id)
             .select('-password')
-            .populate('walks');
+            .populate({
+                path: 'walks',
+                populate: [
+                    { path: 'userid', select: 'firstName lastName email' },  // Populate userid with user details
+                    { path: 'marshall', select: 'firstName lastName email' },  // Populate marshall with full details
+                ]
+            });
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
         if (user.role === 'admin') {
-            const allWalks = await Walk.find();
+            const allWalks = await Walk.find()
+                .populate('userid', 'firstName lastName email')
+                .populate('marshall', 'firstName lastName email'); 
             user = user.toObject(); // Convert Mongoose document to a plain object
-            user.walks = allWalks;  // Assign all walks to the user's walks property
+            user.walks = allWalks;
         }
 
-        res.status(200).json(user); // Return the modified user object
+        res.status(200).json(user);
     } catch (error) {
         console.error('Error fetching user details:', error);
         res.status(500).json({ error: 'Failed to fetch user details' });

@@ -38,5 +38,32 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch walks' });
     }
 });
+// DELETE request to remove a walk and update the associated user's walks array
+router.delete('/:id', async (req, res) => {
+    try {
+        const walkId = req.params.id;
+
+        // Find the walk and get the associated user ID
+        const walk = await Walk.findById(walkId);
+        if (!walk) {
+            return res.status(404).json({ error: 'Walk not found' });
+        }
+
+        // Remove the walk from the Walk collection
+        await Walk.findByIdAndDelete(walkId);
+
+        // Remove the walk reference from the associated user's walks array
+        await User.findByIdAndUpdate(
+            walk.userid,
+            { $pull: { walks: walkId } },
+            { new: true, useFindAndModify: false }
+        );
+
+        res.status(200).json({ message: 'Walk deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting walk:', error);
+        res.status(500).json({ error: 'Failed to delete walk' });
+    }
+});
 
 module.exports = router;

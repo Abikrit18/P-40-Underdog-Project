@@ -57,11 +57,19 @@ const Walk = () => {
     const handleDateChange = (newDate) => setDate(newDate);
 
     const handleAddOrEditTime = () => {
+        const formattedDate = formatDate(date);
+        const currentDate = formatDate(new Date());
+
+        if (formattedDate < currentDate) {
+            alert("You cannot add a time slot for past dates.");
+            return;
+        }
+
         if (!newTime) {
             alert("Please enter a valid time.");
             return;
         }
-        const formattedDate = formatDate(date);
+
         const updatedSlots = { ...timeSlotsByDate };
 
         if (!updatedSlots[formattedDate]) updatedSlots[formattedDate] = [];
@@ -148,8 +156,8 @@ const Walk = () => {
                     onChange={(e) => setSelectedMarshall(e.target.value)}
                 >
                     <option value="">-- Choose a Marshall --</option>
-                    {marshalls.map((marshall, index) => (
-                        <option key={index} value={`${marshall.firstName} ${marshall.lastName}`}>
+                    {marshalls.map((marshall) => (
+                        <option key={marshall._id} value={marshall._id}>
                             {marshall.firstName} {marshall.lastName}
                         </option>
                     ))}
@@ -188,54 +196,55 @@ const Walk = () => {
                     Schedule Walk
                 </button>
             </div>
+            {user?.role === "Marshall" && (
+                <div className="bg-red-900 shadow-md rounded-lg p-10 w-full max-w-md mt-8 border-6 border-yellow-500">
+                    <label className="block text-lg font-medium text-white ml-26">
+                        {editingIndex !== null ? "Edit Time Slot" : "Add a New Time Slot"}
+                    </label>
+                    <div className="mt-2 flex flex-col items-center w-auto">
+                        <input
+                            type="text"
+                            className="bg-white py-1 px-16 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 w-auto text-center"
+                            placeholder="e.g., 4:00 PM"
+                            value={newTime}
+                            onChange={(e) => setNewTime(e.target.value)}
+                        />
+                        <button
+                            className="mt-4 py-1 px-4 bg-green-500 text-white rounded-md hover:bg-green-600"
+                            onClick={handleAddOrEditTime}
+                        >
+                            {editingIndex !== null ? "Update" : "Add"}
+                        </button>
+                    </div>
 
-            <div className="bg-red-900 shadow-md rounded-lg p-10 w-full max-w-md mt-8 border-6 border-yellow-500">
-                <label className="block text-lg font-medium text-white ml-26">
-                    {editingIndex !== null ? "Edit Time Slot" : "Add a New Time Slot"}
-                </label>
-                <div className="mt-2 flex flex-col items-center w-auto">
-                    <input
-                        type="text"
-                        className="bg-white py-1 px-16 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 w-auto text-center"
-                        placeholder="e.g., 4:00 PM"
-                        value={newTime}
-                        onChange={(e) => setNewTime(e.target.value)}
-                    />
-                    <button
-                        className="mt-4 py-1 px-4 bg-green-500 text-white rounded-md hover:bg-green-600"
-                        onClick={handleAddOrEditTime}
-                    >
-                        {editingIndex !== null ? "Update" : "Add"}
-                    </button>
+                    <label className="block text-lg font-medium text-white mt-12 ml-14">Available Times for {formattedDate}</label>
+                    {availableTimes.length > 0 ? (
+                        <ul className="mt-4 space-y-2 mr-8">
+                            {availableTimes.map((slot, index) => (
+                                <li key={index} className="flex justify-between items-center p-2 bg-gray-100 rounded-lg shadow-sm">
+                                    <span className="text-gray-800 font-medium">{slot}</span>
+                                    <div className="flex gap-4">
+                                        <button
+                                            className="text-blue-600 hover:underline"
+                                            onClick={() => handleEditTime(index)}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            className="text-red-600 hover:underline"
+                                            onClick={() => handleDeleteTime(index)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-gray-200 mt-4 ml-30"> No time added </p>
+                    )}
                 </div>
-
-                <label className="block text-lg font-medium text-white mt-12 ml-14">Available Times for {formattedDate}</label>
-                {availableTimes.length > 0 ? (
-                    <ul className="mt-4 space-y-2 mr-8">
-                        {availableTimes.map((slot, index) => (
-                            <li key={index} className="flex justify-between items-center p-2 bg-gray-100 rounded-lg shadow-sm">
-                                <span className="text-gray-800 font-medium">{slot}</span>
-                                <div className="flex gap-4">
-                                    <button
-                                        className="text-blue-600 hover:underline"
-                                        onClick={() => handleEditTime(index)}
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        className="text-red-600 hover:underline"
-                                        onClick={() => handleDeleteTime(index)}
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-gray-200 mt-4 ml-30"> No time added </p>
-                )}
-            </div>
+            )}
         </div>
     );
 };
