@@ -18,7 +18,7 @@ const Walk = () => {
         const fetchMarshalls = async () => {
             try {
                 const response = await axios.get("http://localhost:3000/users");
-                const marshallUsers = response.data.filter(user => user.role === "Marshall"); // Filter users with role "marshall"
+                const marshallUsers = response.data.filter(user => user.role === "Marshall");
                 setMarshalls(marshallUsers);
             } catch (error) {
                 console.error("Error fetching Marshalls:", error);
@@ -26,6 +26,13 @@ const Walk = () => {
         };
         fetchMarshalls();
     }, []);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login', { replace: true });
+        }
+    }, [navigate]);
 
     const formatDate = (date) => date.toISOString().split("T")[0];
 
@@ -38,18 +45,21 @@ const Walk = () => {
         }
         const formattedDate = formatDate(date);
         const updatedSlots = { ...timeSlotsByDate };
+
         if (!updatedSlots[formattedDate]) updatedSlots[formattedDate] = [];
 
         if (editingIndex !== null) {
             updatedSlots[formattedDate][editingIndex] = newTime;
+            alert("Time slot updated successfully.");
         } else {
-            if (!updatedSlots[formattedDate].includes(newTime)) {
-                updatedSlots[formattedDate].push(newTime);
-            } else {
-                alert("This time slot already exists for this date.");
+            if (updatedSlots[formattedDate].includes(newTime)) {
+                alert("This time slot already exists.");
                 return;
             }
+            updatedSlots[formattedDate].push(newTime);
+            alert("Time slot added successfully.");
         }
+
         setTimeSlotsByDate(updatedSlots);
         setNewTime("");
         setEditingIndex(null);
@@ -71,18 +81,17 @@ const Walk = () => {
     const handleSchedule = async () => {
         if (selectedMarshall && time) {
             const walkData = {
-                firstName: "John",  // Replace this with actual input values
+                firstName: "John",  // Replace with actual input values if available
                 lastName: "Doe",
                 email: "johndoe@example.com",
                 marshall: selectedMarshall,
-                date: date.toISOString(),
+                date: formatDate(date),
                 time,
             };
-    
+
             try {
                 const response = await axios.post("http://localhost:3000/walks", walkData);
                 alert("Walk scheduled successfully!");
-                console.log(response.data);  // Optional: Check the response
                 navigate("/");
             } catch (error) {
                 console.error("Error scheduling walk:", error);
@@ -168,7 +177,6 @@ const Walk = () => {
                         {editingIndex !== null ? "Update" : "Add"}
                     </button>
                 </div>
-
 
                 <label className="block text-lg font-medium text-white mt-12 ml-14">Available Times for {formattedDate}</label>
                 {availableTimes.length > 0 ? (
