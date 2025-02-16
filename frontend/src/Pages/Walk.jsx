@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 const Walk = () => {
     const navigate = useNavigate();
@@ -13,6 +14,23 @@ const Walk = () => {
     const [timeSlotsByDate, setTimeSlotsByDate] = useState({});
     const [editingIndex, setEditingIndex] = useState(null);
     const [newTime, setNewTime] = useState("");
+    const [user, setUser] = useState();
+
+    const token = localStorage.getItem('token');
+
+    useEffect(() => {
+        if (token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                console.log(decodedToken);
+                setUser(decodedToken);
+
+                console.log(user); // For debugging
+            } catch (error) {
+                console.error('Failed to decode token:', error);
+            }
+        }
+    }, [token]);
 
     useEffect(() => {
         const fetchMarshalls = async () => {
@@ -79,26 +97,39 @@ const Walk = () => {
     };
 
     const handleSchedule = async () => {
-        if (selectedMarshall && time) {
-            const walkData = {
-                firstName: "John",  // Replace with actual input values if available
-                lastName: "Doe",
-                email: "johndoe@example.com",
-                marshall: selectedMarshall,
-                date: formatDate(date),
-                time,
-            };
+        if (!selectedMarshall || !time) {
+            alert("Please select a marshall and time slot to schedule a walk.");
+            return;
+        }
 
-            try {
-                const response = await axios.post("http://localhost:3000/walks", walkData);
+        if (!user) {
+            alert("Please log in to schedule a walk.");
+            navigate("/login");
+            return;
+        }
+
+        const walkData = {
+            userid: user.id,  // Send only the user ID
+            marshall: selectedMarshall,
+            date: formatDate(date),
+            time,
+        };
+
+        try {
+            const response = await axios.post("http://localhost:3000/walks", walkData, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.status === 201) {
                 alert("Walk scheduled successfully!");
                 navigate("/");
-            } catch (error) {
-                console.error("Error scheduling walk:", error);
-                alert("Failed to schedule walk. Please try again.");
             }
-        } else {
-            alert("Please select a marshall and time slot to schedule a walk.");
+        } catch (error) {
+            console.error("Error scheduling walk:", error);
+            alert("Failed to schedule walk. Please try again.");
         }
     };
 

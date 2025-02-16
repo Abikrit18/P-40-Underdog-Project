@@ -1,40 +1,72 @@
-import React, { useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
-export default function Profile() {
-    const navigate = useNavigate();
-    // useRef to store the inactivity timer across renders
-    const inactivityTimer = useRef(null);
-    const INACTIVITY_LIMIT = 1 * 60 * 1000; // 2 minutes in milliseconds
-
-    const resetTimer = useCallback(() => {
-        if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-        inactivityTimer.current = setTimeout(() => {
-            alert('Session timed out due to inactivity');
-            navigate('/login');
-        }, INACTIVITY_LIMIT);
-    }, [navigate]);
+const Profile = () => {
+    const [user, setUser] = useState(null);
+    const token = localStorage.getItem('token');
 
     useEffect(() => {
-        // Set the initial timer when the component mounts.
-        resetTimer();
+        if (token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                fetchUserDetails(decodedToken.id);  // Use the user ID from the token
+            } catch (error) {
+                console.error('Failed to decode token:', error);
+            }
+        }
+    }, [token]);
 
-        // List of events that count as user activity.
-        const events = ['mousemove', 'keydown', 'mousedown', 'touchstart'];
-        events.forEach((event) => window.addEventListener(event, resetTimer));
+    const fetchUserDetails = async (userId) => {
+        try {
+            const response = await axios.get(`http://localhost:3000/users/profile/${userId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            setUser(response.data);
+        } catch (error) {
+            console.error('Error fetching user details:', error);
+        }
+    };
 
-        // Cleanup the event listeners and timeout on unmount.
-        return () => {
-            events.forEach((event) => window.removeEventListener(event, resetTimer));
-            if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-        };
-    }, [navigate]);
+    if (!user) {
+        return <div>Loading...</div>;
+    }
 
     return (
-        <div className="p-4">
-            <h1 className="text-3xl font-bold">Profile Page</h1>
-            <p>Welcome to your profile. You can browse your profile data here.</p>
-            {/* Add more profile-related elements and navigation as needed */}
+        <div className="p-6">
+            <h1 className="text-2xl font-bold">Profile Details</h1>
+            <hr className="my-4" />
+            <div className="mt-4">
+                <p><strong>Name:</strong> {user.firstName} {user.lastName}</p>
+                <p><strong>Email:</strong> {user.email}</p>
+                <p><strong>Role:</strong> {user.role}</p>
+                {console.log(user)}
+
+            </div>
+            <h2 className="text-xl font-semibold mt-6">Scheduled Walks</h2>
+            {user.walks.length === 0 ? (
+                <p className="mt-4">No walks scheduled yet.</p>
+            ) : (
+                <ul className="mt-4 space-y-2">
+                    {user.walks.map((walk) => (
+                        <li key={walk._id} className="p-4 border rounded-md bg-gray-100">
+                            <p>
+                                <strong>Marshall:</strong> {walk.marshall}
+                            </p>
+                            <p>
+                                <strong>Date:</strong> {walk.date}
+                            </p>
+                            <p>
+                                <strong>Time:</strong> {walk.time}
+                            </p>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     );
-}
+};
+
+export default Profile;

@@ -8,7 +8,7 @@ import Walk from "./Pages/Walk";
 import Adoption from "./Pages/Adoption";
 import Donation from './Pages/Donation';
 import Login from './Pages/Login';
-import Profile from './Pages/profile';
+import Profile from './Pages/Profile';
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 

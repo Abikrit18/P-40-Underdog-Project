@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import DogCard from '../components/dogCard';
 import { Box, Button, TextField, CircularProgress, Container, Pagination } from '@mui/material';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+
 
 const DogList = () => {
   const [dogs, setDogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState("");
   const [newDog, setNewDog] = useState({
     name: '',
     age: '',
@@ -18,6 +21,22 @@ const DogList = () => {
   const [page, setPage] = useState(1);
   const dogsPerPage = 3;
 
+
+  const token = localStorage.getItem('token');
+
+
+  useEffect(() => {
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token);
+        setRole(decodedToken.role);
+
+        console.log(role); // For debugging
+      } catch (error) {
+        console.error('Failed to decode token:', error);
+      }
+    }
+  }, [token]);
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -35,10 +54,10 @@ const DogList = () => {
     try {
       const response = await axios.post('http://localhost:3000/api/upload', formData, {
         headers: {
-        
-          
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          
+
+
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+
         },
       });
       setNewDog({ ...newDog, picture: response.data.url });
@@ -49,7 +68,7 @@ const DogList = () => {
       setUploadLoading(false);
     }
   };
-  
+
   const fetchDogs = async () => {
     try {
       const response = await axios.get('http://localhost:3000/dogs', {
@@ -76,10 +95,12 @@ const DogList = () => {
       return;
     }
     try {
-      const response = await axios.post('http://localhost:3000/dogs', newDog,  
-      {headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      }});
+      const response = await axios.post('http://localhost:3000/dogs', newDog,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          }
+        });
       setDogs([...dogs, response.data]);
       setNewDog({ name: '', age: '', color: '', picture: '' });
     } catch (error) {
@@ -94,9 +115,9 @@ const DogList = () => {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
-      });    
+      });
       setDogs(prevDogs => prevDogs.filter((d) => d._id !== dog._id));
-    } catch (error) { 
+    } catch (error) {
       console.error('Error deleting dog:', error);
       alert('Failed to delete dog. Please try again.');
     }
@@ -134,7 +155,8 @@ const DogList = () => {
 
   return (
     <Container>
-      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd', borderRadius: 2 }}>
+      {console.log(role)}
+      {role === "admin" && (<Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd', borderRadius: 2 }}>
         <TextField
           label="Name"
           value={newDog.name}
@@ -180,15 +202,15 @@ const DogList = () => {
             </Box>
           )}
         </Box>
-        <Button 
-          type="submit" 
-          variant="contained" 
+        <Button
+          type="submit"
+          variant="contained"
           sx={{ mt: 2 }}
           disabled={!newDog.picture || uploadLoading}
         >
           Add Dog
         </Button>
-      </Box>
+      </Box>)}
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
         {currentDogs.map((dog) => (
@@ -197,6 +219,7 @@ const DogList = () => {
             dog={dog}
             onDelete={handleDelete}
             onEdit={handleEdit}
+            role={role}
           />
         ))}
       </Box>

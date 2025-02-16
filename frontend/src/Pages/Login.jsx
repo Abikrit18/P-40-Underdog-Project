@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';  // Import jwt-decode
 
 export default function Login() {
     const [firstName, setFirstName] = useState('');
@@ -14,33 +15,39 @@ export default function Login() {
         const endpoint = isRegistering
             ? 'http://localhost:3000/users/register'
             : 'http://localhost:3000/users/login';
-    
+
         const bodyData = isRegistering
             ? { firstName, lastName, email, password }
             : { email, password };
-    
+
         try {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyData),
             });
-    
+
             const data = await response.json();
             if (response.ok) {
                 if (isRegistering) {
-                    // Clear form fields to avoid autofill
                     setFirstName('');
                     setLastName('');
                     setEmail('');
                     setPassword('');
-                    alert('Registration successful!')
+                    alert('Registration successful!');
                     setIsRegistering(false);
-                    // Redirect to login page
                     navigate('/login');
                 } else {
                     alert('Login successful!');
-                    localStorage.setItem('token', data.token);
+                    const token = data.token;
+                    localStorage.setItem('token', token);
+
+                    // Decode the token to extract user info
+                    const decodedToken = jwtDecode(token);
+                    console.log('Decoded Token:', decodedToken);  // Check the structure of the decoded token
+                    console.log('User Role:', decodedToken.role);  // Example: Log the user role
+
+                    // Redirect to profile
                     navigate('/profile');
                 }
             } else {

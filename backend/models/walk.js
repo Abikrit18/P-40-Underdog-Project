@@ -1,34 +1,10 @@
 const mongoose = require('mongoose');
 
 const walkSchema = new mongoose.Schema({
-  firstName: {
-    type: String,
-    required: true,
-  },
-  lastName: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-  },
-  marshall: {
-    type: String,
-    required: true,
-  },
-  date: {
-    type: Date,
-    required: true,
-  },
-  time: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  userid: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Reference to User model
+  marshall: { type: String, required: true },
+  date: { type: String, required: true },
+  time: { type: String, required: true },
+}, { timestamps: true });
 
 module.exports = mongoose.model('Walk', walkSchema);

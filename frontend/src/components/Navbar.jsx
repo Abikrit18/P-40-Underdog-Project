@@ -52,9 +52,10 @@ export default function Navbar() {
                             <div className="flex flex-1 items-center justify-between sm:items-stretch sm:justify-start">
                                 <div className="flex shrink-0 items-center group">
                                     <a href="/" className="group">
-                                        <img
+                                    <img
                                             src="/src/assets/image.png"
                                             className="h-14 w-auto transform transition-transform duration-300 ease-in-out group-hover:translate-y-[-5px]"
+                                            alt="Logo"
                                         />
                                     </a>
                                 </div>
@@ -68,7 +69,7 @@ export default function Navbar() {
                                                 className={classNames(
                                                     activeNav === item.name
                                                         ? 'text-white font-bold'
-                                                        : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-200 ease-in-out hover:translate-y-[-2px] hover:rounded-md px-2 py-1',
+                                                        : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]',
                                                     'rounded-md px-3 py-2 text-sm font-medium text-decoration-none'
                                                 )}
                                             >
@@ -142,7 +143,7 @@ export default function Navbar() {
                                     className={classNames(
                                         activeNav === item.name
                                             ? 'text-white font-bold'
-                                            : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:rounded-md',
+                                            : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:rounded-md text-decoration-none',
                                         'block rounded-md px-3 py-2 text-base font-medium'
                                     )}
                                 >

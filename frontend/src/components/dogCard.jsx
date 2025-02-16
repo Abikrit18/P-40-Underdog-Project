@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { CircularProgress } from '@mui/material';
 import axios from 'axios';
 
-const DogCard = ({ dog, onDelete, onEdit }) => {
+const DogCard = ({ dog, onDelete, onEdit, role }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedDog, setEditedDog] = useState(dog);
   const [uploadLoading, setUploadLoading] = useState(false);
+
+
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -48,10 +50,10 @@ const DogCard = ({ dog, onDelete, onEdit }) => {
             <CircularProgress />
           </div>
         ) : (
-          <img 
-            className="w-full h-full object-cover" 
-            src={isEditing ? editedDog.picture : dog.picture} 
-            alt={dog.name} 
+          <img
+            className="w-full h-full object-cover"
+            src={isEditing ? editedDog.picture : dog.picture}
+            alt={dog.name}
           />
         )}
       </div>
@@ -107,7 +109,7 @@ const DogCard = ({ dog, onDelete, onEdit }) => {
           </>
         )}
       </div>
-      <div className="px-6 pt-4 pb-2 flex justify-between">
+      {role === "admin" && (<div className="px-6 pt-4 pb-2 flex justify-between">
         <button
           onClick={() => setIsEditing(!isEditing)}
           className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mx-2"
@@ -122,7 +124,7 @@ const DogCard = ({ dog, onDelete, onEdit }) => {
         >
           Delete
         </button>
-      </div>
+      </div>)}
     </div>
   );
 };

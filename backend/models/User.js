@@ -22,7 +22,8 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: "user"
-    }
+    },
+    walks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Walk' }]
 });
 
 module.exports = mongoose.model('User', userSchema);
