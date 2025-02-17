@@ -23,7 +23,8 @@ const userSchema = new mongoose.Schema({
         required: true,
         default: "user"
     },
-    walks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Walk' }]
+    walks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Walk' }],
+    totalWalks: { type: Number, default: 0 } 
 });
 
 module.exports = mongoose.model('User', userSchema);
