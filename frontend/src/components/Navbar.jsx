@@ -2,6 +2,7 @@ import { Disclosure, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/r
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {jwtDecode} from 'jwt-decode';
 
 const navigation = [
     { name: 'Home', href: '/' },
@@ -18,11 +19,23 @@ function classNames(...classes) {
 export default function Navbar() {
     const [activeNav, setActiveNav] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userRole, setUserRole] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         const token = localStorage.getItem('token');
-        setIsLoggedIn(!!token);
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                setIsLoggedIn(true);
+                setUserRole(decoded.role);  // Ensure role is stored
+            } catch (error) {
+                console.error("Invalid Token:", error);
+                localStorage.removeItem('token');
+                setIsLoggedIn(false);
+                setUserRole(null);
+            }
+        }
     }, []);
 
     const handleNavClick = (itemName, href) => {
@@ -39,6 +52,7 @@ export default function Navbar() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         setIsLoggedIn(false);
+        setUserRole(null);
         alert('Logged out successfully');
         navigate('/login');
     };
@@ -100,6 +114,16 @@ export default function Navbar() {
                                                         Your Profile
                                                     </a>
                                                 </MenuItem>
+                                                
+                                                {/* Admin-only Settings 2 */}
+                                                {userRole === 'admin' && (
+                                                    <MenuItem>
+                                                        <a href="/completed" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
+                                                            Completed
+                                                        </a>
+                                                    </MenuItem>
+                                                )}
+
                                                 <MenuItem>
                                                     <a href="/settings" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
                                                         Settings
