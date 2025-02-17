@@ -25,7 +25,7 @@ const Walk = () => {
                 console.log(decodedToken);
                 setUser(decodedToken);
 
-                console.log(user); // For debugging
+                console.log(user); 
             } catch (error) {
                 console.error('Failed to decode token:', error);
             }
