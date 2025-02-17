@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import Walk from '../models/walk.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const generateToken = (user) => {
