@@ -118,8 +118,8 @@ export default function Navbar() {
                                                 {/* Admin-only Settings 2 */}
                                                 {userRole === 'admin' && (
                                                     <MenuItem>
-                                                        <a href="/completed" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
-                                                            Completed
+                                                        <a href="/users" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
+                                                            Users
                                                         </a>
                                                     </MenuItem>
                                                 )}
