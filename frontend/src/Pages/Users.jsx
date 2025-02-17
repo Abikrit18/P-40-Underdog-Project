@@ -79,7 +79,7 @@ const Users = () => {
                     <p>No users found.</p>
                 ) : (
                     users.map((user) => (
-                        <div key={user._id} className="p-4 border-2 border-green-600 rounded-md bg-gray-100 shadow-md flex flex-col h-full ">
+                        <div key={user._id} className="p-4 border-4 border-gray-300 rounded-md bg-gray-100 shadow-md flex flex-col h-full ">
                             <div>
                                 <p><strong>Name:</strong> {user.firstName} {user.lastName}</p>
                                 <p><strong>Email:</strong> {user.email}</p>
