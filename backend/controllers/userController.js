@@ -65,8 +65,8 @@ const userProfile = async (req, res) => {
             .populate({
                 path: 'walks',
                 populate: [
-                    { path: 'userid', select: 'firstName lastName email' },  // Populate userid with user details
-                    { path: 'marshall', select: 'firstName lastName email' },  // Populate marshall with full details
+                    { path: 'userid', select: 'firstName lastName email' },  // User who scheduled the walk
+                    { path: 'marshall', select: 'firstName lastName email' }  // Marshall assigned to the walk
                 ]
             });
 
@@ -77,8 +77,8 @@ const userProfile = async (req, res) => {
         if (user.role === 'admin') {
             const allWalks = await Walk.find()
                 .populate('userid', 'firstName lastName email')
-                .populate('marshall', 'firstName lastName email'); 
-            user = user.toObject(); // Convert Mongoose document to a plain object
+                .populate('marshall', 'firstName lastName email');
+            user = user.toObject();
             user.walks = allWalks;
         }
 

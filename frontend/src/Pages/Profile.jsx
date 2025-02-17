@@ -29,6 +29,25 @@ const Profile = () => {
             console.error("Error fetching user details:", error);
         }
     };
+    const handleCompleteWalk = async (walkId) => {
+        const confirmComplete = window.confirm("Mark this walk as completed?");
+        if (!confirmComplete) return;
+
+        try {
+            await axios.post(`http://localhost:3000/walks/complete/${walkId}`, { userId: user._id }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            alert("Walk marked as completed!");
+            fetchUserDetails(user._id); // Refresh user details after completion
+        } catch (error) {
+            console.error("Error marking walk as completed:", error);
+            alert("Failed to complete walk. Please try again.");
+        }
+    };
 
     const handleDeleteWalk = async (walkId) => {
         const confirmDelete = window.confirm("Are you sure you want to delete this walk?");
@@ -53,41 +72,63 @@ const Profile = () => {
     }
 
     return (
-        <div className="p-6">
+        <div className="p-6 ">
+        {/* Profile Header with Image */}
+        <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Profile Details</h1>
-            <hr className="my-4" />
+            <img 
+                src="/src/assets/profile.png"
+                alt="Profile" 
+                className="w-24 h-24 object-cover rounded-full border-4 border-gray-300 shadow-md"
+            />
+        </div>
+        <hr className="my-4" />
+
             <div className="mt-4">
                 <p><strong>Name:</strong> {user.firstName} {user.lastName}</p>
                 <p><strong>Email:</strong> {user.email}</p>
                 <p><strong>Role:</strong> {user.role}</p>
+                <p><strong>Total Walks:</strong> {user.totalWalks}</p>  {/* Display Total Walks */}
             </div>
 
-            <h2 className="text-xl font-semibold mt-6">Scheduled Walks</h2>
-            {user.walks.length === 0 ? (
-                <p className="mt-4">No walks scheduled yet.</p>
-            ) : (
-                <ul className=" mt-4 space-y-2">
-                {user.walks.map((walk) => (
-                    <li key={walk._id} className="p-4 border rounded-md bg-gray-100">
-                        
-                        <p><strong>Marshall:</strong> {walk.marshall?.firstName} {walk.marshall?.lastName || "N/A"}</p>
-                        <p><strong>Date:</strong> {walk.date}</p>
-                        <p><strong>Time:</strong> {walk.time}</p>
-                        {user.role === "admin" && (
-                            <>
-                                <p><strong>Scheduled by:</strong> {walk.userid?.firstName || "N/A"} {walk.userid?.lastName || "N/A"} ({walk.userid?.email || "N/A"})</p>
-                                <button
-                                    className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                                    onClick={() => handleDeleteWalk(walk._id)}
-                                >
-                                    Delete Walk
-                                </button>
-                            </>
-                        )}
-                    </li>
-                ))}
-            </ul>
-            )}
+           {/* Scheduled Walks Section */}
+<h2 className="text-xl font-semibold mt-6">Scheduled Walks</h2>
+{user.walks.length === 0 ? (
+    <p className="mt-4">No walks scheduled yet.</p>
+) : (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        {user.walks.map((walk) => (
+            <div key={walk._id} className="p-3 border rounded-md bg-gray-100 shadow-md">
+                <p><strong>Scheduled By:</strong> {walk.userid?.firstName} {walk.userid?.lastName || "N/A"}</p>
+                <p><strong>Marshall Assigned:</strong> {walk.marshall?.firstName} {walk.marshall?.lastName || "N/A"}</p>
+                <p><strong>Date:</strong> {walk.date}</p>
+                <p><strong>Time:</strong> {walk.time}</p>
+
+                {/* "Complete Walk" button for User & Marshall */}
+                {(walk.userid?._id === user._id || walk.marshall?._id === user._id) && (
+                    <button
+                        className="mt-2 px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 w-full"
+                        onClick={() => handleCompleteWalk(walk._id)}
+                    >
+                        Complete
+                    </button>
+                )}
+
+                {/* "Delete Walk" button for Admin */}
+                {user.role === "admin" && (
+                    <div>
+                        <button
+                            className="mt-2 px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 w-full"
+                            onClick={() => handleDeleteWalk(walk._id)}
+                        >
+                            Delete Walk
+                        </button>
+                    </div>
+                )}
+            </div>
+        ))}
+    </div>
+)}
         </div>
     );
 };

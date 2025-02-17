@@ -11,20 +11,57 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'All fields are required' });
         }
 
-        // Create a new walk
+        // Ensure both user and marshall exist before scheduling the walk
+        const user = await User.findById(userid);
+        const assignedMarshall = await User.findById(marshall);
+
+        if (!user || !assignedMarshall) {
+            return res.status(404).json({ error: 'User or Marshall not found' });
+        }
+
+        // Create and save the walk
         const newWalk = new Walk({ userid, marshall, date, time });
         const savedWalk = await newWalk.save();
 
-        // Update the user's walk field with the newly created walk's ObjectId
-        await User.findByIdAndUpdate(
-            userid,
-            { $push: { walks: savedWalk._id } },  // Push the new walk's ObjectId to the walks array
-            { new: true, useFindAndModify: false }
-        );
+        // Ensure Marshall's `walks` array is updated properly
+        await User.findByIdAndUpdate(userid, { $push: { walks: savedWalk._id } });
+        await User.findByIdAndUpdate(marshall, { $push: { walks: savedWalk._id } });
+
         res.status(201).json({ message: 'Walk scheduled successfully', walk: savedWalk });
     } catch (error) {
         console.error('Error scheduling walk:', error);
         res.status(500).json({ error: 'Failed to schedule walk' });
+    }
+});
+
+router.post('/complete/:walkId', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const walk = await Walk.findById(req.params.walkId);
+        if (!walk) return res.status(404).json({ error: "Walk not found" });
+
+        // Check if the user completing the walk is either the scheduled user or the Marshall
+        if (walk.userid.toString() !== userId && walk.marshall.toString() !== userId) {
+            return res.status(403).json({ error: "Unauthorized to complete this walk" });
+        }
+
+        // Increment total walks for both user and Marshall
+        await User.findByIdAndUpdate(walk.userid, { $inc: { totalWalks: 1 } });
+        await User.findByIdAndUpdate(walk.marshall, { $inc: { totalWalks: 1 } });
+
+        // Remove walk from user's scheduled walks
+        await User.findByIdAndUpdate(walk.userid, { $pull: { walks: req.params.walkId } });
+
+        // Remove walk from Marshall's assigned walks
+        await User.findByIdAndUpdate(walk.marshall, { $pull: { walks: req.params.walkId } });
+
+        // Delete the walk record
+        await Walk.findByIdAndDelete(req.params.walkId);
+
+        res.status(200).json({ message: "Walk marked as completed" });
+    } catch (error) {
+        console.error("Error completing walk:", error);
+        res.status(500).json({ error: "Failed to complete walk" });
     }
 });
 
