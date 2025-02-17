@@ -9,6 +9,7 @@ import Adoption from "./Pages/Adoption";
 import Donation from './Pages/Donation';
 import Login from './Pages/Login';
 import Profile from './Pages/Profile';
+import Completed from './Pages/Completed';
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -26,6 +27,7 @@ const App = () => {
             <Route path="/donation" element={<Donation />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/completed" element={<Completed />} />
           </Routes>
         
         <Footer />
