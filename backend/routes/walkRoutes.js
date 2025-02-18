@@ -64,7 +64,37 @@ router.post('/complete/:walkId', async (req, res) => {
         res.status(500).json({ error: "Failed to complete walk" });
     }
 });
+// Add available time for a specific marshall on a selected date
+router.post("/add-time", async (req, res) => {
+    try {
+        const { marshall, date, time } = req.body;
 
+        console.log("Received request to add time:", { marshall, date, time });
+
+        if (!marshall || !date || !time) {
+            return res.status(400).json({ error: "All fields are required" });
+        }
+
+        let walk = await Walk.findOne({ marshall, date });
+
+        if (walk) {
+            if (walk.availableTimes.includes(time)) {
+                return res.status(400).json({ error: "This time slot already exists." });
+            }
+            walk.availableTimes.push(time);
+        } else {
+            walk = new Walk({ marshall, date, availableTimes: [time] });
+        }
+
+        await walk.save();
+        console.log("Time slot saved successfully:", walk);
+
+        res.status(201).json({ message: "Time slot added successfully", walk });
+    } catch (error) {
+        console.error("Error adding time slot:", error);
+        res.status(500).json({ error: "Failed to add time slot." });
+    }
+});
 // GET request to retrieve all scheduled walks
 router.get('/', async (req, res) => {
     try {
@@ -73,6 +103,23 @@ router.get('/', async (req, res) => {
     } catch (error) {
         console.error('Error fetching walks:', error);
         res.status(500).json({ error: 'Failed to fetch walks' });
+    }
+});
+// Get available time slots for a specific marshall on a selected date
+router.get("/available-times/:marshall/:date", async (req, res) => {
+    try {
+        const { marshall, date } = req.params;
+
+        const walk = await Walk.findOne({ marshall, date });
+
+        if (!walk) {
+            return res.json([]);
+        }
+
+        res.json(walk.availableTimes);
+    } catch (error) {
+        console.error("Error fetching time slots:", error);
+        res.status(500).json({ error: "Failed to fetch time slots." });
     }
 });
 // DELETE request to remove a walk and update the associated user's walks array
