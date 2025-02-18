@@ -15,6 +15,7 @@ const Walk = () => {
     const [editingIndex, setEditingIndex] = useState(null);
     const [newTime, setNewTime] = useState("");
     const [user, setUser] = useState();
+    const [isLoading, setIsLoading] = useState(false);
 
     const token = localStorage.getItem('token');
 
@@ -31,6 +32,12 @@ const Walk = () => {
             }
         }
     }, [token]);
+
+    useEffect(() => {
+        if (user?.role === "Marshall") {
+            setSelectedMarshall(user.id);
+        }
+    }, [user]);
 
     useEffect(() => {
         const fetchMarshalls = async () => {
@@ -52,9 +59,51 @@ const Walk = () => {
         }
     }, [navigate]);
 
+    useEffect(() => {
+        const fetchMarshallTimeSlots = async () => {
+            if (selectedMarshall && date) {
+                setIsLoading(true);
+                try {
+                    const formattedDate = formatDate(date);
+                    const response = await axios.get(
+                        `http://localhost:3000/walks/marshall/${selectedMarshall}?date=${formattedDate}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${localStorage.getItem('token')}`,
+                            },
+                        }
+                    );
+                    
+                    if (response.data && response.data.availableSlots) {
+                        setTimeSlotsByDate(prevState => ({
+                            ...prevState,
+                            [formattedDate]: response.data.availableSlots
+                        }));
+                    }
+                } catch (error) {
+                    console.error("Error fetching marshall's time slots:", error);
+                    if (error.response?.status === 404) {
+                        console.log("No time slots found for this marshall");
+                    }
+                    setTimeSlotsByDate(prevState => ({
+                        ...prevState,
+                        [formatDate(date)]: []
+                    }));
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        fetchMarshallTimeSlots();
+    }, [selectedMarshall, date]);
+
     const formatDate = (date) => date.toISOString().split("T")[0];
 
-    const handleDateChange = (newDate) => setDate(newDate);
+    const handleDateChange = (newDate) => {
+        setDate(newDate);
+        setTime(""); // Reset selected time when date changes
+    };
 
     const handleAddOrEditTime = () => {
         const formattedDate = formatDate(date);
@@ -153,14 +202,25 @@ const Walk = () => {
                 <select
                     className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                     value={selectedMarshall}
-                    onChange={(e) => setSelectedMarshall(e.target.value)}
+                    onChange={(e) => {
+                        setSelectedMarshall(e.target.value);
+                        setTime(""); // Reset selected time when Marshall changes
+                        setTimeSlotsByDate({}); // Clear existing time slots
+                    }}
+                    disabled={user?.role === "Marshall"}
                 >
                     <option value="">-- Choose a Marshall --</option>
-                    {marshalls.map((marshall) => (
-                        <option key={marshall._id} value={marshall._id}>
-                            {marshall.firstName} {marshall.lastName}
+                    {user?.role === "Marshall" ? (
+                        <option key={user.id} value={user.id}>
+                            {user.userName}
                         </option>
-                    ))}
+                    ) : (
+                        marshalls.map((marshall) => (
+                            <option key={marshall._id} value={marshall._id}>
+                                {marshall.firstName} {marshall.lastName}
+                            </option>
+                        ))
+                    )}
                 </select>
 
                 <label className="block text-lg font-medium text-gray-700 mt-6">Select a Date</label>
@@ -173,19 +233,29 @@ const Walk = () => {
                 </div>
 
                 <label className="block text-lg font-medium text-gray-700 mt-6">Select a Time</label>
-                {availableTimes.length > 0 ? (
-                    <select
-                        className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                    >
-                        <option value="">-- Choose a Time --</option>
-                        {availableTimes.map((slot, index) => (
-                            <option key={index} value={slot}>{slot}</option>
-                        ))}
-                    </select>
+                {isLoading ? (
+                    <p className="text-gray-500 font-medium mt-2">Loading available times...</p>
+                ) : selectedMarshall ? (
+                    availableTimes.length > 0 ? (
+                        <select
+                            className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            value={time}
+                            onChange={(e) => setTime(e.target.value)}
+                        >
+                            <option value="">-- Choose a Time --</option>
+                            {availableTimes.map((slot, index) => (
+                                <option key={index} value={slot}>{slot}</option>
+                            ))}
+                        </select>
+                    ) : (
+                        <p className="text-red-500 font-medium mt-2">
+                            No time slots available for {formattedDate}
+                        </p>
+                    )
                 ) : (
-                    <p className="text-red-500 font-medium mt-2">No time slots available for {formattedDate}.</p>
+                    <p className="text-gray-500 font-medium mt-2">
+                        Please select a Marshall first
+                    </p>
                 )}
 
                 <button

@@ -75,6 +75,36 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch walks' });
     }
 });
+
+// Add this new route
+router.get('/marshall/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { date } = req.query;
+
+        // Validate marshall exists
+        const marshall = await User.findOne({ _id: id, role: 'Marshall' });
+        if (!marshall) {
+            return res.status(404).json({ error: 'Marshall not found' });
+        }
+
+        // Find available walks for this marshall on the given date
+        const walks = await Walk.find({
+            marshall: id,
+            date: date,
+            status: 'available'
+        });
+
+        // Extract time slots
+        const availableSlots = walks.map(walk => walk.time);
+
+        res.status(200).json({ availableSlots });
+    } catch (error) {
+        console.error('Error fetching marshall time slots:', error);
+        res.status(500).json({ error: 'Failed to fetch time slots' });
+    }
+});
+
 // DELETE request to remove a walk and update the associated user's walks array
 router.delete('/:id', async (req, res) => {
     try {
