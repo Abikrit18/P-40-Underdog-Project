@@ -5,9 +5,9 @@ const Home = () => {
     <div style={{ padding: "40px" }}>
       <h1>Welcome to UnderDogs</h1>
       <p>This is the homepage of the UnderDogs platform.
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Minus autem animi nisi est amet magnam excepturi, dolor officiis ratione repellat neque consequuntur impedit. Deleniti aut error atque quod, recusandae aliquam.
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Atque explicabo ex soluta quisquam esse temporibus minima autem, impedit dolor debitis neque totam nisi corporis praesentium veniam cum ratione omnis animi.
+
       </p>
+      <p>We believe that all dogs deserve an opportunity to exercise and experience the world around them. Many dogs stay stuck in kennels for months and even years at a time. This is where you come in to help. Simply sign up, fill out a waiver, and start walking dogs!</p>
     </div>
   );
 };
