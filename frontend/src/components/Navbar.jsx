@@ -3,6 +3,8 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {jwtDecode} from 'jwt-decode';
+import logo from '../assets/image.png';
+import icon from '../assets/icon.png';
 
 const navigation = [
     { name: 'Home', href: '/' },
@@ -67,7 +69,7 @@ export default function Navbar() {
                                 <div className="flex shrink-0 items-center group">
                                     <a href="/" className="group">
                                     <img
-                                            src="/src/assets/image.png"
+                                            src={logo}
                                             className="h-14 w-auto transform transition-transform duration-300 ease-in-out group-hover:translate-y-[-5px]"
                                             alt="Logo"
                                         />
@@ -100,8 +102,8 @@ export default function Navbar() {
                                         <MenuButton className="relative flex items-center justify-center rounded-full bg-red-900 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-red-900 focus:outline-none w-8 h-8">
                                             <span className="sr-only">Open user menu</span>
                                             <img
-                                                alt=""
-                                                src="/src/assets/icon.png"
+                                                alt="icon"
+                                                src={icon}
                                                 className="h-full w-full rounded-full object-cover"
                                             />
                                         </MenuButton>
@@ -118,8 +120,8 @@ export default function Navbar() {
                                                 {/* Admin-only Settings 2 */}
                                                 {userRole === 'admin' && (
                                                     <MenuItem>
-                                                        <a href="/completed" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
-                                                            Completed
+                                                        <a href="/users" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
+                                                            Users
                                                         </a>
                                                     </MenuItem>
                                                 )}
