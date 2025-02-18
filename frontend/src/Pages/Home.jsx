@@ -2,7 +2,7 @@ import React from 'react';
 
 const Home = () => {
   return (
-    <div>
+    <div style={{ padding: "40px" }}>
       <h1>Welcome to UnderDogs</h1>
       <p>This is the homepage of the UnderDogs platform.
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Minus autem animi nisi est amet magnam excepturi, dolor officiis ratione repellat neque consequuntur impedit. Deleniti aut error atque quod, recusandae aliquam.

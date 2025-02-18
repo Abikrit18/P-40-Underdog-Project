@@ -60,7 +60,7 @@ export default function Navbar() {
     };
 
     return (
-        <Disclosure as="nav" style={{ backgroundColor: '#800000' }}>
+        <Disclosure as="nav" style={{ backgroundColor: '#262626' }}>
             {({ open }) => (
                 <>
                     <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -99,7 +99,7 @@ export default function Navbar() {
                             <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                                 <Menu as="div" className="relative">
                                     <div>
-                                        <MenuButton className="relative flex items-center justify-center rounded-full bg-red-900 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-red-900 focus:outline-none w-8 h-8">
+                                        <MenuButton className="relative flex items-center justify-center rounded-full text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-red-900 focus:outline-none w-8 h-8">
                                             <span className="sr-only">Open user menu</span>
                                             <img
                                                 alt="icon"
