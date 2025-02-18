@@ -2,7 +2,7 @@ import React from "react";
 
 const Adoption = () => {
   return (
-    <div>
+    <div style={{ padding: "40px" }}>
       <h1>Adoption Process</h1>
       <p>Learn more about our adoption process and how you can help!</p>
     </div>
