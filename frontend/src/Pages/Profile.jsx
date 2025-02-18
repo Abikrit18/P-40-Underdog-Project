@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import profile from "../assets/profile.png";
+//import profile from "../assets/profile.png";
 const Profile = () => {
     const [user, setUser] = useState(null);
     const token = localStorage.getItem("token");
@@ -77,7 +77,7 @@ const Profile = () => {
         <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Profile Details</h1>
             <img 
-                src={profile}
+                src="profile.png"
                 alt="Profile" 
                 className="w-24 h-24 object-cover rounded-full border-4 border-gray-300 shadow-md"
             />

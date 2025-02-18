@@ -3,8 +3,8 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {jwtDecode} from 'jwt-decode';
-import logo from '../assets/image.png';
-import icon from '../assets/icon.png';
+//import logo from '../assets/image.png';
+//import icon from '../assets/icon.png';
 
 const navigation = [
     { name: 'Home', href: '/' },
@@ -69,7 +69,7 @@ export default function Navbar() {
                                 <div className="flex shrink-0 items-center group">
                                     <a href="/" className="group">
                                     <img
-                                            src={logo}
+                                            src="/image.png"
                                             className="h-14 w-auto transform transition-transform duration-300 ease-in-out group-hover:translate-y-[-5px]"
                                             alt="Logo"
                                         />
@@ -103,7 +103,7 @@ export default function Navbar() {
                                             <span className="sr-only">Open user menu</span>
                                             <img
                                                 alt="icon"
-                                                src={icon}
+                                                src="/icon.png"
                                                 className="h-full w-full rounded-full object-cover"
                                             />
                                         </MenuButton>
