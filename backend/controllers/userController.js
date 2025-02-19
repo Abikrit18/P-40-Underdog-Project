@@ -1,7 +1,8 @@
+import pkg from 'bcryptjs';
+const { hash, compare } = pkg;
+import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Walk from '../models/walk.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 
 const generateToken = (user) => {
     return jwt.sign({ id: user._id, role: user.role, userName: `${user.firstName} ${user.lastName}` }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -15,7 +16,7 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ error: 'User already exists' });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await hash(password, 10);
         const newUser = await User.create({ firstName, lastName, email, password: hashedPassword });
 
         res.status(201).json({ message: 'User registered successfully', userId: newUser._id });
@@ -32,7 +33,7 @@ const loginUser = async (req, res) => {
         //console.log(user);
         if (!user) return res.status(400).json({ error: 'Invalid email or password' });
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await compare(password, user.password);
         if (!isPasswordValid) return res.status(400).json({ error: 'Invalid email or password' });
 
         const token = generateToken(user);
