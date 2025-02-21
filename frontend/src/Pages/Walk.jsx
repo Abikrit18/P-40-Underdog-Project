@@ -98,7 +98,7 @@ const Walk = () => {
     
         try {
             console.log("Sending request to add time:", {
-                marshall: user.id,
+                marshall: user.id,  // Marshall ID
                 date: formattedDate,
                 time: newTime,
             });
@@ -113,7 +113,7 @@ const Walk = () => {
     
             if (response.status === 201) {
                 alert("Time slot added successfully.");
-                setAvailableTimes((prev) => [...prev, newTime]);
+                setAvailableTimes((prev) => [...prev, newTime]);  // Only update available times, NOT walks
                 setNewTime("");
             } else {
                 alert(response.data.error || "Failed to add time slot.");
@@ -124,26 +124,25 @@ const Walk = () => {
         }
     };
 
-    // Handle scheduling a walk
     const handleSchedule = async () => {
         if (!selectedMarshall || !time) {
             alert("Please select a Marshall and time slot to schedule a walk.");
             return;
         }
-
+    
         if (!user) {
             alert("Please log in to schedule a walk.");
             navigate("/login");
             return;
         }
-
+    
         const walkData = {
-            userid: user.id,
+            userid: user.id,  // Only when a user schedules
             marshall: selectedMarshall,
             date: formatDate(date),
             time,
         };
-
+    
         try {
             const response = await axios.post("http://localhost:3000/walks", walkData, {
                 headers: {
@@ -151,7 +150,7 @@ const Walk = () => {
                     "Content-Type": "application/json",
                 },
             });
-
+    
             if (response.status === 201) {
                 alert("Walk scheduled successfully!");
                 navigate("/");
