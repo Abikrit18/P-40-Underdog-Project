@@ -57,17 +57,19 @@ const Users = () => {
             alert("You cannot delete another admin.");
             return;
         }
-
+    
         if (!window.confirm("Are you sure you want to delete this user?")) return;
-
+    
         try {
             await axios.delete(`http://localhost:3000/users/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
+    
+            // Update both users and filteredUsers immediately after deletion
             const updatedUsers = users.filter((user) => user._id !== userId);
             setUsers(updatedUsers);
-            filterUsers(searchTerm); // Update filtered users after deletion
+            setFilteredUsers(updatedUsers); // <-- Ensure filtered list updates too
+    
             alert("User deleted successfully.");
         } catch (error) {
             console.error("Error deleting user:", error);
