@@ -4,6 +4,7 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import "../App.css";
 
 const Walk = () => {
     const navigate = useNavigate();
@@ -80,37 +81,37 @@ const Walk = () => {
     const handleAddTime = async () => {
         const formattedDate = formatDate(date);
         const currentDate = formatDate(new Date());
-    
+
         if (formattedDate < currentDate) {
             alert("You cannot add a time slot for past dates.");
             return;
         }
-    
+
         if (!newTime) {
             alert("Please enter a valid time.");
             return;
         }
-    
+
         if (!user || user.role !== "Marshall") {
             alert("Only Marshalls can add time slots.");
             return;
         }
-    
+
         try {
             console.log("Sending request to add time:", {
                 marshall: user.id,  // Marshall ID
                 date: formattedDate,
                 time: newTime,
             });
-    
+
             const response = await axios.post("http://localhost:3000/walks/add-time", {
-                marshall: user.id, 
+                marshall: user.id,
                 date: formattedDate,
                 time: newTime,
             });
-    
+
             console.log("Response from server:", response.data);
-    
+
             if (response.status === 201) {
                 alert("Time slot added successfully.");
                 setAvailableTimes((prev) => [...prev, newTime]);  // Only update available times, NOT walks
@@ -129,20 +130,20 @@ const Walk = () => {
             alert("Please select a Marshall and time slot to schedule a walk.");
             return;
         }
-    
+
         if (!user) {
             alert("Please log in to schedule a walk.");
             navigate("/login");
             return;
         }
-    
+
         const walkData = {
             userid: user.id,  // Only when a user schedules
             marshall: selectedMarshall,
             date: formatDate(date),
             time,
         };
-    
+
         try {
             const response = await axios.post("http://localhost:3000/walks", walkData, {
                 headers: {
@@ -150,7 +151,7 @@ const Walk = () => {
                     "Content-Type": "application/json",
                 },
             });
-    
+
             if (response.status === 201) {
                 alert("Walk scheduled successfully!");
                 navigate("/");
@@ -160,14 +161,14 @@ const Walk = () => {
             alert("Failed to schedule walk. Please try again.");
         }
     };
-    
+
 
     return (
         <div className="flex flex-col items-center gap-6 p-6 min-h-screen justify-center bg-gray-100">
             <h1 className="text-3xl font-bold text-blue-700">Walk our Dogs</h1>
 
             {/* Walk Scheduling Form */}
-            <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md text-center border-4 border-blue-200">
+            <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-[700px] text-center border-4 border-blue-200">
                 <label className="block text-lg font-medium text-gray-700">Select a Marshall</label>
                 <select
                     className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -183,7 +184,7 @@ const Walk = () => {
                 </select>
 
                 <label className="block text-lg font-medium text-gray-700 mt-6">Select a Date</label>
-                <div className="bg-red-900 p-4 rounded-lg mt-2 flex justify-center">
+                <div className="bg-red-900 px-4 py-4 rounded-lg mt-2 flex justify-center">
                     <Calendar
                         onChange={setDate}
                         value={date}
@@ -210,11 +211,10 @@ const Walk = () => {
                 )}
 
                 <button
-                    className={`w-full mt-4 p-2 font-bold rounded-md transition-all ${
-                        availableTimes.length === 0
+                    className={`w-full mt-4 p-2 font-bold rounded-md transition-all ${availableTimes.length === 0
                             ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                             : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
+                        }`}
                     onClick={handleSchedule}
                     disabled={availableTimes.length === 0}
                 >
