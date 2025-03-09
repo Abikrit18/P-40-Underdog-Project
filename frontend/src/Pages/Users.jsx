@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Users = () => {
     const [users, setUsers] = useState([]);
@@ -43,14 +45,27 @@ const Users = () => {
             setUsers((prevUsers) =>
                 prevUsers.map((u) => (u._id === userId ? { ...u, role: newRole } : u))
             );
+            
+            toast.success("User role updated successfully", {
+                position: "top-center",
+                autoClose: 3000
+            });
+            
         } catch (error) {
             console.error("Error updating role:", error);
+            toast.error("Failed to update user role", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
 
     const handleDeleteUser = async (userId, role) => {
         if (role === "admin") {
-            alert("You cannot delete another admin.");
+            toast.error("You cannot delete another admin.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
 
@@ -62,10 +77,16 @@ const Users = () => {
             });
 
             setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));
-            alert("User deleted successfully.");
+            toast.success("User deleted successfully.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         } catch (error) {
             console.error("Error deleting user:", error);
-            alert("Failed to delete user.");
+            toast.error("Failed to delete user.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
 
@@ -73,6 +94,7 @@ const Users = () => {
 
     return (
         <div className="p-6">
+            <ToastContainer />
             <h1 className="text-2xl font-bold mb-4">All Users</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {users.length === 0 ? (

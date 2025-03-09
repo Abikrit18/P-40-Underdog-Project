@@ -4,6 +4,8 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Walk = () => {
     const navigate = useNavigate();
@@ -82,17 +84,26 @@ const Walk = () => {
         const currentDate = formatDate(new Date());
     
         if (formattedDate < currentDate) {
-            alert("You cannot add a time slot for past dates.");
+            toast.error("You cannot add a time slot for past dates.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
     
         if (!newTime) {
-            alert("Please enter a valid time.");
+            toast.warning("Please enter a valid time.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
     
         if (!user || user.role !== "Marshall") {
-            alert("Only Marshalls can add time slots.");
+            toast.error("Only Marshalls can add time slots.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
     
@@ -112,27 +123,42 @@ const Walk = () => {
             console.log("Response from server:", response.data);
     
             if (response.status === 201) {
-                alert("Time slot added successfully.");
+                toast.success("Time slot added successfully.", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
                 setAvailableTimes((prev) => [...prev, newTime]);
                 setNewTime("");
             } else {
-                alert(response.data.error || "Failed to add time slot.");
+                toast.error(response.data.error || "Failed to add time slot.", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
             }
         } catch (error) {
             console.error("Error adding time slot:", error.response?.data || error);
-            alert("Failed to add time slot. Check console for details.");
+            toast.error("Failed to add time slot. Check console for details.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
 
     // Handle scheduling a walk
     const handleSchedule = async () => {
         if (!selectedMarshall || !time) {
-            alert("Please select a Marshall and time slot to schedule a walk.");
+            toast.warning("Please select a Marshall and time slot to schedule a walk.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
 
         if (!user) {
-            alert("Please log in to schedule a walk.");
+            toast.error("Please log in to schedule a walk.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             navigate("/login");
             return;
         }
@@ -153,18 +179,25 @@ const Walk = () => {
             });
 
             if (response.status === 201) {
-                alert("Walk scheduled successfully!");
+                toast.success("Walk scheduled successfully!", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
                 navigate("/");
             }
         } catch (error) {
             console.error("Error scheduling walk:", error);
-            alert("Failed to schedule walk. Please try again.");
+            toast.error("Failed to schedule walk. Please try again.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
     
 
     return (
         <div className="flex flex-col items-center gap-6 p-6 min-h-screen justify-center bg-gray-100">
+            <ToastContainer />
             <h1 className="text-3xl font-bold text-blue-700">Walk our Dogs</h1>
 
             {/* Walk Scheduling Form */}
