@@ -1,1 +1,18 @@
 @import "tailwindcss";
+.custom-calendar {
+    width: 100% !important;
+    max-width: 500px !important; /* Adjust as needed */
+    background-color: rgb(92, 68, 68);
+    border-radius: 8px; /* Smooth rounded corners */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    padding: 10px;
+    border: 1px solid #d1d5db; /* Light gray border */
+}
+
+.react-calendar {
+    width: 100% !important;
+    max-width: 500px !important; /* Keep it clean and responsive */
+    font-family: "Poppins", sans-serif;
+    border: none;
+}
+

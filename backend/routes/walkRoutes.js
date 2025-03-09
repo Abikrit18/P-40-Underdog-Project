@@ -11,7 +11,7 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'All fields are required' });
         }
 
-        // Ensure both user and marshall exist before scheduling the walk
+        // Ensure user and marshall exist before scheduling the walk
         const user = await User.findById(userid);
         const assignedMarshall = await User.findById(marshall);
 
@@ -19,11 +19,17 @@ router.post('/', async (req, res) => {
             return res.status(404).json({ error: 'User or Marshall not found' });
         }
 
-        // Create and save the walk
+        // Remove the selected time slot from available times for that Marshall
+        await Walk.updateOne(
+            { marshall, date },
+            { $pull: { availableTimes: time } }
+        );
+
+        // Create and save the scheduled walk
         const newWalk = new Walk({ userid, marshall, date, time });
         const savedWalk = await newWalk.save();
 
-        // Ensure Marshall's `walks` array is updated properly
+        // Add scheduled walk to both User and Marshall
         await User.findByIdAndUpdate(userid, { $push: { walks: savedWalk._id } });
         await User.findByIdAndUpdate(marshall, { $push: { walks: savedWalk._id } });
 
@@ -64,21 +70,21 @@ router.post('/complete/:walkId', async (req, res) => {
         res.status(500).json({ error: "Failed to complete walk" });
     }
 });
-// Add available time for a specific marshall on a selected date
 router.post("/add-time", async (req, res) => {
     try {
         const { marshall, date, time } = req.body;
 
-        console.log("Received request to add time:", { marshall, date, time });
+        //console.log("Received request to add time:", { marshall, date, time });
 
         if (!marshall || !date || !time) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
+        // Find the walk document where the marshall has added available times
         let walk = await Walk.findOne({ marshall, date });
 
         if (walk) {
-            if (walk.availableTimes.includes(time)) {
+            if (walk.availableTimes && walk.availableTimes.includes(time)) {
                 return res.status(400).json({ error: "This time slot already exists." });
             }
             walk.availableTimes.push(time);
@@ -87,7 +93,6 @@ router.post("/add-time", async (req, res) => {
         }
 
         await walk.save();
-        console.log("Time slot saved successfully:", walk);
 
         res.status(201).json({ message: "Time slot added successfully", walk });
     } catch (error) {
