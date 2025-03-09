@@ -1,10 +1,8 @@
 import { Disclosure, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {jwtDecode} from 'jwt-decode';
-//import logo from '../assets/image.png';
-//import icon from '../assets/icon.png';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 
 const navigation = [
     { name: 'Home', href: '/' },
@@ -23,22 +21,57 @@ export default function Navbar() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userRole, setUserRole] = useState(null);
     const navigate = useNavigate();
+    const location = useLocation();
 
+    // Check authentication status whenever the component mounts or location changes
     useEffect(() => {
+        checkAuthStatus();
+    }, [location]);
+
+    // Create a separate function to check auth status that can be called from different places
+    const checkAuthStatus = () => {
         const token = localStorage.getItem('token');
         if (token) {
             try {
                 const decoded = jwtDecode(token);
                 setIsLoggedIn(true);
-                setUserRole(decoded.role);  // Ensure role is stored
+                setUserRole(decoded.role);
             } catch (error) {
                 console.error("Invalid Token:", error);
                 localStorage.removeItem('token');
                 setIsLoggedIn(false);
                 setUserRole(null);
             }
+        } else {
+            setIsLoggedIn(false);
+            setUserRole(null);
         }
+    };
+
+    // Set up a storage event listener to handle token changes from other tabs
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'token') {
+                checkAuthStatus();
+            }
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, []);
+
+    // Set active nav item based on current location
+    useEffect(() => {
+        const path = location.pathname;
+        const currentNav = navigation.find(item => item.href === path);
+        if (currentNav) {
+            setActiveNav(currentNav.name);
+        } else {
+            setActiveNav('');
+        }
+    }, [location]);
 
     const handleNavClick = (itemName, href) => {
         const token = localStorage.getItem('token');

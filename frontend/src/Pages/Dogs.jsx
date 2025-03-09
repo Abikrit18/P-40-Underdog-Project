@@ -3,7 +3,8 @@ import DogCard from '../components/dogCard';
 import { Box, Button, TextField, CircularProgress, Container, Pagination } from '@mui/material';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const DogList = () => {
   const [dogs, setDogs] = useState([]);
@@ -54,16 +55,16 @@ const DogList = () => {
     try {
       const response = await axios.post('http://localhost:3000/api/upload', formData, {
         headers: {
-
-
           Authorization: `Bearer ${localStorage.getItem('token')}`,
-
         },
       });
       setNewDog({ ...newDog, picture: response.data.url });
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      toast.error('Failed to upload image. Please try again.', {
+        position: "top-center",
+        autoClose: 3000
+      });
     } finally {
       setUploadLoading(false);
     }
@@ -91,7 +92,10 @@ const DogList = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newDog.picture) {
-      alert('Please upload an image first');
+      toast.warning('Please upload an image first', {
+        position: "top-center",
+        autoClose: 3000
+      });
       return;
     }
     try {
@@ -103,9 +107,16 @@ const DogList = () => {
         });
       setDogs([...dogs, response.data]);
       setNewDog({ name: '', age: '', color: '', picture: '' });
+      toast.success('Dog added successfully!', {
+        position: "top-center",
+        autoClose: 3000
+      });
     } catch (error) {
       console.error('Error adding dog:', error);
-      alert('Failed to add dog. Please try again.');
+      toast.error('Failed to add dog. Please try again.', {
+        position: "top-center",
+        autoClose: 3000
+      });
     }
   };
 
@@ -117,9 +128,16 @@ const DogList = () => {
         }
       });
       setDogs(prevDogs => prevDogs.filter((d) => d._id !== dog._id));
+      toast.success('Dog deleted successfully!', {
+        position: "top-center",
+        autoClose: 3000
+      });
     } catch (error) {
       console.error('Error deleting dog:', error);
-      alert('Failed to delete dog. Please try again.');
+      toast.error('Failed to delete dog. Please try again.', {
+        position: "top-center",
+        autoClose: 3000
+      });
     }
   };
 
@@ -131,9 +149,16 @@ const DogList = () => {
         }
       });
       setDogs(dogs.map(d => d._id === updatedDog._id ? updatedDog : d));
+      toast.success('Dog updated successfully!', {
+        position: "top-center",
+        autoClose: 3000
+      });
     } catch (error) {
       console.error('Error updating dog:', error);
-      alert('Failed to update dog. Please try again.');
+      toast.error('Failed to update dog. Please try again.', {
+        position: "top-center",
+        autoClose: 3000
+      });
     }
   };
 
@@ -155,6 +180,7 @@ const DogList = () => {
 
   return (
     <Container>
+      <ToastContainer />
       {console.log(role)}
       {role === "admin" && (<Box component="form" onSubmit={handleSubmit} sx={{ mt: 4, mb: 4, p: 2, border: '1px solid #ddd', borderRadius: 2 }}>
         <TextField

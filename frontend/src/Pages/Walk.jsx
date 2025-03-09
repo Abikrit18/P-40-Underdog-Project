@@ -4,7 +4,8 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import "../App.css";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Walk = () => {
     const navigate = useNavigate();
@@ -81,64 +82,89 @@ const Walk = () => {
     const handleAddTime = async () => {
         const formattedDate = formatDate(date);
         const currentDate = formatDate(new Date());
-
+    
         if (formattedDate < currentDate) {
-            alert("You cannot add a time slot for past dates.");
+            toast.error("You cannot add a time slot for past dates.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
-
+    
         if (!newTime) {
-            alert("Please enter a valid time.");
+            toast.warning("Please enter a valid time.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
-
+    
         if (!user || user.role !== "Marshall") {
-            alert("Only Marshalls can add time slots.");
+            toast.error("Only Marshalls can add time slots.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
-
+    
         try {
             console.log("Sending request to add time:", {
-                marshall: user.id,  // Marshall ID
-                date: formattedDate,
-                time: newTime,
-            });
-
-            const response = await axios.post("http://localhost:3000/walks/add-time", {
                 marshall: user.id,
                 date: formattedDate,
                 time: newTime,
             });
-
+    
+            const response = await axios.post("http://localhost:3000/walks/add-time", {
+                marshall: user.id, 
+                date: formattedDate,
+                time: newTime,
+            });
+    
             console.log("Response from server:", response.data);
-
+    
             if (response.status === 201) {
-                alert("Time slot added successfully.");
-                setAvailableTimes((prev) => [...prev, newTime]);  // Only update available times, NOT walks
+                toast.success("Time slot added successfully.", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
+                setAvailableTimes((prev) => [...prev, newTime]);
                 setNewTime("");
             } else {
-                alert(response.data.error || "Failed to add time slot.");
+                toast.error(response.data.error || "Failed to add time slot.", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
             }
         } catch (error) {
             console.error("Error adding time slot:", error.response?.data || error);
-            alert("Failed to add time slot. Check console for details.");
+            toast.error("Failed to add time slot. Check console for details.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
 
+    // Handle scheduling a walk
     const handleSchedule = async () => {
         if (!selectedMarshall || !time) {
-            alert("Please select a Marshall and time slot to schedule a walk.");
+            toast.warning("Please select a Marshall and time slot to schedule a walk.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
 
         if (!user) {
-            alert("Please log in to schedule a walk.");
+            toast.error("Please log in to schedule a walk.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             navigate("/login");
             return;
         }
 
         const walkData = {
-            userid: user.id,  // Only when a user schedules
+            userid: user.id,
             marshall: selectedMarshall,
             date: formatDate(date),
             time,
@@ -153,22 +179,29 @@ const Walk = () => {
             });
 
             if (response.status === 201) {
-                alert("Walk scheduled successfully!");
+                toast.success("Walk scheduled successfully!", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
                 navigate("/");
             }
         } catch (error) {
             console.error("Error scheduling walk:", error);
-            alert("Failed to schedule walk. Please try again.");
+            toast.error("Failed to schedule walk. Please try again.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
-
+    
 
     return (
         <div className="flex flex-col items-center gap-6 p-6 min-h-screen justify-center bg-gray-100">
+            <ToastContainer />
             <h1 className="text-3xl font-bold text-blue-700">Walk our Dogs</h1>
 
             {/* Walk Scheduling Form */}
-            <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-[700px] text-center border-4 border-blue-200">
+            <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md text-center border-4 border-blue-200">
                 <label className="block text-lg font-medium text-gray-700">Select a Marshall</label>
                 <select
                     className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -184,7 +217,7 @@ const Walk = () => {
                 </select>
 
                 <label className="block text-lg font-medium text-gray-700 mt-6">Select a Date</label>
-                <div className="bg-red-900 px-4 py-4 rounded-lg mt-2 flex justify-center">
+                <div className="bg-red-900 p-4 rounded-lg mt-2 flex justify-center">
                     <Calendar
                         onChange={setDate}
                         value={date}
@@ -211,10 +244,11 @@ const Walk = () => {
                 )}
 
                 <button
-                    className={`w-full mt-4 p-2 font-bold rounded-md transition-all ${availableTimes.length === 0
+                    className={`w-full mt-4 p-2 font-bold rounded-md transition-all ${
+                        availableTimes.length === 0
                             ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                             : "bg-blue-500 text-white hover:bg-blue-600"
-                        }`}
+                    }`}
                     onClick={handleSchedule}
                     disabled={availableTimes.length === 0}
                 >
