@@ -18,7 +18,7 @@ const Home = () => {
             <p className="text-xl md:text-2xl text-white mb-8 max-w-3xl">
               Helping rescue dogs find joy, exercise, and forever homes.
             </p>
-            <Link to="/dogs" className="bg-orange-700 hover:bg-orange-800 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform duration-300 hover:scale-105">
+            <Link to="/dogs" className="bg-orange-700 hover:bg-orange-800 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform duration-300 hover:scale-105 text-decoration-none">
               Meet Our Dogs
             </Link>
           </div>
@@ -50,7 +50,7 @@ const Home = () => {
                 <p className="text-gray-700 mb-4">
                   Take a shelter dog for a walk. Exercise is crucial for their physical and mental well-being.
                 </p>
-                <Link to="/walk" className="text-orange-700 font-semibold hover:text-orange-900">
+                <Link to="/walk" className="text-orange-700 font-semibold hover:text-orange-900 text-decoration-none">
                   Schedule a Walk →
                 </Link>
               </div>
@@ -68,7 +68,7 @@ const Home = () => {
                 <p className="text-gray-700 mb-4">
                   Give a deserving dog a forever home. Our adoption process is designed to find perfect matches.
                 </p>
-                <Link to="/adoption" className="text-orange-700 font-semibold hover:text-orange-900">
+                <Link to="/adoption" className="text-orange-700 font-semibold hover:text-orange-900 text-decoration-none">
                   Learn About Adoption →
                 </Link>
               </div>
@@ -86,7 +86,7 @@ const Home = () => {
                 <p className="text-gray-700 mb-4">
                   Your contribution helps provide food, shelter, medical care, and more for our rescue dogs.
                 </p>
-                <Link to="/donation" className="text-orange-700 font-semibold hover:text-orange-900">
+                <Link to="/donation" className="text-orange-700 font-semibold hover:text-orange-900 text-decoration-none">
                   Make a Donation →
                 </Link>
               </div>
@@ -169,10 +169,10 @@ const Home = () => {
             Join our community of dog lovers and help give these deserving dogs the attention they need.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/login" className="bg-white text-red-900 hover:bg-gray-200 font-bold py-3 px-8 rounded-full text-lg">
+            <Link to="/login" className="bg-white text-red-900 hover:bg-gray-200 font-bold py-3 px-8 rounded-full text-lg text-decoration-none">
               Sign Up Today
             </Link>
-            <Link to="/walk" className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-bold py-3 px-8 rounded-full text-lg">
+            <Link to="/walk" className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-bold py-3 px-8 rounded-full text-lg text-decoration-none">
               Schedule a Walk
             </Link>
           </div>

@@ -13,7 +13,11 @@ const walkSchema = new mongoose.Schema({
   time: { 
     type: String 
   },
-  availableTimes: [{ type: String }] // Stores available times per marshall for a date
+  availableTimes: [{ type: String }], // Stores available times per marshall for a date
+  availableSlots: {
+    type: Number,
+    default: 4
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Walk', walkSchema);

@@ -53,10 +53,12 @@ const Users = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setUsers((prevUsers) =>
-                prevUsers.map((u) => (u._id === userId ? { ...u, role: newRole } : u))
+            const updatedUsers = users.map((u) =>
+                u._id === userId ? { ...u, role: newRole } : u
             );
-            filterUsers(searchTerm); // Update filtered users after role change
+
+            setUsers(updatedUsers);
+            setFilteredUsers(updatedUsers); // Update filtered users immediately after role change
             toast.success(`User role updated to ${newRole}`, {
                 position: "top-center",
                 autoClose: 2000

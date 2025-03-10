@@ -1,25 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import "../App.css";
+
 
 const Walk = () => {
     const navigate = useNavigate();
-    const [marshalls, setMarshalls] = useState([]);
-    const [selectedMarshall, setSelectedMarshall] = useState("");
-    const [date, setDate] = useState(new Date());
-    const [time, setTime] = useState("");
-    const [availableTimes, setAvailableTimes] = useState([]);
-    const [newTime, setNewTime] = useState("");
     const [user, setUser] = useState();
+    const [events, setEvents] = useState([]);
+    const [selectedDate, setSelectedDate] = useState("");
+    const [time, setTime] = useState("");
+    const [availableDate, setAvailableDate] = useState("");
+    const [availableTime, setAvailableTime] = useState("");
+    const [availableTimesData, setAvailableTimesData] = useState([]);
 
     const token = localStorage.getItem("token");
 
-    // Decode token to get user details
     useEffect(() => {
         if (token) {
             try {
@@ -31,249 +33,242 @@ const Walk = () => {
         }
     }, [token]);
 
-    // Fetch all Marshalls
+    const fetchScheduledWalks = async () => {
+        try {
+            const response = await axios.get("http://localhost:3000/walks");
+            const scheduledEvents = response.data
+                .filter((walk) => walk.userid)
+                .map((walk) => ({
+                    title: `Walk with ${walk.marshallName}`,
+                    date: walk.date,
+                }));
+
+            const availableTimeEvents = response.data
+                .filter((walk) => walk.availableTimes && walk.availableTimes.length > 0)
+                .map((walk) => ({
+                    date: walk.date,
+                    display: 'background',
+                    className: 'has-available-time'
+                }));
+
+            setEvents([...scheduledEvents, ...availableTimeEvents]);
+        } catch (error) {
+            console.error("Error fetching scheduled walks:", error);
+        }
+    };
+
+    const handleSelectWalk = async (walkId, timeSlot) => {
+        try {
+            await axios.post(`http://localhost:3000/walks/select-walk/${walkId}`, {
+                userId: user.id,
+                timeSlot,
+            });
+
+            // Update local state to disable the select button for this user
+            setAvailableTimesData(prevData =>
+                prevData.map(walk => {
+                    if (walk._id === walkId) {
+                        return {
+                            ...walk,
+                            selectedByUser: true, // Mark this walk as selected by the user
+                            availableSlots: walk.availableSlots - 1,
+                        };
+                    }
+                    return walk;
+                })
+            );
+
+            alert("Walk successfully selected!");
+        } catch (error) {
+            console.error("Error selecting walk:", error);
+            alert("Failed to select walk.");
+        }
+    };
+
+    const fetchAvailableTimes = async () => {
+        try {
+            const response = await axios.get("http://localhost:3000/walks/available-times");
+            const userWalks = user?.id
+                ? await axios.get(`http://localhost:3000/users/profile/${user.id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+                : { data: { walks: [] } };
+
+            const updatedData = response.data.map((walk) => {
+            const isSelectedByUser = userWalks.data.walks.some((userWalk) => userWalk._id === walk._id && userWalk.time === walk.time);
+                return {
+                    ...walk,
+                    selectedByUser: isSelectedByUser
+                };
+            });
+            setAvailableTimesData(updatedData);
+        } catch (error) {
+            console.error("Error fetching available times:", error);
+        }
+    };
+
     useEffect(() => {
-        const fetchMarshalls = async () => {
-            try {
-                const response = await axios.get("http://localhost:3000/users");
-                const marshallUsers = response.data.filter((user) => user.role === "Marshall");
-                setMarshalls(marshallUsers);
-            } catch (error) {
-                console.error("Error fetching Marshalls:", error);
-            }
-        };
-        fetchMarshalls();
+        fetchScheduledWalks();
+        fetchAvailableTimes();
     }, []);
 
-    // Redirect user to login if not authenticated
-    useEffect(() => {
-        if (!token) {
-            navigate("/login", { replace: true });
+    const handleDateClick = (arg) => {
+        setSelectedDate(arg.dateStr);
+        setAvailableDate(arg.dateStr); // Auto-set the form date field
+    };
+    // Removed handleAddTime function as modal functionality is removed.
+
+    const handleAvailableTimeSubmit = async (e) => {
+        e.preventDefault();
+        const today = new Date().setHours(0, 0, 0, 0);
+        const selected = new Date(availableDate).setHours(0, 0, 0, 0);
+
+        if (selected < today) {
+            return alert("Cannot add time for past dates.");
         }
-    }, [navigate, token]);
 
-    // Format date for consistency
-    const formatDate = (date) => date.toISOString().split("T")[0];
+        if (!availableDate || !availableTime) return alert("Please fill in both fields.");
 
-    // Fetch available time slots when Marshall or date changes
-    useEffect(() => {
-        const fetchAvailableTimes = async () => {
-            if (!selectedMarshall || !date) {
-                setAvailableTimes([]);
-                return;
-            }
-
-            try {
-                const formattedDate = formatDate(date);
-                const response = await axios.get(
-                    `http://localhost:3000/walks/available-times/${selectedMarshall}/${formattedDate}`
-                );
-                setAvailableTimes(response.data);
-            } catch (error) {
-                console.error("Error fetching available times:", error);
-                setAvailableTimes([]);
-            }
-        };
-
-        fetchAvailableTimes();
-    }, [selectedMarshall, date]);
-
-    // Handle adding a new time slot (Marshall only)
-    const handleAddTime = async () => {
-        const formattedDate = formatDate(date);
-        const currentDate = formatDate(new Date());
-    
-        if (formattedDate < currentDate) {
-            toast.error("You cannot add a time slot for past dates.", {
-                position: "top-center",
-                autoClose: 3000
-            });
-            return;
-        }
-    
-        if (!newTime) {
-            toast.warning("Please enter a valid time.", {
-                position: "top-center",
-                autoClose: 3000
-            });
-            return;
-        }
-    
-        if (!user || user.role !== "Marshall") {
-            toast.error("Only Marshalls can add time slots.", {
-                position: "top-center",
-                autoClose: 3000
-            });
-            return;
-        }
-    
         try {
-            console.log("Sending request to add time:", {
+            await axios.post("http://localhost:3000/walks/add-time", {
                 marshall: user.id,
-                date: formattedDate,
-                time: newTime,
+                date: availableDate,
+                time: availableTime,
             });
-    
-            const response = await axios.post("http://localhost:3000/walks/add-time", {
-                marshall: user.id, 
-                date: formattedDate,
-                time: newTime,
-            });
-    
-            console.log("Response from server:", response.data);
-    
-            if (response.status === 201) {
-                toast.success("Time slot added successfully.", {
-                    position: "top-center",
-                    autoClose: 3000
-                });
-                setAvailableTimes((prev) => [...prev, newTime]);
-                setNewTime("");
-            } else {
-                toast.error(response.data.error || "Failed to add time slot.", {
-                    position: "top-center",
-                    autoClose: 3000
-                });
-            }
+            alert("Available time added successfully!");
+
+            // Re-fetch available times to ensure marshall's details are updated
+            await fetchAvailableTimes();
+            setAvailableDate("");
+            setAvailableTime("");
         } catch (error) {
-            console.error("Error adding time slot:", error.response?.data || error);
-            toast.error("Failed to add time slot. Check console for details.", {
-                position: "top-center",
-                autoClose: 3000
+            console.error("Error adding available time:", error);
+            alert("Failed to add available time. Please check the backend server.");
+        }
+    };
+
+    const handleEditTime = (walk, timeSlot) => {
+        const newTime = prompt("Enter new time:", timeSlot);
+        if (newTime && newTime !== timeSlot) {
+            axios.put(`http://localhost:3000/walks/update-time/${walk._id}`, {
+                oldTime: timeSlot,
+                newTime: newTime
+            })
+            .then(response => {
+                alert("Time updated successfully!");
+                fetchAvailableTimes();
+            })
+            .catch(error => {
+                console.error("Error updating time:", error);
+                alert("Failed to update time.");
             });
         }
     };
 
-    // Handle scheduling a walk
-    const handleSchedule = async () => {
-        if (!selectedMarshall || !time) {
-            toast.warning("Please select a Marshall and time slot to schedule a walk.", {
-                position: "top-center",
-                autoClose: 3000
-            });
-            return;
-        }
-
-        if (!user) {
-            toast.error("Please log in to schedule a walk.", {
-                position: "top-center",
-                autoClose: 3000
-            });
-            navigate("/login");
-            return;
-        }
-
-        const walkData = {
-            userid: user.id,
-            marshall: selectedMarshall,
-            date: formatDate(date),
-            time,
-        };
-
-        try {
-            const response = await axios.post("http://localhost:3000/walks", walkData, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    "Content-Type": "application/json",
-                },
-            });
-
-            if (response.status === 201) {
-                toast.success("Walk scheduled successfully!", {
-                    position: "top-center",
-                    autoClose: 3000
+    const handleDeleteTime = async (walkId, timeSlot) => {
+        const confirmDelete = window.confirm("Are you sure you want to delete this time?");
+        if (confirmDelete) {
+            try {
+                await axios.delete(`http://localhost:3000/walks/delete-time/${walkId}`, {
+                    data: { time: timeSlot }
                 });
-                navigate("/");
+                alert("Time deleted successfully!");
+                fetchAvailableTimes();
+            } catch (error) {
+                console.error("Error deleting time:", error);
+                alert("Failed to delete time.");
             }
-        } catch (error) {
-            console.error("Error scheduling walk:", error);
-            toast.error("Failed to schedule walk. Please try again.", {
-                position: "top-center",
-                autoClose: 3000
-            });
         }
     };
-    
 
     return (
-        <div className="flex flex-col items-center gap-6 p-6 min-h-screen justify-center bg-gray-100">
-            <ToastContainer />
-            <h1 className="text-3xl font-bold text-blue-700">Walk our Dogs</h1>
-
-            {/* Walk Scheduling Form */}
-            <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md text-center border-4 border-blue-200">
-                <label className="block text-lg font-medium text-gray-700">Select a Marshall</label>
-                <select
-                    className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={selectedMarshall}
-                    onChange={(e) => setSelectedMarshall(e.target.value)}
-                >
-                    <option value="">-- Choose a Marshall --</option>
-                    {marshalls.map((marshall) => (
-                        <option key={marshall._id} value={marshall._id}>
-                            {marshall.firstName} {marshall.lastName}
-                        </option>
-                    ))}
-                </select>
-
-                <label className="block text-lg font-medium text-gray-700 mt-6">Select a Date</label>
-                <div className="bg-red-900 p-4 rounded-lg mt-2 flex justify-center">
-                    <Calendar
-                        onChange={setDate}
-                        value={date}
-                        className="w-full border border-gray-300 rounded-lg"
-                    />
-                </div>
-
-                <label className="block text-lg font-medium text-gray-700 mt-6">Select a Time</label>
-                {availableTimes.length > 0 ? (
-                    <select
-                        className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                    >
-                        <option value="">-- Choose a Time --</option>
-                        {availableTimes.map((slot, index) => (
-                            <option key={index} value={slot}>
-                                {slot}
-                            </option>
-                        ))}
-                    </select>
-                ) : (
-                    <p className="text-red-500 font-medium mt-2">No time slots available.</p>
-                )}
-
-                <button
-                    className={`w-full mt-4 p-2 font-bold rounded-md transition-all ${
-                        availableTimes.length === 0
-                            ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                            : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
-                    onClick={handleSchedule}
-                    disabled={availableTimes.length === 0}
-                >
-                    Schedule Walk
-                </button>
-            </div>
-
-            {/* Marshall's Time Slot Management */}
-            {user?.role === "Marshall" && (
-                <div className="bg-red-900 shadow-md rounded-lg p-10 w-full max-w-md mt-8 border-6 border-yellow-500">
-                    <label className="block text-lg font-medium text-white ml-26">Add Time Slot</label>
-                    <div className="mt-2 flex flex-col items-center w-auto">
-                        <input
-                            type="text"
-                            className="bg-white py-1 px-16 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 w-auto text-center"
-                            placeholder="e.g., 4:00 PM"
-                            value={newTime}
-                            onChange={(e) => setNewTime(e.target.value)}
-                        />
-                        <button className="mt-4 py-1 px-4 bg-green-500 text-white rounded-md hover:bg-green-600" onClick={handleAddTime}>
-                            Add
-                        </button>
+        <div>
+            <h1 className="calendar-title" style={{ textAlign: "center", margin: "20px 0" }}>Walk Scheduling Calendar</h1>
+            <div className="calendar-container">
+                <FullCalendar
+                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                    initialView="dayGridMonth"
+                    selectable={true}
+                    dateClick={handleDateClick}
+                    events={events}
+                    height="auto"
+                />
+                {/* Modal functionality removed */}
+                {user?.role === "Marshall" && (
+                    <div className="form-container">
+                        <form onSubmit={handleAvailableTimeSubmit} className="add-time-form">
+                            <input
+                                type="date"
+                                value={availableDate}
+                                onChange={(e) => setAvailableDate(e.target.value)}
+                                required
+                                className="form-input"
+                            />
+                            <input
+                                type="text"
+                                value={availableTime}
+                                onChange={(e) => setAvailableTime(e.target.value)}
+                                placeholder="Enter time (e.g., 2:00 PM)"
+                                required
+                                className="form-input"
+                            />
+                            <button type="submit" className="form-button small-button">Add Time</button>
+                        </form>
                     </div>
+                )}
+            </div>
+            <div className="mt-6 w-full flex flex-wrap gap-4 justify-start mb-10 px-4">
+    {availableTimesData.map((walk, index) =>
+        walk.availableTimes.map((timeSlot, idx) => (
+            <div key={`${index}-${idx}`} className="bg-white shadow-md rounded-lg p-4 border border-gray-300 w-[calc(33.333%-1rem)]">
+                <h2 className="text-lg font-semibold text-gray-800">
+                    Marshall: {walk.marshall?.firstName || "Unknown"}
+                </h2>
+                <p className="text-gray-600">Date: {walk.date}</p>
+                <p className="text-gray-600">Time: {timeSlot}</p>
+                <p className="text-gray-600">Available Slots: {walk.availableSlots}</p>
+
+                <div className="flex gap-2 mt-2">
+                    {user?.id !== walk.marshall?._id && (
+                        walk.availableSlots > 0 && !walk.selectedByUser ? (
+                        <button
+                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                            onClick={() => handleSelectWalk(walk._id, timeSlot)}
+                        >
+                            Select
+                        </button>
+                        ) : (
+                        <button
+                            className="px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed"
+                            disabled
+                        >
+                            {walk.selectedByUser ? "Already Selected" : "No Available Slots"}
+                        </button>
+                        )
+                    )}
+                    {user?.id === walk.marshall?._id && (
+                        <>
+                            <button
+                                className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                                onClick={() => handleEditTime(walk, timeSlot)}
+                            >
+                                Edit
+                            </button>
+                            <button
+                                className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                onClick={() => handleDeleteTime(walk._id, timeSlot)}
+                            >
+                                Delete
+                            </button>
+                        </>
+                    )}
                 </div>
-            )}
+            </div>
+        ))
+    )}
+</div>
         </div>
     );
 };
