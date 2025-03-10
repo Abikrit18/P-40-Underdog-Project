@@ -79,34 +79,63 @@ router.put('/update-time/:walkId', async (req, res) => {
     }
 });
 
-// Route to mark a walk as completed
+// Route to select a walk
+router.post('/select-walk/:walkId', async (req, res) => {
+    try {
+        const { walkId } = req.params;
+        const { userId, timeSlot } = req.body;
+
+        const walk = await Walk.findById(walkId);
+        if (!walk || !walk.availableTimes.includes(timeSlot)) {
+            return res.status(400).json({ error: "Time slot does not exist for this walk" });
+        }
+
+        if (walk.userid) {
+            return res.status(400).json({ error: "This walk has already been selected by another user." });
+        }
+
+        walk.userid = userId;
+        walk.time = timeSlot;
+        walk.availableTimes = [];
+        await walk.save();
+
+        const user = await User.findById(userId);
+        user.walks.push(walkId);
+        await user.save();
+
+        const marshall = await User.findById(walk.marshall);
+        if (!marshall.walks.includes(walkId)) {
+            marshall.walks.push(walkId);
+            await marshall.save();
+        }
+
+        res.status(200).json({ message: "Walk successfully selected and hidden from user profiles", walk });
+    } catch (error) {
+        console.error("Error selecting walk:", error);
+        res.status(500).json({ error: "Failed to select walk" });
+    }
+});
+
+// Route to complete a walk
 router.post('/complete/:walkId', async (req, res) => {
     try {
         const { userId } = req.body;
         const walk = await Walk.findById(req.params.walkId);
         if (!walk) return res.status(404).json({ error: "Walk not found" });
 
-        // Check if the user completing the walk is either the scheduled user or the Marshall
         if (walk.userid.toString() !== userId && walk.marshall.toString() !== userId) {
             return res.status(403).json({ error: "Unauthorized to complete this walk" });
         }
 
-        // Increment total walks for both user and Marshall
-        await User.findByIdAndUpdate(walk.userid, { $inc: { totalWalks: 1 } });
-        await User.findByIdAndUpdate(walk.marshall, { $inc: { totalWalks: 1 } });
+        // Increment total walks for both the user and the marshall
+        await User.findByIdAndUpdate(walk.userid, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
+        await User.findByIdAndUpdate(walk.marshall, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
+        await User.updateMany({ role: 'admin' }, { $pull: { walks: req.params.walkId } });
 
-        // Remove walk from user's, marshall's, and admin's scheduled walks
-        await User.updateMany(
-            { $or: [{ _id: walk.userid }, { _id: walk.marshall }, { role: 'admin' }] },
-            { $pull: { walks: req.params.walkId } }
-        );
- 
-        // Retain the walk card in the Walk collection and reset its scheduling info
-        walk.userid = null;
-        walk.time = null;
-        await walk.save();
+        // Remove walk from Walk collection
+        await Walk.findByIdAndDelete(req.params.walkId);
 
-        res.status(200).json({ message: "Walk marked as completed" });
+        res.status(200).json({ message: "Walk marked as completed and removed from all profiles" });
     } catch (error) {
         console.error("Error completing walk:", error);
         res.status(500).json({ error: "Failed to complete walk" });
@@ -154,51 +183,6 @@ router.delete('/delete/:walkId', async (req, res) => {
     } catch (error) {
         console.error("Error removing walk from profile:", error);
         res.status(500).json({ error: "Failed to remove walk from profile" });
-    }
-});
-
-
-// Route to select a walk
-router.post('/select-walk/:walkId', async (req, res) => {
-    try {
-        const { walkId } = req.params;
-        const { userId, timeSlot } = req.body;
-
-        const walk = await Walk.findById(walkId);
-        if (!walk || walk.availableSlots <= 0) {
-            return res.status(400).json({ error: "No available slots for this walk" });
-        }
-
-        // Check if user has already selected this walk
-        const user = await User.findById(userId);
-        if (user.walks.includes(walkId)) {
-            return res.status(400).json({ error: "You have already selected this walk" });
-        }
-
-        walk.userid = userId;
-        walk.time = timeSlot;
-        walk.availableSlots -= 1;
-        await walk.save();
-
-        user.walks.push(walkId);
-        await user.save();
-
-        const marshall = await User.findById(walk.marshall);
-        if (!marshall.walks.includes(walkId)) {
-            marshall.walks.push(walkId);
-            await marshall.save();
-        }
-        
-        const adminUsers = await User.find({ role: 'admin' });
-        for (const admin of adminUsers) {
-            admin.walks.push({ walkId, userId, timeSlot });
-            await admin.save();
-        }
-
-        res.status(200).json({ message: "Walk successfully selected", walk });
-    } catch (error) {
-        console.error("Error selecting walk:", error);
-        res.status(500).json({ error: "Failed to select walk" });
     }
 });
 

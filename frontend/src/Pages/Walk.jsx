@@ -63,22 +63,11 @@ const Walk = () => {
                 userId: user.id,
                 timeSlot,
             });
-
-            // Update local state to disable the select button for this user
-            setAvailableTimesData(prevData =>
-                prevData.map(walk => {
-                    if (walk._id === walkId) {
-                        return {
-                            ...walk,
-                            selectedByUser: true, // Mark this walk as selected by the user
-                            availableSlots: walk.availableSlots - 1,
-                        };
-                    }
-                    return walk;
-                })
-            );
-
-            alert("Walk successfully selected!");
+    
+            // Remove the walk from UI
+            setAvailableTimesData(prevData => prevData.filter(walk => walk._id !== walkId));
+    
+            alert("Walk successfully selected and card removed!");
         } catch (error) {
             console.error("Error selecting walk:", error);
             alert("Failed to select walk.");
@@ -228,11 +217,11 @@ const Walk = () => {
                 </h2>
                 <p className="text-gray-600">Date: {walk.date}</p>
                 <p className="text-gray-600">Time: {timeSlot}</p>
-                <p className="text-gray-600">Available Slots: {walk.availableSlots}</p>
+                {/* Available Slots removed */}
 
                 <div className="flex gap-2 mt-2">
                     {user?.id !== walk.marshall?._id && (
-                        walk.availableSlots > 0 && !walk.selectedByUser ? (
+                        !walk.selectedByUser ? (
                         <button
                             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                             onClick={() => handleSelectWalk(walk._id, timeSlot)}
@@ -244,7 +233,7 @@ const Walk = () => {
                             className="px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed"
                             disabled
                         >
-                            {walk.selectedByUser ? "Already Selected" : "No Available Slots"}
+                            Already Selected
                         </button>
                         )
                     )}
