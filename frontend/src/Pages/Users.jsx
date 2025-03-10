@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Users = () => {
     const [users, setUsers] = useState([]);
@@ -19,6 +21,10 @@ const Users = () => {
                 fetchUsers();
             } catch (error) {
                 console.error("Failed to decode token:", error);
+                toast.error("Invalid token. Please log in again.", {
+                    position: "top-center",
+                    autoClose: 3000
+                });
             }
         }
     }, [token]);
@@ -32,6 +38,10 @@ const Users = () => {
             setFilteredUsers(response.data);
         } catch (error) {
             console.error("Error fetching users:", error);
+            toast.error("Failed to fetch users. Please try again later.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
 
@@ -43,18 +53,31 @@ const Users = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setUsers((prevUsers) =>
-                prevUsers.map((u) => (u._id === userId ? { ...u, role: newRole } : u))
+            const updatedUsers = users.map((u) =>
+                u._id === userId ? { ...u, role: newRole } : u
             );
-            filterUsers(searchTerm); // Update filtered users after role change
+
+            setUsers(updatedUsers);
+            setFilteredUsers(updatedUsers); // Update filtered users immediately after role change
+            toast.success(`User role updated to ${newRole}`, {
+                position: "top-center",
+                autoClose: 2000
+            });
         } catch (error) {
             console.error("Error updating role:", error);
+            toast.error("Failed to update user role.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
 
     const handleDeleteUser = async (userId, role) => {
         if (role === "admin") {
-            alert("You cannot delete another admin.");
+            toast.error("You cannot delete another admin.", {
+                position: "top-center",
+                autoClose: 3000
+            });
             return;
         }
     
@@ -70,10 +93,16 @@ const Users = () => {
             setUsers(updatedUsers);
             setFilteredUsers(updatedUsers); // <-- Ensure filtered list updates too
     
-            alert("User deleted successfully.");
+            toast.success("User deleted successfully.", {
+                position: "top-center",
+                autoClose: 2000
+            });
         } catch (error) {
             console.error("Error deleting user:", error);
-            alert("Failed to delete user.");
+            toast.error("Failed to delete user.", {
+                position: "top-center",
+                autoClose: 3000
+            });
         }
     };
 
@@ -106,10 +135,11 @@ const Users = () => {
 
     return (
         <div className="p-6">
+            <ToastContainer />
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">All Users</h1>
 
-                {/* 🔍 Search Bar */}
+                {/* Search Bar */}
                 <div className="relative">
                     <input
                         type="text"
@@ -135,7 +165,7 @@ const Users = () => {
                 </div>
             </div>
 
-            {/* 📊 Users Table */}
+            {/* Users Table */}
             <div className="overflow-x-auto">
                 <table className="min-w-full bg-white border border-gray-300 rounded-lg">
                     <thead>
@@ -205,7 +235,7 @@ const Users = () => {
                 </table>
             </div>
 
-            {/* 📄 Pagination */}
+            {/*  Pagination */}
             {totalPages > 1 && (
                 <div className="flex justify-center mt-4 space-x-2">
                     {Array.from({ length: totalPages }, (_, i) => (

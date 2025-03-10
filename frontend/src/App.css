@@ -1,18 +1,144 @@
 @import "tailwindcss";
-.custom-calendar {
-    width: 100% !important;
-    max-width: 500px !important; /* Adjust as needed */
-    background-color: rgb(92, 68, 68);
-    border-radius: 8px; /* Smooth rounded corners */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-    padding: 10px;
-    border: 1px solid #d1d5db; /* Light gray border */
+
+
+.calendar-container {
+    padding: 24px 10px;
+    margin : 20px;
+    margin-bottom: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f3f4f6;
+    border: 2px solid black;
 }
 
-.react-calendar {
-    width: 100% !important;
-    max-width: 500px !important; /* Keep it clean and responsive */
-    font-family: "Poppins", sans-serif;
+.calendar-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 16px;
+    color: #4a148c;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.5rem;
+    color: #740bf4;
+}
+
+.fc-button {
+    background-color: #7e22ce;
     border: none;
+    color: white;
 }
 
+.fc-button:hover {
+    background-color: #6a1b9a;
+    text-decoration: none;
+}
+
+.fc-daygrid-day {
+    cursor: pointer;
+}
+
+.fc-day-today {
+    background-color: #35a540 !important;
+    border-radius: 4px;
+}
+
+.fc-event {
+    background-color: #7e22ce !important;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+/* Change calendar dates to black */
+.fc-daygrid-day-number, 
+.fc-col-header-cell-cushion {
+    text-decoration: none !important;
+    color: black !important;
+    font-weight: 500;
+}
+
+.form-container {
+    margin-top: 20px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: #f9fafb;
+    max-width: 500px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.add-time-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.form-input {
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.form-button {
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #7e22ce;
+    color: white;
+    cursor: pointer;
+}
+
+.form-button.small-button {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.form-button:hover {
+    background-color: #6a1b9a;
+}
+
+@media (min-width: 600px) {
+    .add-time-form {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 768px) {
+    .fc .fc-toolbar-title {
+        font-size: 1rem;
+    }
+
+    .fc-button {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+
+    .fc-event {
+        padding: 2px 6px;
+        font-size: 0.65rem;
+    }
+
+    .calendar-container {
+        padding: 12px;
+    }
+}
+ .fc-daygrid-day.has-available-time::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    background-color: #4caf50;
+    border-radius: 50%;
+}
