@@ -25,9 +25,6 @@ const walkLogSchema = new mongoose.Schema({
   dogs: [{ 
     type: String 
   }],
-  notes: { 
-    type: String 
-  },
   status: { 
     type: String, 
     enum: ['pending', 'completed'], 

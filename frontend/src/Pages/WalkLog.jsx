@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+// Import print icon from a popular icon library like Font Awesome or use inline SVG
+import { FaPrint } from "react-icons/fa"; // Make sure to install react-icons with: npm install react-icons
 
 const WalkLog = () => {
     const [user, setUser] = useState(null);
     const [walkLogs, setWalkLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedDogs, setSelectedDogs] = useState({});
-    const [notes, setNotes] = useState({});
-    const [availableDogs, setAvailableDogs] = useState([
-        "Max", "Bella", "Charlie", "Lucy", "Cooper", "Luna", 
-        "Buddy", "Daisy", "Rocky", "Sadie", "Milo", "Bailey"
-    ]);
+    const [availableDogs, setAvailableDogs] = useState([]);
+    // Reference to the printable content
+    const printRef = useRef();
 
     const token = localStorage.getItem("token");
 
@@ -23,12 +23,33 @@ const WalkLog = () => {
                 const decodedToken = jwtDecode(token);
                 setUser(decodedToken);
                 fetchWalkLogs(decodedToken.id, decodedToken.role);
+                fetchDogs();
             } catch (error) {
                 console.error("Failed to decode token:", error);
                 toast.error("Authentication error. Please login again.");
             }
         }
     }, [token]);
+
+    const fetchDogs = async () => {
+        try {
+            // Fetch dogs data
+            const response = await axios.get("http://localhost:3000/dogs");
+            
+            // Extract just the dog names from the dog objects
+            const dogNames = response.data.map(dog => dog.name);
+            setAvailableDogs(dogNames);
+        } catch (error) {
+            console.error("Error fetching dogs:", error);
+            toast.error("Failed to fetch dogs");
+            
+            // Fallback to hardcoded dogs if fetching fails
+            setAvailableDogs([
+                "Max", "Bella", "Charlie", "Lucy", "Cooper", "Luna", 
+                "Buddy", "Daisy", "Rocky", "Sadie", "Milo", "Bailey"
+            ]);
+        }
+    };
 
     const fetchWalkLogs = async (userId, role) => {
         try {
@@ -43,16 +64,13 @@ const WalkLog = () => {
             
             setWalkLogs(response.data);
             
-            // Initialize selected dogs and notes for each log
+            // Initialize selected dogs for each log
             const dogsObj = {};
-            const notesObj = {};
             response.data.forEach(log => {
                 dogsObj[log._id] = log.dogs || [];
-                notesObj[log._id] = log.notes || '';
             });
             
             setSelectedDogs(dogsObj);
-            setNotes(notesObj);
             setLoading(false);
         } catch (error) {
             console.error("Error fetching walk logs:", error);
@@ -76,15 +94,10 @@ const WalkLog = () => {
         });
     };
 
-    const handleNotesChange = (logId, value) => {
-        setNotes(prev => ({ ...prev, [logId]: value }));
-    };
-
     const handleSubmit = async (logId) => {
         try {
             await axios.put(`http://localhost:3000/walks/logs/${logId}`, {
                 dogs: selectedDogs[logId],
-                notes: notes[logId],
                 status: 'completed'
             });
             
@@ -97,7 +110,6 @@ const WalkLog = () => {
                         ? { 
                             ...log, 
                             dogs: selectedDogs[logId], 
-                            notes: notes[logId], 
                             status: 'completed' 
                         } 
                         : log
@@ -109,17 +121,117 @@ const WalkLog = () => {
         }
     };
 
+    // Function to handle printing the report
+    const handlePrint = () => {
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank', 'height=600,width=800');
+        
+        // Generate the content to print - we'll create a simplified version of the table
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Walk Logs Report</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 20px;
+                    }
+                    h1 {
+                        color: #333;
+                        text-align: center;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+                    th, td {
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    th {
+                        background-color: #f2f2f2;
+                    }
+                    .completed {
+                        color: green;
+                        font-weight: bold;
+                    }
+                    .pending {
+                        color: orange;
+                        font-weight: bold;
+                    }
+                    .print-date {
+                        text-align: right;
+                        margin-bottom: 20px;
+                        font-style: italic;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Underdog Project - Walk Logs Report</h1>
+                <div class="print-date">Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Marshall</th>
+                            <th>Dogs</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${walkLogs.map(log => `
+                            <tr>
+                                <td>${log.date}</td>
+                                <td>${log.time}</td>
+                                <td>${log.userId ? `${log.userId.firstName} ${log.userId.lastName}` : "Unknown"}</td>
+                                <td>${log.marshallId ? `${log.marshallId.firstName} ${log.marshallId.lastName}` : "Unknown"}</td>
+                                <td>${Array.isArray(log.dogs) ? log.dogs.join(", ") : "None"}</td>
+                                <td class="${log.status === 'completed' ? 'completed' : 'pending'}">${log.status}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `);
+        
+        // Trigger print dialog
+        printWindow.document.close();
+        printWindow.focus();
+        // Wait a moment for content to load before printing
+        setTimeout(() => {
+            printWindow.print();
+            // Close the print window after printing (optional)
+            // printWindow.close();
+        }, 250);
+    };
+
     if (loading) return <div className="text-center p-8">Loading walk logs...</div>;
 
     return (
         <div className="container mx-auto p-6">
             <ToastContainer />
-            <h1 className="text-2xl font-bold mb-6">Walk Logs</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">Walk Logs</h1>
+                {user?.role === 'admin' && (
+                    <button 
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                    >
+                        <FaPrint /> Print Report
+                    </button>
+                )}
+            </div>
             
             {walkLogs.length === 0 ? (
                 <div className="text-gray-500">No walk logs available.</div>
             ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto" ref={printRef}>
                     <table className="min-w-full bg-white border border-gray-200">
                         <thead className="bg-gray-100">
                             <tr>
@@ -128,7 +240,6 @@ const WalkLog = () => {
                                 <th className="py-2 px-4 border">User</th>
                                 <th className="py-2 px-4 border">Marshall</th>
                                 <th className="py-2 px-4 border">Dogs</th>
-                                <th className="py-2 px-4 border">Notes</th>
                                 <th className="py-2 px-4 border">Status</th>
                                 {user?.role === 'Marshall' && (
                                     <th className="py-2 px-4 border">Actions</th>
@@ -164,19 +275,7 @@ const WalkLog = () => {
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div>{log.dogs?.join(", ") || "None"}</div>
-                                        )}
-                                    </td>
-                                    <td className="py-2 px-4 border">
-                                        {user?.role === 'Marshall' && log.status === 'pending' ? (
-                                            <textarea
-                                                value={notes[log._id] || ''}
-                                                onChange={(e) => handleNotesChange(log._id, e.target.value)}
-                                                className="w-full p-2 border rounded"
-                                                rows="2"
-                                            />
-                                        ) : (
-                                            log.notes || "No notes"
+                                            <div>{Array.isArray(log.dogs) ? log.dogs.join(", ") : "None"}</div>
                                         )}
                                     </td>
                                     <td className="py-2 px-4 border">

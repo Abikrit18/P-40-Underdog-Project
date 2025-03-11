@@ -118,7 +118,7 @@ router.post('/select-walk/:walkId', async (req, res) => {
     }
 });
 
-// Route to complete a walk
+// Route to complete a walk - remove notes references
 router.post('/complete/:walkId', async (req, res) => {
     try {
         const { userId } = req.body;
@@ -209,7 +209,7 @@ router.delete('/delete/:walkId', async (req, res) => {
 // Route to create a walk log entry
 router.post('/logs', async (req, res) => {
   try {
-    const { walkId, userId, marshallId, date, time, dogs, notes } = req.body;
+    const { walkId, userId, marshallId, date, time, dogs } = req.body;
 
     const walkLog = new WalkLog({
       walkId,
@@ -218,7 +218,6 @@ router.post('/logs', async (req, res) => {
       date,
       time,
       dogs,
-      notes,
       status: 'pending'
     });
 
@@ -263,7 +262,7 @@ router.get('/logs/marshall/:marshallId', async (req, res) => {
 // Route to update a walk log
 router.put('/logs/:logId', async (req, res) => {
   try {
-    const { dogs, notes, status } = req.body;
+    const { dogs, status } = req.body;
     
     const walkLog = await WalkLog.findById(req.params.logId);
     if (!walkLog) {
@@ -271,7 +270,6 @@ router.put('/logs/:logId', async (req, res) => {
     }
 
     if (dogs) walkLog.dogs = dogs;
-    if (notes) walkLog.notes = notes;
     if (status) walkLog.status = status;
 
     await walkLog.save();
