@@ -3,8 +3,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// Import print icon from a popular icon library like Font Awesome or use inline SVG
-import { FaPrint } from "react-icons/fa"; // Make sure to install react-icons with: npm install react-icons
+import { FaPrint } from "react-icons/fa"; 
 
 const WalkLog = () => {
     const [user, setUser] = useState(null);
@@ -12,7 +11,6 @@ const WalkLog = () => {
     const [loading, setLoading] = useState(true);
     const [selectedDogs, setSelectedDogs] = useState({});
     const [availableDogs, setAvailableDogs] = useState([]);
-    // Reference to the printable content
     const printRef = useRef();
 
     const token = localStorage.getItem("token");

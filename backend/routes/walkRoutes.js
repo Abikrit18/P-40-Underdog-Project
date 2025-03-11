@@ -204,7 +204,6 @@ router.delete('/delete/:walkId', async (req, res) => {
     }
 });
 
-// Add these new routes for walk logs
 
 // Route to create a walk log entry
 router.post('/logs', async (req, res) => {
