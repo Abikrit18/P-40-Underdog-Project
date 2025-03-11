@@ -17,6 +17,11 @@ const walkSchema = new mongoose.Schema({
   availableSlots: {
     type: Number,
     default: 4
+  },
+  status: { 
+    type: String, 
+    enum: ['available', 'scheduled'], 
+    default: 'available' 
   }
 }, { timestamps: true });
 

@@ -67,7 +67,7 @@ const Walk = () => {
             // Remove the walk from UI
             setAvailableTimesData(prevData => prevData.filter(walk => walk._id !== walkId));
     
-            alert("Walk successfully selected and card removed!");
+            alert("Walk successfully selected");
         } catch (error) {
             console.error("Error selecting walk:", error);
             alert("Failed to select walk.");
@@ -77,27 +77,17 @@ const Walk = () => {
     const fetchAvailableTimes = async () => {
         try {
             const response = await axios.get("http://localhost:3000/walks/available-times");
-            const userWalks = user?.id
-                ? await axios.get(`http://localhost:3000/users/profile/${user.id}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                })
-                : { data: { walks: [] } };
-
-            const updatedData = response.data.map((walk) => {
-            const isSelectedByUser = userWalks.data.walks.some((userWalk) => userWalk._id === walk._id && userWalk.time === walk.time);
-                return {
-                    ...walk,
-                    selectedByUser: isSelectedByUser
-                };
-            });
+    
+            const updatedData = response.data.map((walk) => ({
+                ...walk,
+                isSelectable: !walk.userid // Only selectable if not already assigned
+            }));
+    
             setAvailableTimesData(updatedData);
         } catch (error) {
             console.error("Error fetching available times:", error);
         }
     };
-
     useEffect(() => {
         fetchScheduledWalks();
         fetchAvailableTimes();
@@ -221,21 +211,13 @@ const Walk = () => {
 
                 <div className="flex gap-2 mt-2">
                     {user?.id !== walk.marshall?._id && (
-                        !walk.selectedByUser ? (
                         <button
-                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                            onClick={() => handleSelectWalk(walk._id, timeSlot)}
+                            className={`px-4 py-2 ${walk.isSelectable ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-md`}
+                            onClick={() => walk.isSelectable && handleSelectWalk(walk._id, timeSlot)}
+                            disabled={!walk.isSelectable}
                         >
-                            Select
+                            {walk.isSelectable ? 'Select' : 'Unavailable'}
                         </button>
-                        ) : (
-                        <button
-                            className="px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed"
-                            disabled
-                        >
-                            Already Selected
-                        </button>
-                        )
                     )}
                     {user?.id === walk.marshall?._id && (
                         <>

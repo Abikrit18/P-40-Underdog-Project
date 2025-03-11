@@ -31,6 +31,7 @@ router.post('/add-time', async (req, res) => {
                 walk.availableTimes.push(time);
             }
         }
+        walk.status = 'available';
 
         await walk.save();
 
@@ -96,6 +97,7 @@ router.post('/select-walk/:walkId', async (req, res) => {
 
         walk.userid = userId;
         walk.time = timeSlot;
+        walk.status = 'scheduled';
         walk.availableTimes = [];
         await walk.save();
 
