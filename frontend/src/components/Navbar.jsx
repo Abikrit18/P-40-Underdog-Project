@@ -99,9 +99,11 @@ export default function Navbar() {
         setUserRole(null);
         toast.success('Logged out successfully', {
             position: "top-center",
-            autoClose: 3000
+            autoClose: 1000,
+            onClose: () => {
+                window.location.href = "/login";
+            }
         });
-        navigate('/login');
     };
 
     return (
