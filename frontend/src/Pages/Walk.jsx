@@ -19,6 +19,7 @@ const Walk = () => {
     const [availableDate, setAvailableDate] = useState("");
     const [availableTime, setAvailableTime] = useState("");
     const [availableTimesData, setAvailableTimesData] = useState([]);
+    const [filteredWalks, setFilteredWalks] = useState([]);
 
     const token = localStorage.getItem("token");
 
@@ -83,7 +84,16 @@ const Walk = () => {
                 isSelectable: !walk.userid // Only selectable if not already assigned
             }));
     
-            setAvailableTimesData(updatedData);
+        setAvailableTimesData(updatedData);
+        
+        // Highlight dates with available walks
+        const availableTimeEvents = response.data.map((walk) => ({
+            date: walk.date,
+            display: 'background',
+            className: 'has-available-time'
+        }));
+
+        setEvents((prevEvents) => [...prevEvents, ...availableTimeEvents]);
         } catch (error) {
             console.error("Error fetching available times:", error);
         }
@@ -94,8 +104,12 @@ const Walk = () => {
     }, []);
 
     const handleDateClick = (arg) => {
-        setSelectedDate(arg.dateStr);
-        setAvailableDate(arg.dateStr); // Auto-set the form date field
+        const selected = arg.dateStr;
+        setSelectedDate(selected);
+        // Filter walks based on the selected date
+        const walksForDate = availableTimesData.filter((walk) => walk.date === selected);
+        setFilteredWalks(walksForDate);
+        setAvailableDate(selected); // Auto-set the form date field
     };
     // Removed handleAddTime function as modal functionality is removed.
 
@@ -199,7 +213,7 @@ const Walk = () => {
                 )}
             </div>
             <div className="mt-6 w-full flex flex-wrap gap-4 justify-start mb-10 px-4">
-    {availableTimesData.map((walk, index) =>
+            {filteredWalks.map((walk, index) =>
         walk.availableTimes.map((timeSlot, idx) => (
             <div key={`${index}-${idx}`} className="bg-white shadow-md rounded-lg p-4 border border-gray-300 w-[calc(33.333%-1rem)]">
                 <h2 className="text-lg font-semibold text-gray-800">
