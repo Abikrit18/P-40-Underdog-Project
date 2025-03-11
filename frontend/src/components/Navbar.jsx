@@ -139,6 +139,19 @@ export default function Navbar() {
                                                     {item.name}
                                                 </button>
                                             ))}
+                                            {(userRole === 'admin' || userRole === 'Marshall') && (
+                                                <button
+                                                    onClick={() => handleNavClick('Walk Logs', '/walk-logs')}
+                                                    className={classNames(
+                                                        activeNav === 'Walk Logs'
+                                                            ? 'text-white font-bold'
+                                                            : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]',
+                                                        'rounded-md px-3 py-2 text-sm font-medium text-decoration-none'
+                                                    )}
+                                                >
+                                                    Walk Logs
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

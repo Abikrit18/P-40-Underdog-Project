@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-// Removed moment dependency for date comparison
 const Walk = require('../models/walk'); // Import the Walk model
 const User = require('../models/User');
+const WalkLog = require('../models/WalkLog'); // Import the WalkLog model
 
 // Endpoint to add time for a walk
 router.post('/add-time', async (req, res) => {
@@ -122,22 +122,38 @@ router.post('/select-walk/:walkId', async (req, res) => {
 router.post('/complete/:walkId', async (req, res) => {
     try {
         const { userId } = req.body;
-        const walk = await Walk.findById(req.params.walkId);
+        const walk = await Walk.findById(req.params.walkId).populate('userid', 'firstName lastName');
         if (!walk) return res.status(404).json({ error: "Walk not found" });
 
         if (walk.userid.toString() !== userId && walk.marshall.toString() !== userId) {
             return res.status(403).json({ error: "Unauthorized to complete this walk" });
         }
 
+        // Create walk log entry
+        const walkLog = new WalkLog({
+            walkId: walk._id,
+            userId: walk.userid,
+            marshallId: walk.marshall,
+            date: walk.date,
+            time: walk.time,
+            status: 'pending'
+        });
+        await walkLog.save();
+
         // Increment total walks for both the user and the marshall
         await User.findByIdAndUpdate(walk.userid, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
         await User.findByIdAndUpdate(walk.marshall, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
+
+        // Remove walk from administrators' profiles
         await User.updateMany({ role: 'admin' }, { $pull: { walks: req.params.walkId } });
 
         // Remove walk from Walk collection
         await Walk.findByIdAndDelete(req.params.walkId);
 
-        res.status(200).json({ message: "Walk marked as completed and removed from all profiles" });
+        res.status(200).json({ 
+            message: "Walk marked as completed and log created",
+            logId: walkLog._id 
+        });
     } catch (error) {
         console.error("Error completing walk:", error);
         res.status(500).json({ error: "Failed to complete walk" });
@@ -186,6 +202,84 @@ router.delete('/delete/:walkId', async (req, res) => {
         console.error("Error removing walk from profile:", error);
         res.status(500).json({ error: "Failed to remove walk from profile" });
     }
+});
+
+// Add these new routes for walk logs
+
+// Route to create a walk log entry
+router.post('/logs', async (req, res) => {
+  try {
+    const { walkId, userId, marshallId, date, time, dogs, notes } = req.body;
+
+    const walkLog = new WalkLog({
+      walkId,
+      userId,
+      marshallId,
+      date,
+      time,
+      dogs,
+      notes,
+      status: 'pending'
+    });
+
+    await walkLog.save();
+    res.status(201).json({ message: 'Walk log created successfully', walkLog });
+  } catch (error) {
+    console.error('Error creating walk log:', error);
+    res.status(500).json({ error: 'Failed to create walk log' });
+  }
+});
+
+// Route to get all walk logs
+router.get('/logs', async (req, res) => {
+  try {
+    const walkLogs = await WalkLog.find()
+      .populate('userId', 'firstName lastName')
+      .populate('marshallId', 'firstName lastName')
+      .sort({ date: -1 });
+    
+    res.status(200).json(walkLogs);
+  } catch (error) {
+    console.error('Error fetching walk logs:', error);
+    res.status(500).json({ error: 'Failed to fetch walk logs' });
+  }
+});
+
+// Route to get logs by marshall ID
+router.get('/logs/marshall/:marshallId', async (req, res) => {
+  try {
+    const walkLogs = await WalkLog.find({ marshallId: req.params.marshallId })
+      .populate('userId', 'firstName lastName')
+      .populate('marshallId', 'firstName lastName')
+      .sort({ date: -1 });
+    
+    res.status(200).json(walkLogs);
+  } catch (error) {
+    console.error('Error fetching marshall walk logs:', error);
+    res.status(500).json({ error: 'Failed to fetch walk logs' });
+  }
+});
+
+// Route to update a walk log
+router.put('/logs/:logId', async (req, res) => {
+  try {
+    const { dogs, notes, status } = req.body;
+    
+    const walkLog = await WalkLog.findById(req.params.logId);
+    if (!walkLog) {
+      return res.status(404).json({ error: 'Walk log not found' });
+    }
+
+    if (dogs) walkLog.dogs = dogs;
+    if (notes) walkLog.notes = notes;
+    if (status) walkLog.status = status;
+
+    await walkLog.save();
+    res.status(200).json({ message: 'Walk log updated successfully', walkLog });
+  } catch (error) {
+    console.error('Error updating walk log:', error);
+    res.status(500).json({ error: 'Failed to update walk log' });
+  }
 });
 
 module.exports = router;
