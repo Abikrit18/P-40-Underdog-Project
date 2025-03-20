@@ -132,6 +132,7 @@
     }
 }
  .fc-daygrid-day.has-available-time::after {
+<<<<<<< HEAD
     content: '';
     position: absolute;
     bottom: 4px;
@@ -140,5 +141,15 @@
     width: 6px;
     height: 6px;
     background-color: #4caf50;
+=======
+    content: '✔';
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    font-size: 12px;
+    color: green;
+    background-color: #e0f2f1;
+    padding: 2px;
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
     border-radius: 50%;
 }

@@ -19,6 +19,10 @@ const Walk = () => {
     const [availableDate, setAvailableDate] = useState("");
     const [availableTime, setAvailableTime] = useState("");
     const [availableTimesData, setAvailableTimesData] = useState([]);
+<<<<<<< HEAD
+=======
+    const [filteredWalks, setFilteredWalks] = useState([]);
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
 
     const token = localStorage.getItem("token");
 
@@ -63,6 +67,7 @@ const Walk = () => {
                 userId: user.id,
                 timeSlot,
             });
+<<<<<<< HEAD
 
             // Update local state to disable the select button for this user
             setAvailableTimesData(prevData =>
@@ -79,6 +84,13 @@ const Walk = () => {
             );
 
             alert("Walk successfully selected!");
+=======
+    
+            // Remove the walk from UI
+            setAvailableTimesData(prevData => prevData.filter(walk => walk._id !== walkId));
+    
+            alert("Walk successfully selected");
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
         } catch (error) {
             console.error("Error selecting walk:", error);
             alert("Failed to select walk.");
@@ -88,6 +100,7 @@ const Walk = () => {
     const fetchAvailableTimes = async () => {
         try {
             const response = await axios.get("http://localhost:3000/walks/available-times");
+<<<<<<< HEAD
             const userWalks = user?.id
                 ? await axios.get(`http://localhost:3000/users/profile/${user.id}`, {
                     headers: {
@@ -104,19 +117,49 @@ const Walk = () => {
                 };
             });
             setAvailableTimesData(updatedData);
+=======
+    
+            const updatedData = response.data.map((walk) => ({
+                ...walk,
+                isSelectable: !walk.userid // Only selectable if not already assigned
+            }));
+    
+        setAvailableTimesData(updatedData);
+        
+        // Highlight dates with available walks
+        const availableTimeEvents = response.data.map((walk) => ({
+            date: walk.date,
+            display: 'background',
+            className: 'has-available-time'
+        }));
+
+        setEvents((prevEvents) => [...prevEvents, ...availableTimeEvents]);
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
         } catch (error) {
             console.error("Error fetching available times:", error);
         }
     };
+<<<<<<< HEAD
 
+=======
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
     useEffect(() => {
         fetchScheduledWalks();
         fetchAvailableTimes();
     }, []);
 
     const handleDateClick = (arg) => {
+<<<<<<< HEAD
         setSelectedDate(arg.dateStr);
         setAvailableDate(arg.dateStr); // Auto-set the form date field
+=======
+        const selected = arg.dateStr;
+        setSelectedDate(selected);
+        // Filter walks based on the selected date
+        const walksForDate = availableTimesData.filter((walk) => walk.date === selected);
+        setFilteredWalks(walksForDate);
+        setAvailableDate(selected); // Auto-set the form date field
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
     };
     // Removed handleAddTime function as modal functionality is removed.
 
@@ -220,7 +263,11 @@ const Walk = () => {
                 )}
             </div>
             <div className="mt-6 w-full flex flex-wrap gap-4 justify-start mb-10 px-4">
+<<<<<<< HEAD
     {availableTimesData.map((walk, index) =>
+=======
+            {filteredWalks.map((walk, index) =>
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
         walk.availableTimes.map((timeSlot, idx) => (
             <div key={`${index}-${idx}`} className="bg-white shadow-md rounded-lg p-4 border border-gray-300 w-[calc(33.333%-1rem)]">
                 <h2 className="text-lg font-semibold text-gray-800">
@@ -228,6 +275,7 @@ const Walk = () => {
                 </h2>
                 <p className="text-gray-600">Date: {walk.date}</p>
                 <p className="text-gray-600">Time: {timeSlot}</p>
+<<<<<<< HEAD
                 <p className="text-gray-600">Available Slots: {walk.availableSlots}</p>
 
                 <div className="flex gap-2 mt-2">
@@ -247,6 +295,19 @@ const Walk = () => {
                             {walk.selectedByUser ? "Already Selected" : "No Available Slots"}
                         </button>
                         )
+=======
+                {/* Available Slots removed */}
+
+                <div className="flex gap-2 mt-2">
+                    {user?.id !== walk.marshall?._id && (
+                        <button
+                            className={`px-4 py-2 ${walk.isSelectable ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-md`}
+                            onClick={() => walk.isSelectable && handleSelectWalk(walk._id, timeSlot)}
+                            disabled={!walk.isSelectable}
+                        >
+                            {walk.isSelectable ? 'Select' : 'Unavailable'}
+                        </button>
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
                     )}
                     {user?.id === walk.marshall?._id && (
                         <>

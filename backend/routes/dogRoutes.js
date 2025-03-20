@@ -51,6 +51,19 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Add a route to get all dog names
+router.get('/names', async (req, res) => {
+  try {
+    // Assuming your dog model has a name field
+    const dogs = await Dog.find({}, 'name');
+    const dogNames = dogs.map(dog => dog.name);
+    res.status(200).json(dogNames);
+  } catch (error) {
+    console.error('Error fetching dog names:', error);
+    res.status(500).json({ error: 'Failed to fetch dog names' });
+  }
+});
+
 // POST: Add a new dog (admin only)
 router.post('/', verifyToken, async (req, res) => {
   try {

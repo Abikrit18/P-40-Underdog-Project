@@ -3,6 +3,10 @@ const router = express.Router();
 // Removed moment dependency for date comparison
 const Walk = require('../models/walk'); // Import the Walk model
 const User = require('../models/User');
+<<<<<<< HEAD
+=======
+const WalkLog = require('../models/WalkLog'); // Import the WalkLog model
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
 
 // Endpoint to add time for a walk
 router.post('/add-time', async (req, res) => {
@@ -31,6 +35,10 @@ router.post('/add-time', async (req, res) => {
                 walk.availableTimes.push(time);
             }
         }
+<<<<<<< HEAD
+=======
+        walk.status = 'available';
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
 
         await walk.save();
 
@@ -79,22 +87,71 @@ router.put('/update-time/:walkId', async (req, res) => {
     }
 });
 
+<<<<<<< HEAD
 // Route to mark a walk as completed
+=======
+// Route to select a walk
+router.post('/select-walk/:walkId', async (req, res) => {
+    try {
+        const { walkId } = req.params;
+        const { userId, timeSlot } = req.body;
+
+        const walk = await Walk.findById(walkId);
+        if (!walk || !walk.availableTimes.includes(timeSlot)) {
+            return res.status(400).json({ error: "Time slot does not exist for this walk" });
+        }
+
+        if (walk.userid) {
+            return res.status(400).json({ error: "This walk has already been selected by another user." });
+        }
+
+        walk.userid = userId;
+        walk.time = timeSlot;
+        walk.status = 'scheduled';
+        walk.availableTimes = [];
+        await walk.save();
+
+        const user = await User.findById(userId);
+        user.walks.push(walkId);
+        await user.save();
+
+        const marshall = await User.findById(walk.marshall);
+        if (!marshall.walks.includes(walkId)) {
+            marshall.walks.push(walkId);
+            await marshall.save();
+        }
+
+        res.status(200).json({ message: "Walk successfully selected and hidden from user profiles", walk });
+    } catch (error) {
+        console.error("Error selecting walk:", error);
+        res.status(500).json({ error: "Failed to select walk" });
+    }
+});
+
+// Route to complete a walk - remove notes references
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
 router.post('/complete/:walkId', async (req, res) => {
     try {
         const { userId } = req.body;
-        const walk = await Walk.findById(req.params.walkId);
+        const walk = await Walk.findById(req.params.walkId).populate('userid', 'firstName lastName');
         if (!walk) return res.status(404).json({ error: "Walk not found" });
 
-        // Check if the user completing the walk is either the scheduled user or the Marshall
         if (walk.userid.toString() !== userId && walk.marshall.toString() !== userId) {
             return res.status(403).json({ error: "Unauthorized to complete this walk" });
         }
 
-        // Increment total walks for both user and Marshall
-        await User.findByIdAndUpdate(walk.userid, { $inc: { totalWalks: 1 } });
-        await User.findByIdAndUpdate(walk.marshall, { $inc: { totalWalks: 1 } });
+        // Create walk log entry
+        const walkLog = new WalkLog({
+            walkId: walk._id,
+            userId: walk.userid,
+            marshallId: walk.marshall,
+            date: walk.date,
+            time: walk.time,
+            status: 'pending'
+        });
+        await walkLog.save();
 
+<<<<<<< HEAD
         // Remove walk from user's, marshall's, and admin's scheduled walks
         await User.updateMany(
             { $or: [{ _id: walk.userid }, { _id: walk.marshall }, { role: 'admin' }] },
@@ -105,8 +162,22 @@ router.post('/complete/:walkId', async (req, res) => {
         walk.userid = null;
         walk.time = null;
         await walk.save();
+=======
+        // Increment total walks for both the user and the marshall
+        await User.findByIdAndUpdate(walk.userid, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
+        await User.findByIdAndUpdate(walk.marshall, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
 
-        res.status(200).json({ message: "Walk marked as completed" });
+        // Remove walk from administrators' profiles
+        await User.updateMany({ role: 'admin' }, { $pull: { walks: req.params.walkId } });
+
+        // Remove walk from Walk collection
+        await Walk.findByIdAndDelete(req.params.walkId);
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
+
+        res.status(200).json({ 
+            message: "Walk marked as completed and log created",
+            logId: walkLog._id 
+        });
     } catch (error) {
         console.error("Error completing walk:", error);
         res.status(500).json({ error: "Failed to complete walk" });
@@ -154,6 +225,7 @@ router.delete('/delete/:walkId', async (req, res) => {
     } catch (error) {
         console.error("Error removing walk from profile:", error);
         res.status(500).json({ error: "Failed to remove walk from profile" });
+<<<<<<< HEAD
     }
 });
 
@@ -199,7 +271,84 @@ router.post('/select-walk/:walkId', async (req, res) => {
     } catch (error) {
         console.error("Error selecting walk:", error);
         res.status(500).json({ error: "Failed to select walk" });
+=======
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
     }
+});
+
+
+// Route to create a walk log entry
+router.post('/logs', async (req, res) => {
+  try {
+    const { walkId, userId, marshallId, date, time, dogs } = req.body;
+
+    const walkLog = new WalkLog({
+      walkId,
+      userId,
+      marshallId,
+      date,
+      time,
+      dogs,
+      status: 'pending'
+    });
+
+    await walkLog.save();
+    res.status(201).json({ message: 'Walk log created successfully', walkLog });
+  } catch (error) {
+    console.error('Error creating walk log:', error);
+    res.status(500).json({ error: 'Failed to create walk log' });
+  }
+});
+
+// Route to get all walk logs
+router.get('/logs', async (req, res) => {
+  try {
+    const walkLogs = await WalkLog.find()
+      .populate('userId', 'firstName lastName')
+      .populate('marshallId', 'firstName lastName')
+      .sort({ date: -1 });
+    
+    res.status(200).json(walkLogs);
+  } catch (error) {
+    console.error('Error fetching walk logs:', error);
+    res.status(500).json({ error: 'Failed to fetch walk logs' });
+  }
+});
+
+// Route to get logs by marshall ID
+router.get('/logs/marshall/:marshallId', async (req, res) => {
+  try {
+    const walkLogs = await WalkLog.find({ marshallId: req.params.marshallId })
+      .populate('userId', 'firstName lastName')
+      .populate('marshallId', 'firstName lastName')
+      .sort({ date: -1 });
+    
+    res.status(200).json(walkLogs);
+  } catch (error) {
+    console.error('Error fetching marshall walk logs:', error);
+    res.status(500).json({ error: 'Failed to fetch walk logs' });
+  }
+});
+
+// Route to update a walk log
+router.put('/logs/:logId', async (req, res) => {
+  try {
+    const { dogs, status } = req.body;
+    
+    const walkLog = await WalkLog.findById(req.params.logId);
+    if (!walkLog) {
+      return res.status(404).json({ error: 'Walk log not found' });
+    }
+
+    if (dogs) walkLog.dogs = dogs;
+    if (status) walkLog.status = status;
+
+    await walkLog.save();
+    res.status(200).json({ message: 'Walk log updated successfully', walkLog });
+  } catch (error) {
+    console.error('Error updating walk log:', error);
+    res.status(500).json({ error: 'Failed to update walk log' });
+  }
 });
 
 module.exports = router;

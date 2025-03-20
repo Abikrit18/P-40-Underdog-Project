@@ -82,6 +82,7 @@ const Profile = () => {
 
         try {
         await axios.delete(`http://localhost:3000/walks/delete/${walkId}`, {
+<<<<<<< HEAD
                 data: { userId: user._id },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -90,6 +91,17 @@ const Profile = () => {
                 autoClose: 2000
             });
             fetchUserDetails(user._id);
+=======
+            data: { userId: user._id },
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        // Immediately update UI by removing the deleted walk
+        setScheduledWalks(prevWalks => prevWalks.filter(walk => walk._id !== walkId));
+        toast.success("Walk card successfully removed from profile and deleted.", {
+            position: "top-center",
+            autoClose: 2000
+        });
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
         } catch (error) {
             console.error("Error deleting walk:", error);
             toast.error("Failed to delete walk. Please try again.", {

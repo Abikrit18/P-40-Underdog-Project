@@ -99,9 +99,17 @@ export default function Navbar() {
         setUserRole(null);
         toast.success('Logged out successfully', {
             position: "top-center",
+<<<<<<< HEAD
             autoClose: 3000
         });
         navigate('/login');
+=======
+            autoClose: 1000,
+            onClose: () => {
+                window.location.href = "/login";
+            }
+        });
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
     };
 
     return (
@@ -139,6 +147,22 @@ export default function Navbar() {
                                                     {item.name}
                                                 </button>
                                             ))}
+<<<<<<< HEAD
+=======
+                                            {(userRole === 'admin' || userRole === 'Marshall') && (
+                                                <button
+                                                    onClick={() => handleNavClick('Walk Logs', '/walk-logs')}
+                                                    className={classNames(
+                                                        activeNav === 'Walk Logs'
+                                                            ? 'text-white font-bold'
+                                                            : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]',
+                                                        'rounded-md px-3 py-2 text-sm font-medium text-decoration-none'
+                                                    )}
+                                                >
+                                                    Walk Logs
+                                                </button>
+                                            )}
+>>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
                                         </div>
                                     </div>
                                 </div>
