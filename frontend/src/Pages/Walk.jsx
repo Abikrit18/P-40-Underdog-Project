@@ -224,10 +224,10 @@ const Walk = () => {
                     </Link>
                 </div>
             )}
-            <div className="mt-6 w-full flex flex-wrap gap-4 justify-start mb-10 px-4">
+            <div className="mt-10 mb-16 px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredWalks.map((walk, index) =>
         walk.availableTimes.map((timeSlot, idx) => (
-            <div key={`${index}-${idx}`} className="bg-white shadow-md rounded-lg p-4 border border-gray-300 w-[calc(33.333%-1rem)]">
+            <div key={`${index}-${idx}`} className="bg-white shadow-md rounded-lg p-6 border border-gray-300 flex flex-col justify-between">
                 <h2 className="text-lg font-semibold text-gray-800">
                     Marshall: {walk.marshall?.firstName || "Unknown"}
                 </h2>

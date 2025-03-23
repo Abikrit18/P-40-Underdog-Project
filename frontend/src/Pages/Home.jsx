@@ -1,7 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
+  const [user, setUser] = useState(null);
+  const [scheduledWalks, setScheduledWalks] = useState([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        axios.get(`http://localhost:3000/users/profile/${decoded.id}`)
+          .then((res) => {
+            setUser(res.data);
+            setScheduledWalks(res.data.walks || []);
+          })
+          .catch((err) => console.error("Error fetching user profile:", err));
+      } catch (error) {
+        console.error("Failed to decode token:", error);
+      }
+    }
+  }, []);
+
   return (
     <div className="flex flex-col items-center">
       {/* Hero Section */}
@@ -24,6 +46,25 @@ const Home = () => {
           </div>
         </div>
       </div>
+      
+      {/* Upcoming Walks Card */}
+      {user && scheduledWalks.length > 0 && (
+        <div className="w-full bg-yellow-50 py-10">
+          <div className="max-w-6xl mx-auto px-6">
+            <h2 className="text-2xl font-bold text-center mb-6">Your Upcoming Walks</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {scheduledWalks.map((walk) => (
+                <div key={walk._id} className="p-6 bg-white border border-gray-300 rounded-lg shadow-md flex flex-col gap-2">
+                  <p className="text-gray-800"><strong>Date:</strong> {walk.date}</p>
+                  <p className="text-gray-800"><strong>Time:</strong> {walk.time}</p>
+                  <p className="text-gray-800"><strong>Marshall:</strong> {walk.marshall?.firstName || "Unknown"}</p>
+                  <p className="text-gray-800"><strong>Scheduled By:</strong> {walk.userid?.firstName || "Unknown"}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mission Statement */}
       <div className="max-w-4xl mx-auto px-6 py-12 text-center">
