@@ -15,7 +15,6 @@ const Walk = () => {
     const [user, setUser] = useState();
     const [events, setEvents] = useState([]);
     const [selectedDate, setSelectedDate] = useState("");
-    const [time, setTime] = useState("");
     const [availableDate, setAvailableDate] = useState("");
     const [availableTime, setAvailableTime] = useState("");
     const [availableTimesData, setAvailableTimesData] = useState([]);
@@ -60,15 +59,22 @@ const Walk = () => {
 
     const handleSelectWalk = async (walkId, timeSlot) => {
         try {
+            // Check waiver status
+        const waiverResponse = await axios.get(`http://localhost:3000/users/profile/${user.id}`);
+        if (!waiverResponse.data.waiverSigned) {
+            alert("You must sign the waiver before scheduling a walk.");
+            navigate("/waiver");
+            return;
+        }
+
+            // Proceed to select the walk if waiver is signed
             await axios.post(`http://localhost:3000/walks/select-walk/${walkId}`, {
                 userId: user.id,
                 timeSlot,
             });
-    
-            // Remove the walk from UI
+
             setAvailableTimesData(prevData => prevData.filter(walk => walk._id !== walkId));
-    
-            alert("Walk successfully selected");
+            alert("Walk successfully selected!");
         } catch (error) {
             console.error("Error selecting walk:", error);
             alert("Failed to select walk.");
@@ -79,12 +85,7 @@ const Walk = () => {
         try {
             const response = await axios.get("http://localhost:3000/walks/available-times");
     
-            const updatedData = response.data.map((walk) => ({
-                ...walk,
-                isSelectable: !walk.userid // Only selectable if not already assigned
-            }));
-    
-        setAvailableTimesData(updatedData);
+            setAvailableTimesData(response.data);
         
         // Highlight dates with available walks
         const availableTimeEvents = response.data.map((walk) => ({
@@ -212,6 +213,17 @@ const Walk = () => {
                     </div>
                 )}
             </div>
+            {user?.totalWalks === 0 && !user?.waiverSigned && (
+                <div className="mt-4">
+                    <p className="text-red-500 font-medium">You must sign the waiver before scheduling a walk.</p>
+                    <Link
+                        to="/waiver"
+                        className="mt-2 inline-block px-4 py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600"
+                    >
+                        Sign Waiver
+                    </Link>
+                </div>
+            )}
             <div className="mt-6 w-full flex flex-wrap gap-4 justify-start mb-10 px-4">
             {filteredWalks.map((walk, index) =>
         walk.availableTimes.map((timeSlot, idx) => (
@@ -226,11 +238,10 @@ const Walk = () => {
                 <div className="flex gap-2 mt-2">
                     {user?.id !== walk.marshall?._id && (
                         <button
-                            className={`px-4 py-2 ${walk.isSelectable ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-md`}
-                            onClick={() => walk.isSelectable && handleSelectWalk(walk._id, timeSlot)}
-                            disabled={!walk.isSelectable}
+                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md"
+                            onClick={() => handleSelectWalk(walk._id, timeSlot)}
                         >
-                            {walk.isSelectable ? 'Select' : 'Unavailable'}
+                            Select
                         </button>
                     )}
                     {user?.id === walk.marshall?._id && (
