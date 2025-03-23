@@ -8,6 +8,30 @@ router.post('/login', loginUser);
 router.get('/', getUsers);
 router.get('/profile/:id', userProfile);
 
+router.post('/waiver/sign', async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required." });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Update the waiverSigned field to true
+        user.waiverSigned = true;
+        await user.save();
+
+        res.status(200).json({ message: "Waiver signed successfully!" });
+    } catch (error) {
+        console.error("Error signing waiver:", error);
+        res.status(500).json({ message: "Failed to sign waiver. Please try again later." });
+    }
+});
+
 router.put('/:id/role', async (req, res) => {
     try {
         const { role } = req.body;
@@ -46,3 +70,14 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+router.get('/waiver/status/:userId', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId);
+        if (!user) return res.status(404).json({ message: "User not found." });
+
+        res.status(200).json({ signed: user.waiverSigned });
+    } catch (error) {
+        console.error("Error fetching waiver status:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+});

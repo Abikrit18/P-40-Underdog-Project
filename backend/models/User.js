@@ -24,7 +24,17 @@ const userSchema = new mongoose.Schema({
         default: "user"
     },
     walks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Walk' }],
-    totalWalks: { type: Number, default: 0 } 
+    totalWalks: { type: Number, default: 0 },
+    waiverSigned: { type: Boolean, default: false }, 
 });
+
+userSchema.methods.hasSignedWaiver = function() {
+    return this.waiverSigned;
+};
+
+userSchema.methods.signWaiver = function() {
+    this.waiverSigned = true;
+    return this.save();
+};
 
 module.exports = mongoose.model('User', userSchema);

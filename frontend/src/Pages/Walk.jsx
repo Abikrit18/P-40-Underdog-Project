@@ -15,14 +15,10 @@ const Walk = () => {
     const [user, setUser] = useState();
     const [events, setEvents] = useState([]);
     const [selectedDate, setSelectedDate] = useState("");
-    const [time, setTime] = useState("");
     const [availableDate, setAvailableDate] = useState("");
     const [availableTime, setAvailableTime] = useState("");
     const [availableTimesData, setAvailableTimesData] = useState([]);
-<<<<<<< HEAD
-=======
     const [filteredWalks, setFilteredWalks] = useState([]);
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
 
     const token = localStorage.getItem("token");
 
@@ -63,34 +59,22 @@ const Walk = () => {
 
     const handleSelectWalk = async (walkId, timeSlot) => {
         try {
+            // Check waiver status
+        const waiverResponse = await axios.get(`http://localhost:3000/users/profile/${user.id}`);
+        if (!waiverResponse.data.waiverSigned) {
+            alert("You must sign the waiver before scheduling a walk.");
+            navigate("/waiver");
+            return;
+        }
+
+            // Proceed to select the walk if waiver is signed
             await axios.post(`http://localhost:3000/walks/select-walk/${walkId}`, {
                 userId: user.id,
                 timeSlot,
             });
-<<<<<<< HEAD
 
-            // Update local state to disable the select button for this user
-            setAvailableTimesData(prevData =>
-                prevData.map(walk => {
-                    if (walk._id === walkId) {
-                        return {
-                            ...walk,
-                            selectedByUser: true, // Mark this walk as selected by the user
-                            availableSlots: walk.availableSlots - 1,
-                        };
-                    }
-                    return walk;
-                })
-            );
-
-            alert("Walk successfully selected!");
-=======
-    
-            // Remove the walk from UI
             setAvailableTimesData(prevData => prevData.filter(walk => walk._id !== walkId));
-    
-            alert("Walk successfully selected");
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
+            alert("Walk successfully selected!");
         } catch (error) {
             console.error("Error selecting walk:", error);
             alert("Failed to select walk.");
@@ -100,31 +84,8 @@ const Walk = () => {
     const fetchAvailableTimes = async () => {
         try {
             const response = await axios.get("http://localhost:3000/walks/available-times");
-<<<<<<< HEAD
-            const userWalks = user?.id
-                ? await axios.get(`http://localhost:3000/users/profile/${user.id}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                })
-                : { data: { walks: [] } };
-
-            const updatedData = response.data.map((walk) => {
-            const isSelectedByUser = userWalks.data.walks.some((userWalk) => userWalk._id === walk._id && userWalk.time === walk.time);
-                return {
-                    ...walk,
-                    selectedByUser: isSelectedByUser
-                };
-            });
-            setAvailableTimesData(updatedData);
-=======
     
-            const updatedData = response.data.map((walk) => ({
-                ...walk,
-                isSelectable: !walk.userid // Only selectable if not already assigned
-            }));
-    
-        setAvailableTimesData(updatedData);
+            setAvailableTimesData(response.data);
         
         // Highlight dates with available walks
         const availableTimeEvents = response.data.map((walk) => ({
@@ -134,32 +95,22 @@ const Walk = () => {
         }));
 
         setEvents((prevEvents) => [...prevEvents, ...availableTimeEvents]);
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
         } catch (error) {
             console.error("Error fetching available times:", error);
         }
     };
-<<<<<<< HEAD
-
-=======
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
     useEffect(() => {
         fetchScheduledWalks();
         fetchAvailableTimes();
     }, []);
 
     const handleDateClick = (arg) => {
-<<<<<<< HEAD
-        setSelectedDate(arg.dateStr);
-        setAvailableDate(arg.dateStr); // Auto-set the form date field
-=======
         const selected = arg.dateStr;
         setSelectedDate(selected);
         // Filter walks based on the selected date
         const walksForDate = availableTimesData.filter((walk) => walk.date === selected);
         setFilteredWalks(walksForDate);
         setAvailableDate(selected); // Auto-set the form date field
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
     };
     // Removed handleAddTime function as modal functionality is removed.
 
@@ -262,52 +213,36 @@ const Walk = () => {
                     </div>
                 )}
             </div>
-            <div className="mt-6 w-full flex flex-wrap gap-4 justify-start mb-10 px-4">
-<<<<<<< HEAD
-    {availableTimesData.map((walk, index) =>
-=======
+            {user?.totalWalks === 0 && !user?.waiverSigned && (
+                <div className="mt-4">
+                    <p className="text-red-500 font-medium">You must sign the waiver before scheduling a walk.</p>
+                    <Link
+                        to="/waiver"
+                        className="mt-2 inline-block px-4 py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600"
+                    >
+                        Sign Waiver
+                    </Link>
+                </div>
+            )}
+            <div className="mt-10 mb-16 px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredWalks.map((walk, index) =>
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
         walk.availableTimes.map((timeSlot, idx) => (
-            <div key={`${index}-${idx}`} className="bg-white shadow-md rounded-lg p-4 border border-gray-300 w-[calc(33.333%-1rem)]">
+            <div key={`${index}-${idx}`} className="bg-white shadow-md rounded-lg p-6 border border-gray-300 flex flex-col justify-between">
                 <h2 className="text-lg font-semibold text-gray-800">
                     Marshall: {walk.marshall?.firstName || "Unknown"}
                 </h2>
                 <p className="text-gray-600">Date: {walk.date}</p>
                 <p className="text-gray-600">Time: {timeSlot}</p>
-<<<<<<< HEAD
-                <p className="text-gray-600">Available Slots: {walk.availableSlots}</p>
-
-                <div className="flex gap-2 mt-2">
-                    {user?.id !== walk.marshall?._id && (
-                        walk.availableSlots > 0 && !walk.selectedByUser ? (
-                        <button
-                            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                            onClick={() => handleSelectWalk(walk._id, timeSlot)}
-                        >
-                            Select
-                        </button>
-                        ) : (
-                        <button
-                            className="px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed"
-                            disabled
-                        >
-                            {walk.selectedByUser ? "Already Selected" : "No Available Slots"}
-                        </button>
-                        )
-=======
                 {/* Available Slots removed */}
 
                 <div className="flex gap-2 mt-2">
                     {user?.id !== walk.marshall?._id && (
                         <button
-                            className={`px-4 py-2 ${walk.isSelectable ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-md`}
-                            onClick={() => walk.isSelectable && handleSelectWalk(walk._id, timeSlot)}
-                            disabled={!walk.isSelectable}
+                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md"
+                            onClick={() => handleSelectWalk(walk._id, timeSlot)}
                         >
-                            {walk.isSelectable ? 'Select' : 'Unavailable'}
+                            Select
                         </button>
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
                     )}
                     {user?.id === walk.marshall?._id && (
                         <>
