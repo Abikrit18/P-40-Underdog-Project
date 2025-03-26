@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Walk = require('../models/walk'); // Import the Walk model
 const User = require('../models/User');
-const WalkLog = require('../models/WalkLog'); // Import the WalkLog model
+const WalkLog = require('../models/walkLog'); // Import the WalkLog model
 
 // Endpoint to add time for a walk
 router.post('/add-time', async (req, res) => {

@@ -32,8 +32,7 @@ const WalkLog = () => {
     const fetchDogs = async () => {
         try {
             // Fetch dogs data
-            const response = await axios.get("http://localhost:3000/dogs");
-            
+            const response = await axios.get("http://localhost:3000/dogs");  
             // Extract just the dog names from the dog objects
             const dogNames = response.data.map(dog => dog.name);
             setAvailableDogs(dogNames);
