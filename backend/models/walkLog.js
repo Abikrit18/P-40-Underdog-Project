@@ -27,7 +27,7 @@ const walkLogSchema = new mongoose.Schema({
   }],
   status: { 
     type: String, 
-    enum: ['pending', 'completed'], 
+    enum: ['pending', 'completed', 'incomplete'], 
     default: 'pending' 
   }
 }, { timestamps: true });

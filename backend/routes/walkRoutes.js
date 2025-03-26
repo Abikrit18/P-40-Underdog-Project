@@ -204,6 +204,46 @@ router.delete('/delete/:walkId', async (req, res) => {
     }
 });
 
+// Route to mark a walk as incomplete
+router.post('/incomplete/:walkId', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const walk = await Walk.findById(req.params.walkId).populate('userid', 'firstName lastName');
+        if (!walk) return res.status(404).json({ error: "Walk not found" });
+
+        if (walk.marshall.toString() !== userId) {
+            return res.status(403).json({ error: "Unauthorized to mark this walk as incomplete" });
+        }
+
+        // Create walk log entry with status "incomplete"
+        const walkLog = new WalkLog({
+            walkId: walk._id,
+            userId: walk.userid,
+            marshallId: walk.marshall,
+            date: walk.date,
+            time: walk.time,
+            dogs: ["N/A"],
+            status: 'incomplete'
+        });
+        await walkLog.save();
+
+        // Remove walk from both user and marshall
+        await User.findByIdAndUpdate(walk.userid, { $pull: { walks: req.params.walkId } });
+        await User.findByIdAndUpdate(walk.marshall, { $pull: { walks: req.params.walkId } });
+
+        // Remove from admins
+        await User.updateMany({ role: 'admin' }, { $pull: { walks: req.params.walkId } });
+
+        // Remove walk from Walk collection
+        await Walk.findByIdAndDelete(req.params.walkId);
+
+        res.status(200).json({ message: "Walk marked as incomplete and removed from profiles", logId: walkLog._id });
+    } catch (error) {
+        console.error("Error marking walk as incomplete:", error);
+        res.status(500).json({ error: "Failed to mark walk as incomplete" });
+    }
+});
+
 
 // Route to create a walk log entry
 router.post('/logs', async (req, res) => {

@@ -159,6 +159,10 @@ const WalkLog = () => {
                         color: orange;
                         font-weight: bold;
                     }
+                    .incomplete {
+                        color: red;
+                        font-weight: bold;
+                    }
                     .print-date {
                         text-align: right;
                         margin-bottom: 20px;
@@ -187,8 +191,8 @@ const WalkLog = () => {
                                 <td>${log.time}</td>
                                 <td>${log.userId ? `${log.userId.firstName} ${log.userId.lastName}` : "Unknown"}</td>
                                 <td>${log.marshallId ? `${log.marshallId.firstName} ${log.marshallId.lastName}` : "Unknown"}</td>
-                                <td>${Array.isArray(log.dogs) ? log.dogs.join(", ") : "None"}</td>
-                                <td class="${log.status === 'completed' ? 'completed' : 'pending'}">${log.status}</td>
+                                <td>${Array.isArray(log.dogs) ? log.dogs.join(", ") : "N/A"}</td>
+                                <td class="${log.status === 'completed' ? 'completed' : log.status === 'incomplete' ? 'incomplete' : 'pending'}">${log.status}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -272,13 +276,15 @@ const WalkLog = () => {
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div>{Array.isArray(log.dogs) ? log.dogs.join(", ") : "None"}</div>
+                                            <div>{Array.isArray(log.dogs) ? log.dogs.join(", ") : "N/A"}</div>
                                         )}
                                     </td>
                                     <td className="py-2 px-4 border">
                                         <span className={`px-2 py-1 rounded text-sm ${
                                             log.status === 'completed' 
                                                 ? 'bg-green-100 text-green-800' 
+                                                : log.status === 'incomplete'
+                                                ? 'bg-red-100 text-red-800'
                                                 : 'bg-yellow-100 text-yellow-800'
                                         }`}>
                                             {log.status}
