@@ -250,6 +250,24 @@ export default function Navbar() {
                                         {item.name}
                                     </Disclosure.Button>
                                 ))}
+                                {(userRole === 'admin' || userRole === 'Marshall') && (
+                                    <Disclosure.Button
+                                        as="a"
+                                        href="/walk-logs"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleNavClick('Walk Logs', '/walk-logs');
+                                        }}
+                                        className={classNames(
+                                            activeNav === 'Walk Logs'
+                                                ? 'text-white font-bold'
+                                                : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:rounded-md text-decoration-none',
+                                            'block rounded-md px-3 py-2 text-base font-medium'
+                                        )}
+                                    >
+                                        Walk Logs
+                                    </Disclosure.Button>
+                                )}
                             </div>
                         </Disclosure.Panel>
                     </>

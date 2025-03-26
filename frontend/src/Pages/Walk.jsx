@@ -33,29 +33,29 @@ const Walk = () => {
         }
     }, [token]);
 
-    const fetchScheduledWalks = async () => {
-        try {
-            const response = await axios.get("http://localhost:3000/walks");
-            const scheduledEvents = response.data
-                .filter((walk) => walk.userid)
-                .map((walk) => ({
-                    title: `Walk with ${walk.marshallName}`,
-                    date: walk.date,
-                }));
+    // const fetchScheduledWalks = async () => {
+    //     try {
+    //         const response = await axios.get("http://localhost:3000/walks");
+    //         const scheduledEvents = response.data
+    //             .filter((walk) => walk.userid)
+    //             .map((walk) => ({
+    //                 title: `Walk with ${walk.marshallName}`,
+    //                 date: walk.date,
+    //             }));
 
-            const availableTimeEvents = response.data
-                .filter((walk) => walk.availableTimes && walk.availableTimes.length > 0)
-                .map((walk) => ({
-                    date: walk.date,
-                    display: 'background',
-                    className: 'has-available-time'
-                }));
+    //         const availableTimeEvents = response.data
+    //             .filter((walk) => walk.availableTimes && walk.availableTimes.length > 0)
+    //             .map((walk) => ({
+    //                 date: walk.date,
+    //                 display: 'background',
+    //                 className: 'has-available-time'
+    //             }));
 
-            setEvents([...scheduledEvents, ...availableTimeEvents]);
-        } catch (error) {
-            console.error("Error fetching scheduled walks:", error);
-        }
-    };
+    //         setEvents([...scheduledEvents, ...availableTimeEvents]);
+    //     } catch (error) {
+    //         console.error("Error fetching scheduled walks:", error);
+    //     }
+    // };
 
     const handleSelectWalk = async (walkId, timeSlot) => {
         try {
@@ -100,7 +100,7 @@ const Walk = () => {
         }
     };
     useEffect(() => {
-        fetchScheduledWalks();
+        //fetchScheduledWalks();
         fetchAvailableTimes();
     }, []);
 

@@ -77,6 +77,32 @@ const Profile = () => {
         }
     };
 
+    const handleDidNotShow = async (walkId) => {
+        const confirm = window.confirm("Mark this walk as incomplete?");
+        if (!confirm) return;
+
+        try {
+            await axios.post(`http://localhost:3000/walks/incomplete/${walkId}`, { userId: user._id }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            toast.success("Walk marked as incomplete!", {
+                position: "top-center",
+                autoClose: 2000
+            });
+            fetchUserDetails(user._id); // Refresh after action
+        } catch (error) {
+            console.error("Error marking walk as incomplete:", error);
+            toast.error("Failed to mark walk as incomplete. Please try again.", {
+                position: "top-center",
+                autoClose: 3000
+            });
+        }
+    };
+
     const handleDeleteWalk = async (walkId) => {
         const confirmDelete = window.confirm("Are you sure you want to delete this walk?");
         if (!confirmDelete) return;
@@ -164,7 +190,7 @@ const Profile = () => {
                                 <p><strong>Date:</strong> {walk.date}</p>
                                 <p><strong>Time:</strong> {walk.time}</p>
                                 <p><strong>Marshall:</strong> {walk.marshall?.firstName || "Unknown"}</p>
-                            <p><strong>Scheduled By:</strong> {walk.userid?.firstName || "Unknown"}</p>
+                                <p><strong>Scheduled By:</strong> {walk.userid?.firstName || "Unknown"}</p>
                                 {user.role === 'admin' && (
                                     <button
                                         onClick={() => handleDeleteWalk(walk._id)}
@@ -174,12 +200,20 @@ const Profile = () => {
                                     </button>
                                 )}
                                 {user._id === walk.marshall?._id && (
+                                  <>
                                     <button
-                                        onClick={() => handleCompleteWalk(walk._id)}
-                                        className="mt-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+                                      onClick={() => handleCompleteWalk(walk._id)}
+                                      className="mt-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 w-full"
                                     >
-                                        Complete Walk
+                                      Complete Walk
                                     </button>
+                                    <button
+                                      onClick={() => handleDidNotShow(walk._id)}
+                                      className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 w-full"
+                                    >
+                                      Did Not Show Up
+                                    </button>
+                                  </>
                                 )}
                             </div>
                         ))}

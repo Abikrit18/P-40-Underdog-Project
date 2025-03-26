@@ -1,12 +1,8 @@
 const express = require('express');
 const router = express.Router();
-// Removed moment dependency for date comparison
 const Walk = require('../models/walk'); // Import the Walk model
 const User = require('../models/User');
-<<<<<<< HEAD
-=======
-const WalkLog = require('../models/WalkLog'); // Import the WalkLog model
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
+const WalkLog = require('../models/walkLog'); // Import the WalkLog model
 
 // Endpoint to add time for a walk
 router.post('/add-time', async (req, res) => {
@@ -35,10 +31,7 @@ router.post('/add-time', async (req, res) => {
                 walk.availableTimes.push(time);
             }
         }
-<<<<<<< HEAD
-=======
         walk.status = 'available';
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
 
         await walk.save();
 
@@ -87,9 +80,6 @@ router.put('/update-time/:walkId', async (req, res) => {
     }
 });
 
-<<<<<<< HEAD
-// Route to mark a walk as completed
-=======
 // Route to select a walk
 router.post('/select-walk/:walkId', async (req, res) => {
     try {
@@ -129,7 +119,6 @@ router.post('/select-walk/:walkId', async (req, res) => {
 });
 
 // Route to complete a walk - remove notes references
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
 router.post('/complete/:walkId', async (req, res) => {
     try {
         const { userId } = req.body;
@@ -151,18 +140,6 @@ router.post('/complete/:walkId', async (req, res) => {
         });
         await walkLog.save();
 
-<<<<<<< HEAD
-        // Remove walk from user's, marshall's, and admin's scheduled walks
-        await User.updateMany(
-            { $or: [{ _id: walk.userid }, { _id: walk.marshall }, { role: 'admin' }] },
-            { $pull: { walks: req.params.walkId } }
-        );
- 
-        // Retain the walk card in the Walk collection and reset its scheduling info
-        walk.userid = null;
-        walk.time = null;
-        await walk.save();
-=======
         // Increment total walks for both the user and the marshall
         await User.findByIdAndUpdate(walk.userid, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
         await User.findByIdAndUpdate(walk.marshall, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
@@ -172,7 +149,6 @@ router.post('/complete/:walkId', async (req, res) => {
 
         // Remove walk from Walk collection
         await Walk.findByIdAndDelete(req.params.walkId);
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
 
         res.status(200).json({ 
             message: "Walk marked as completed and log created",
@@ -225,54 +201,46 @@ router.delete('/delete/:walkId', async (req, res) => {
     } catch (error) {
         console.error("Error removing walk from profile:", error);
         res.status(500).json({ error: "Failed to remove walk from profile" });
-<<<<<<< HEAD
     }
 });
 
-
-// Route to select a walk
-router.post('/select-walk/:walkId', async (req, res) => {
+// Route to mark a walk as incomplete
+router.post('/incomplete/:walkId', async (req, res) => {
     try {
-        const { walkId } = req.params;
-        const { userId, timeSlot } = req.body;
+        const { userId } = req.body;
+        const walk = await Walk.findById(req.params.walkId).populate('userid', 'firstName lastName');
+        if (!walk) return res.status(404).json({ error: "Walk not found" });
 
-        const walk = await Walk.findById(walkId);
-        if (!walk || walk.availableSlots <= 0) {
-            return res.status(400).json({ error: "No available slots for this walk" });
+        if (walk.marshall.toString() !== userId) {
+            return res.status(403).json({ error: "Unauthorized to mark this walk as incomplete" });
         }
 
-        // Check if user has already selected this walk
-        const user = await User.findById(userId);
-        if (user.walks.includes(walkId)) {
-            return res.status(400).json({ error: "You have already selected this walk" });
-        }
+        // Create walk log entry with status "incomplete"
+        const walkLog = new WalkLog({
+            walkId: walk._id,
+            userId: walk.userid,
+            marshallId: walk.marshall,
+            date: walk.date,
+            time: walk.time,
+            dogs: ["N/A"],
+            status: 'incomplete'
+        });
+        await walkLog.save();
 
-        walk.userid = userId;
-        walk.time = timeSlot;
-        walk.availableSlots -= 1;
-        await walk.save();
+        // Remove walk from both user and marshall
+        await User.findByIdAndUpdate(walk.userid, { $pull: { walks: req.params.walkId } });
+        await User.findByIdAndUpdate(walk.marshall, { $pull: { walks: req.params.walkId } });
 
-        user.walks.push(walkId);
-        await user.save();
+        // Remove from admins
+        await User.updateMany({ role: 'admin' }, { $pull: { walks: req.params.walkId } });
 
-        const marshall = await User.findById(walk.marshall);
-        if (!marshall.walks.includes(walkId)) {
-            marshall.walks.push(walkId);
-            await marshall.save();
-        }
-        
-        const adminUsers = await User.find({ role: 'admin' });
-        for (const admin of adminUsers) {
-            admin.walks.push({ walkId, userId, timeSlot });
-            await admin.save();
-        }
+        // Remove walk from Walk collection
+        await Walk.findByIdAndDelete(req.params.walkId);
 
-        res.status(200).json({ message: "Walk successfully selected", walk });
+        res.status(200).json({ message: "Walk marked as incomplete and removed from profiles", logId: walkLog._id });
     } catch (error) {
-        console.error("Error selecting walk:", error);
-        res.status(500).json({ error: "Failed to select walk" });
-=======
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
+        console.error("Error marking walk as incomplete:", error);
+        res.status(500).json({ error: "Failed to mark walk as incomplete" });
     }
 });
 
