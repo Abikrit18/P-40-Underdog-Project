@@ -319,4 +319,42 @@ router.put('/logs/:logId', async (req, res) => {
   }
 });
 
+// Add these endpoints to support date filtering
+
+// Route to get logs with date filtering
+router.get('/logs/filter', async (req, res) => {
+  try {
+    const { days, userId, role } = req.query;
+    
+    let query = {};
+    
+    // Apply date filter if specified
+    if (days) {
+      const compareDate = new Date();
+      compareDate.setDate(compareDate.getDate() - parseInt(days));
+      
+      // Convert to same format as stored in database
+      const formattedDate = compareDate.toISOString().split('T')[0];
+      
+      // This assumes date is stored in format YYYY-MM-DD
+      query.date = { $gte: formattedDate };
+    }
+    
+    // Apply user filter for marshall
+    if (role === 'Marshall' && userId) {
+      query.marshallId = userId;
+    }
+    
+    const walkLogs = await WalkLog.find(query)
+      .populate('userId', 'firstName lastName')
+      .populate('marshallId', 'firstName lastName')
+      .sort({ date: -1 });
+    
+    res.status(200).json(walkLogs);
+  } catch (error) {
+    console.error('Error fetching filtered walk logs:', error);
+    res.status(500).json({ error: 'Failed to fetch walk logs' });
+  }
+});
+
 module.exports = router;

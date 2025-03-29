@@ -4,6 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Link } from "react-router-dom";
+import formatTimeForDisplay from "../components/Calendar/formatTime";
 
 const Profile = () => {
     const [user, setUser] = useState(null);
@@ -177,7 +178,7 @@ const Profile = () => {
                         {currentWalks.map((walk) => (
                             <div key={walk._id} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
                                 <p><strong>Date:</strong> {walk.date}</p>
-                                <p><strong>Time:</strong> {walk.time}</p>
+                                <p><strong>Time:</strong> {formatTimeForDisplay(walk.time)}</p>
                                 <p><strong>Marshall:</strong> {walk.marshall?.firstName || "Unknown"}</p>
                                 <p><strong>Scheduled By:</strong> {walk.userid?.firstName || "Unknown"}</p>
                                 {user.role === 'admin' && (
