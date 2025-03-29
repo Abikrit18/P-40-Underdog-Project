@@ -101,6 +101,12 @@ const WalkLog = () => {
             let compareDate = new Date();
             
             switch(dateFilter) {
+                case 'Today':
+                    compareDate.setDate(today.getDate());
+                    break;
+                case 'Yesterday':
+                    compareDate.setDate(today.getDate() - 1);
+                    break;    
                 case '7days':
                     compareDate.setDate(today.getDate() - 7);
                     break;
@@ -420,6 +426,8 @@ const WalkLog = () => {
                             className="block w-full p-2 bg-white border border-blue-200 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                         >
                             <option value="all">All Time</option>
+                            <option value="Today">Today</option>
+                            <option value="Yesterday">Yesterday</option>
                             <option value="7days">Last 7 Days</option>
                             <option value="14days">Last 14 Days</option>
                             <option value="1month">Last Month</option>
@@ -483,7 +491,9 @@ const WalkLog = () => {
                         <span>
                             {dateFilter !== 'all' && (
                                 <span className="mr-2">
-                                    <span className="font-medium">Date:</span> {dateFilter === '7days' ? 'Last 7 Days' : 
+                                    <span className="font-medium">Date:</span> {dateFilter === 'Today' ? 'Today' : 
+                                                                         dateFilter === 'Yesterday' ? 'Yesterday' :
+                                                                         dateFilter === '7days' ? 'Last 7 Days' :
                                                                          dateFilter === '14days' ? 'Last 14 Days' : 
                                                                          dateFilter === '1month' ? 'Last Month' :
                                                                          dateFilter === '3months' ? 'Last 3 Months' :
