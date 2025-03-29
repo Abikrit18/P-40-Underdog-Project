@@ -3,6 +3,7 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import { Link } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import formatTimeForDisplay from '../components/Calendar/formatTime';
 
 const Home = () => {
   const [user, setUser] = useState(null);
@@ -269,7 +270,7 @@ const Home = () => {
                     {/* Timeline Content */}
                     <div className="bg-white rounded-lg shadow-md p-3 border-l-4 border-orange-700 transform transition-all duration-300 group-hover:-translate-y-1">
                       <p className="font-bold text-red-900">{formattedDate}</p>
-                      <p className="text-gray-800 font-medium">{walk.time}</p>
+                      <p className="text-gray-800 font-medium">{formatTimeForDisplay(walk.time)}</p>
                       <div className="mt-2 text-sm">
                         <p className="text-gray-700">
                           <span className="font-semibold">Marshall:</span> {walk.marshall?.firstName || "Unknown"}

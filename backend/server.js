@@ -9,6 +9,7 @@ const userRoutes = require('./routes/userRoutes');
 const dogRoutes = require('./routes/dogRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const walkRoutes = require('./routes/walkRoutes');
+const shelterTimeRoutes = require('./routes/shelterTimeRoutes');
 
 const app = express();
 const port = 3000;
@@ -32,6 +33,8 @@ app.use('/users', userRoutes);
 app.use('/dogs', dogRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/walks', walkRoutes);
+app.use('/shelter-times', shelterTimeRoutes);
+
 // 404 Handler
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
