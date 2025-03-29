@@ -22,13 +22,13 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showFullDetails, setShowFullDetails] = useState(false);
 
-  // Prepare image array for the gallery
+  // Ensure we have a valid array of images
   const allImages = [
     dog.picture, 
     ...(dog.additionalImages || [])
-  ].filter(Boolean);  // Filter out undefined or empty URLs
-  
-  // Default image if no images are available
+  ].filter(img => img && img.trim() !== "");  // Filter out empty/null values
+
+  // Use placeholder only if no valid images exist
   const images = allImages.length > 0 
     ? allImages 
     : ["https://via.placeholder.com/300x200?text=No+Image"];
@@ -128,13 +128,19 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
   };
 
   const handlePrevImage = (e) => {
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    e.preventDefault(); // Prevent event bubbling
+    e.stopPropagation(); // Stop event from triggering parent clicks
+    setCurrentImageIndex(prevIndex => 
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+    );
   };
 
   const handleNextImage = (e) => {
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    e.preventDefault(); // Prevent event bubbling
+    e.stopPropagation(); // Stop event from triggering parent clicks
+    setCurrentImageIndex(prevIndex => 
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+    );
   };
 
   const handleRemoveAdditionalImage = (index) => {
@@ -168,6 +174,76 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
     }
   };
 
+  // Image gallery section
+  const ImageGallery = () => (
+    <div className="relative h-64 overflow-hidden group cursor-pointer">
+      {uploadLoading ? (
+        <div className="w-full h-full flex items-center justify-center bg-amber-50">
+          <CircularProgress sx={{ color: "#B45309" }} />
+        </div>
+      ) : (
+        <div className="relative w-full h-full">
+          <motion.img
+            className="w-full h-full object-cover transition-transform duration-700"
+            src={images[currentImageIndex]}
+            alt={dog.name}
+            initial={{ opacity: 0.8 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          />
+          
+          {/* Navigation arrows - Always visible */}
+          {images.length > 1 && (
+            <>
+              <button 
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 
+                         bg-amber-800/90 text-white p-2 rounded-full
+                         transition-all duration-300 hover:bg-amber-900
+                         shadow-lg hover:shadow-xl"
+                onClick={handlePrevImage}
+              >
+                <ArrowBackIosIcon style={{ fontSize: 20 }} />
+              </button>
+              
+              <button 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 
+                         bg-amber-800/90 text-white p-2 rounded-full
+                         transition-all duration-300 hover:bg-amber-900
+                         shadow-lg hover:shadow-xl"
+                onClick={handleNextImage}
+              >
+                <ArrowForwardIosIcon style={{ fontSize: 20 }} />
+              </button>
+
+              {/* Image counter */}
+              <div className="absolute bottom-2 right-2 bg-amber-800/90 text-white 
+                           px-3 py-1 rounded-full text-sm font-medium">
+                {currentImageIndex + 1} / {images.length}
+              </div>
+
+              {/* Image indicators */}
+              <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
+                    className={`w-3 h-3 rounded-full transition-all duration-300
+                      ${currentImageIndex === index 
+                        ? 'bg-amber-500 scale-110 shadow-lg' 
+                        : 'bg-amber-400/70 hover:bg-amber-500'}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <motion.div 
       className="max-w-xs relative rounded-2xl overflow-hidden shadow-xl bg-white border-2 border-amber-200"
@@ -177,97 +253,30 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
       whileHover="hover"
       layout
     >
-      {/* Decorative accent based on dog color */}
-      <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${colorGradient}`}></div>
+      {/* Top accent bar */}
+      <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${getColorGradient(dog.color)}`} />
       
       {/* Favorite button */}
       {!isEditing && (
         <motion.button
           className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white shadow-lg hover:shadow-xl"
-          whileHover={{ scale: 1.15, rotate: 5 }}
+          whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          onClick={() => onToggleFavorite(dog)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(dog);
+          }}
         >
           {isFavorite ? (
-            <FavoriteIcon className="text-red-500" fontSize="small" />
+            <FavoriteIcon className="text-red-500" />
           ) : (
-            <FavoriteBorderIcon className="text-red-500" fontSize="small" />
+            <FavoriteBorderIcon className="text-gray-400" />
           )}
         </motion.button>
       )}
 
-      {/* Image Gallery with vignette overlay */}
-      <div 
-        className="relative h-64 overflow-hidden group cursor-pointer" 
-        onClick={() => !isEditing && setShowFullDetails(!showFullDetails)}
-      >
-        {uploadLoading ? (
-          <div className="w-full h-full flex items-center justify-center bg-amber-50">
-            <CircularProgress sx={{ color: "#B45309" }} />
-          </div>
-        ) : (
-          <div className="w-full h-full overflow-hidden">
-            <motion.img
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-              src={isEditing ? editedDog.picture : images[currentImageIndex]}
-              alt={dog.name}
-              initial={{ opacity: 0.8 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            />
-            
-            {/* Subtle vignette overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60"></div>
-            
-            {/* Image gallery navigation with improved visibility */}
-            {images.length > 1 && !isEditing && (
-              <>
-                <motion.button 
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 text-amber-800 rounded-full p-2 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  onClick={handlePrevImage}
-                  whileHover={{ scale: 1.1, backgroundColor: "#ffffff" }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <ArrowBackIosIcon style={{ fontSize: 16 }} />
-                </motion.button>
-                <motion.button 
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 text-amber-800 rounded-full p-2 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  onClick={handleNextImage}
-                  whileHover={{ scale: 1.1, backgroundColor: "#ffffff" }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <ArrowForwardIosIcon style={{ fontSize: 16 }} />
-                </motion.button>
-                
-                {/* Image indicator dots with animation */}
-                <div className="absolute bottom-3 left-0 right-0 flex justify-center space-x-2 z-10">
-                  {images.map((_, index) => (
-                    <motion.div 
-                      key={index} 
-                      className={`h-2.5 w-2.5 rounded-full border border-white ${
-                        currentImageIndex === index ? 'bg-white' : 'bg-white/40'
-                      }`}
-                      initial={false}
-                      animate={currentImageIndex === index ? 
-                        { scale: 1.2, opacity: 1 } : 
-                        { scale: 1, opacity: 0.7 }
-                      }
-                      transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-        
-        {/* Dog name badge overlaying the image */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-          <h3 className="font-bold text-xl text-white drop-shadow-md">
-            {dog.name}
-          </h3>
-        </div>
-      </div>
+      {/* Image Gallery */}
+      <ImageGallery />
 
       <div className="px-5 py-4 bg-gradient-to-br from-amber-50 to-white">
         {isEditing ? (
