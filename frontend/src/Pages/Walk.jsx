@@ -41,7 +41,7 @@ const Walk = () => {
     const handleSelectWalk = async (walkId, timeSlot) => {
         try {
             // Check waiver status
-        const waiverResponse = await axios.get(`http://localhost:3000/users/profile/${user.id}`);
+        const waiverResponse = await axios.get(`https://p-40-underdog-project-backend.onrender.com/users/profile/${user.id}`);
         if (!waiverResponse.data.waiverSigned) {
             alert("You must sign the waiver before scheduling a walk.");
             navigate("/waiver");
@@ -49,7 +49,7 @@ const Walk = () => {
         }
 
             // Proceed to select the walk if waiver is signed
-            await axios.post(`http://localhost:3000/walks/select-walk/${walkId}`, {
+            await axios.post(`https://p-40-underdog-project-backend.onrender.com/walks/select-walk/${walkId}`, {
                 userId: user.id,
                 timeSlot,
             });
@@ -64,7 +64,7 @@ const Walk = () => {
 
     const fetchAvailableTimes = async () => {
         try {
-            const response = await axios.get("http://localhost:3000/walks/available-times");
+            const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/walks/available-times");
     
             setAvailableTimesData(response.data);
         
@@ -83,7 +83,7 @@ const Walk = () => {
 
     const fetchShelterTimes = async () => {
         try {
-          const response = await axios.get("http://localhost:3000/shelter-times", {
+          const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/shelter-times", {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
           });
           setShelterTimes(response.data);
@@ -132,7 +132,7 @@ const Walk = () => {
         if (!availableDate || !availableTime) return alert("Please fill in both fields.");
     
         try {
-            await axios.post("http://localhost:3000/walks/add-time", {
+            await axios.post("https://p-40-underdog-project-backend.onrender.com/walks/add-time", {
                 marshall: user.id,
                 date: availableDate,
                 time: availableTime,
@@ -157,7 +157,7 @@ const Walk = () => {
     const handleEditTime = (walk, timeSlot) => {
         const newTime = prompt("Enter new time:", timeSlot);
         if (newTime && newTime !== timeSlot) {
-            axios.put(`http://localhost:3000/walks/update-time/${walk._id}`, {
+            axios.put(`https://p-40-underdog-project-backend.onrender.com/walks/update-time/${walk._id}`, {
                 oldTime: timeSlot,
                 newTime: newTime
             })
@@ -176,7 +176,7 @@ const Walk = () => {
         const confirmDelete = window.confirm("Are you sure you want to delete this time?");
         if (confirmDelete) {
             try {
-                await axios.delete(`http://localhost:3000/walks/delete-time/${walkId}`, {
+                await axios.delete(`https://p-40-underdog-project-backend.onrender.com/walks/delete-time/${walkId}`, {
                     data: { time: timeSlot }
                 });
                 alert("Time deleted successfully!");
@@ -204,7 +204,7 @@ const Walk = () => {
         
         try {
           await axios.post(
-            "http://localhost:3000/shelter-times", 
+            "https://p-40-underdog-project-backend.onrender.com/shelter-times", 
             {
               date: shelterDate,
               startTime: shelterStartTime,
@@ -231,7 +231,7 @@ const Walk = () => {
     const handleDeleteShelterTime = async (id) => {
         if (window.confirm("Are you sure you want to delete these shelter hours?")) {
           try {
-            await axios.delete(`http://localhost:3000/shelter-times/${id}`, {
+            await axios.delete(`https://p-40-underdog-project-backend.onrender.com/shelter-times/${id}`, {
               headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
             });
             toast.success("Shelter hours deleted");

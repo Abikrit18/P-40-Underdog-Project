@@ -17,8 +17,8 @@ export default function Login() {
         e.preventDefault();
         setIsLoading(true);
         const endpoint = isRegistering
-            ? 'http://localhost:3000/users/register'
-            : 'http://localhost:3000/users/login';
+            ? 'https://p-40-underdog-project-backend.onrender.com/users/register'
+            : 'https://p-40-underdog-project-backend.onrender.com/users/login';
 
         const bodyData = isRegistering
             ? { firstName, lastName, email, password }

@@ -32,10 +32,10 @@ const Profile = () => {
     const fetchUserDetails = async (userId) => {
         try {
             if (user?.role === "admin") {
-                const response = await axios.get("http://localhost:3000/walks");
+                const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/walks");
                 setScheduledWalks(response.data);
             } else {
-                const response = await axios.get(`http://localhost:3000/users/profile/${userId}`, {
+                const response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/users/profile/${userId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -57,7 +57,7 @@ const Profile = () => {
         if (!confirmComplete) return;
 
         try {
-            await axios.post(`http://localhost:3000/walks/complete/${walkId}`, { userId: user._id }, {
+            await axios.post(`https://p-40-underdog-project-backend.onrender.com/walks/complete/${walkId}`, { userId: user._id }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -83,7 +83,7 @@ const Profile = () => {
         if (!confirm) return;
 
         try {
-            await axios.post(`http://localhost:3000/walks/incomplete/${walkId}`, { userId: user._id }, {
+            await axios.post(`https://p-40-underdog-project-backend.onrender.com/walks/incomplete/${walkId}`, { userId: user._id }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -109,7 +109,7 @@ const Profile = () => {
         if (!confirmDelete) return;
 
         try {
-        await axios.delete(`http://localhost:3000/walks/delete/${walkId}`, {
+        await axios.delete(`https://p-40-underdog-project-backend.onrender.com/walks/delete/${walkId}`, {
             data: { userId: user._id },
             headers: { Authorization: `Bearer ${token}` },
         });

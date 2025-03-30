@@ -26,10 +26,10 @@ const WaiverForm = () => {
         }
 
         try {
-        await axios.post("http://localhost:3000/users/waiver/sign", { userId: user.id });
+        await axios.post("https://p-40-underdog-project-backend.onrender.com/users/waiver/sign", { userId: user.id });
 
         // Fetch updated user data to reflect waiver signing
-        const updatedUser = await axios.get(`http://localhost:3000/users/profile/${user.id}`);
+        const updatedUser = await axios.get(`https://p-40-underdog-project-backend.onrender.com/users/profile/${user.id}`);
         setUser(prevUser => ({ ...prevUser, waiverSigned: true }));
 
         alert("Waiver signed successfully!");

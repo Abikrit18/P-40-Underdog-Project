@@ -47,7 +47,7 @@ const WalkLog = () => {
     const fetchDogs = async () => {
         try {
             // Fetch dogs data
-            const response = await axios.get("http://localhost:3000/dogs");  
+            const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/dogs");  
             // Extract just the dog names from the dog objects
             const dogNames = response.data.map(dog => dog.name);
             setAvailableDogs(dogNames);
@@ -71,9 +71,9 @@ const WalkLog = () => {
             
             // Add sortOrder to the API requests
             if (role === 'admin') {
-                response = await axios.get(`http://localhost:3000/walks/logs?sortOrder=${sortOrder}`);
+                response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/walks/logs?sortOrder=${sortOrder}`);
             } else if (role === 'Marshall') {
-                response = await axios.get(`http://localhost:3000/walks/logs/marshall/${userId}?sortOrder=${sortOrder}`);
+                response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/walks/logs/marshall/${userId}?sortOrder=${sortOrder}`);
             }
             
             const logs = response.data;
@@ -274,7 +274,7 @@ const WalkLog = () => {
 
     const handleSubmit = async (logId) => {
         try {
-            await axios.put(`http://localhost:3000/walks/logs/${logId}`, {
+            await axios.put(`https://p-40-underdog-project-backend.onrender.com/walks/logs/${logId}`, {
                 dogs: selectedDogs[logId],
                 status: 'completed'
             });

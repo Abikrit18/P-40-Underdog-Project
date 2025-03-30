@@ -64,7 +64,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
     formData.append('image', file);
     
     try {
-      const response = await axios.post('http://localhost:3000/api/upload', formData, {
+      const response = await axios.post('https://p-40-underdog-project-backend.onrender.com/api/upload', formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -95,7 +95,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
     formData.append('image', file);
     
     try {
-      const response = await axios.post('http://localhost:3000/api/upload', formData, {
+      const response = await axios.post('https://p-40-underdog-project-backend.onrender.com/api/upload', formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },

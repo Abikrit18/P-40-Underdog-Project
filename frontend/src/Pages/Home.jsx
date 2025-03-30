@@ -15,7 +15,7 @@ const Home = () => {
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        axios.get(`http://localhost:3000/users/profile/${decoded.id}`)
+        axios.get(`https://p-40-underdog-project-backend.onrender.com/users/profile/${decoded.id}`)
           .then((res) => {
             setUser(res.data);
             setScheduledWalks(res.data.walks || []);
