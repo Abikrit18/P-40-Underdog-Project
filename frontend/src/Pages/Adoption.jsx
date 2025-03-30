@@ -21,19 +21,109 @@ const Adoption = () => {
         </div>
       </div>
 
-      {/* Introduction */}
-      <div className="max-w-3xl mx-auto mb-16 text-center">
-        <h2 className="text-3xl font-bold mb-6">Why Adopt?</h2>
-        <p className="text-lg mb-6">
-          When you adopt a dog, you're not just bringing home a pet; you're saving a life. 
-          Each year, millions of dogs enter shelters, and many never find their way out. 
-          By choosing adoption, you're giving a deserving dog a second chance at happiness 
-          while making room for another dog in need at the shelter.
-        </p>
-        <p className="text-lg">
-          At UnderDogs, we work tirelessly to match each dog with the right forever home. 
-          We believe every dog deserves love, care, and the perfect family that fits their unique personality.
-        </p>
+      {/* Why Adopt Section */}
+      <div className="mb-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-6">Why Adopt?</h2>
+          <p className="text-lg text-gray-700 max-w-3xl mx-auto mb-12">
+            When you adopt a dog, you're not just bringing home a pet; you're saving a life and making a difference.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {/* Reason 1 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="text-orange-700 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold mb-3">Save a Life</h3>
+            <p className="text-gray-700">
+              Each year, millions of dogs enter shelters. By choosing adoption, you're giving a deserving dog a second chance at happiness and making room for another dog in need.
+            </p>
+          </div>
+
+          {/* Reason 2 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="text-orange-700 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold mb-3">Cost-Effective</h3>
+            <p className="text-gray-700">
+              Adoption fees include vaccinations, spay/neuter, microchipping, and initial vet checks - services that would cost significantly more if purchased separately.
+            </p>
+          </div>
+
+          {/* Reason 3 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="text-orange-700 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold mb-3">Known History</h3>
+            <p className="text-gray-700">
+              Our dogs are thoroughly evaluated for health and temperament. We provide detailed information about their personality, behavior, and medical history.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto mt-8">
+          {/* Reason 4 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="flex items-start gap-4">
+              <div className="text-orange-700">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold mb-2">Expert Support</h3>
+                <p className="text-gray-700">
+                  Get ongoing support from our experienced team, including training tips, behavioral advice, and medical guidance throughout your dog's life.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Reason 5 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="flex items-start gap-4">
+              <div className="text-orange-700">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold mb-2">Join Our Community</h3>
+                <p className="text-gray-700">
+                  Become part of our growing family of adopters. Participate in exclusive events, share experiences, and connect with other dog lovers.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Impact Stats */}
+        <div className="bg-orange-50 rounded-xl p-8 mt-12 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold text-orange-700 mb-2">500+</div>
+              <p className="text-gray-700">Dogs Adopted Last Year</p>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-orange-700 mb-2">98%</div>
+              <p className="text-gray-700">Successful Adoptions</p>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-orange-700 mb-2">15+</div>
+              <p className="text-gray-700">Years of Experience</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Process Steps */}
@@ -199,39 +289,90 @@ const Adoption = () => {
 
       {/* FAQs */}
       <div className="max-w-3xl mx-auto mb-16">
-        <h2 className="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
+        <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
         
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-xl font-bold mb-2">How long does the adoption process take?</h3>
-            <p className="text-lg">
-              The adoption process typically takes 1-2 weeks from application to bringing your new dog home, 
-              depending on the individual circumstances and how quickly we can schedule the home visit.
+        <div className="space-y-8">
+          {/* FAQ Item 1 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+            <h3 className="text-xl font-bold mb-3 text-orange-700">How long does the adoption process take?</h3>
+            <p className="text-gray-700 leading-relaxed">
+              The adoption process typically takes 1-2 weeks from application to bringing your new dog home. 
+              This includes application review (1-2 days), home visit scheduling and completion (2-4 days), 
+              and final paperwork (1-2 days). The timeline may vary based on your availability and the 
+              specific circumstances of the adoption.
             </p>
           </div>
           
-          <div>
-            <h3 className="text-xl font-bold mb-2">What's included in the adoption fee?</h3>
-            <p className="text-lg">
-              Our adoption fee includes spay/neuter surgery, up-to-date vaccinations, microchipping, 
-              deworming, flea/tick prevention, an initial health check, and a basic starter kit with food samples.
+          {/* FAQ Item 2 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+            <h3 className="text-xl font-bold mb-3 text-orange-700">What's included in the adoption fee?</h3>
+            <p className="text-gray-700 leading-relaxed">
+              Our adoption fee includes:
+              <ul className="list-disc ml-6 mt-2 space-y-1">
+                <li>Spay/neuter surgery</li>
+                <li>Up-to-date vaccinations</li>
+                <li>Microchipping</li>
+                <li>Deworming treatment</li>
+                <li>Flea/tick prevention</li>
+                <li>Initial health check</li>
+                <li>Basic starter kit with food samples</li>
+                <li>30 days of pet insurance</li>
+              </ul>
             </p>
           </div>
           
-          <div>
-            <h3 className="text-xl font-bold mb-2">Can I adopt if I live in an apartment?</h3>
-            <p className="text-lg">
-              Yes! We have many dogs that do well in apartments. We consider the dog's specific needs 
-              and energy levels when matching them with potential homes, regardless of home size.
+          {/* FAQ Item 3 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+            <h3 className="text-xl font-bold mb-3 text-orange-700">What are the requirements for adopting?</h3>
+            <p className="text-gray-700 leading-relaxed">
+              Basic requirements include:
+              <ul className="list-disc ml-6 mt-2 space-y-1">
+                <li>Must be at least 21 years old</li>
+                <li>Valid government-issued ID</li>
+                <li>Proof of residence (lease/mortgage)</li>
+                <li>Landlord approval if renting</li>
+                <li>All household members must meet the dog</li>
+                <li>Secure, fenced yard for certain breeds</li>
+                <li>Current pets must be up-to-date on vaccinations</li>
+              </ul>
             </p>
           </div>
           
-          <div>
-            <h3 className="text-xl font-bold mb-2">What if the adoption doesn't work out?</h3>
-            <p className="text-lg">
-              We have a 14-day trial period. If for any reason the match isn't working out, 
-              you can return the dog and either receive a refund or try another match. We always 
-              want what's best for both the dogs and the adopters.
+          {/* FAQ Item 4 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+            <h3 className="text-xl font-bold mb-3 text-orange-700">Can I return a dog if it doesn't work out?</h3>
+            <p className="text-gray-700 leading-relaxed">
+              Yes, we have a 30-day adoption guarantee. If for any reason the adoption doesn't work out, 
+              you can return the dog and receive a full refund of the adoption fee. We also provide post-adoption 
+              support and resources to help ensure a successful transition. Our goal is to make sure both you 
+              and your new dog are happy with the match.
+            </p>
+          </div>
+          
+          {/* FAQ Item 5 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+            <h3 className="text-xl font-bold mb-3 text-orange-700">Do you offer post-adoption support?</h3>
+            <p className="text-gray-700 leading-relaxed">
+              Yes! We provide comprehensive post-adoption support including:
+              <ul className="list-disc ml-6 mt-2 space-y-1">
+                <li>Free training consultation</li>
+                <li>24/7 behavioral support hotline</li>
+                <li>Monthly check-ins for the first 3 months</li>
+                <li>Access to our network of preferred veterinarians</li>
+                <li>Discounted training classes</li>
+                <li>Regular adopter community events</li>
+              </ul>
+            </p>
+          </div>
+          
+          {/* FAQ Item 6 */}
+          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+            <h3 className="text-xl font-bold mb-3 text-orange-700">What if I already have pets at home?</h3>
+            <p className="text-gray-700 leading-relaxed">
+              We encourage adoptions into homes with existing pets! We'll arrange a meet-and-greet between your 
+              current pets and your potential new family member to ensure compatibility. Our experienced staff 
+              will guide you through the introduction process and provide tips for successful integration. 
+              We recommend bringing current vaccination records for your existing pets to the meeting.
             </p>
           </div>
         </div>
