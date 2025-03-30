@@ -270,32 +270,38 @@ router.post('/logs', async (req, res) => {
 
 // Route to get all walk logs
 router.get('/logs', async (req, res) => {
-  try {
-    const walkLogs = await WalkLog.find()
-      .populate('userId', 'firstName lastName')
-      .populate('marshallId', 'firstName lastName')
-      .sort({ date: -1 });
-    
-    res.status(200).json(walkLogs);
-  } catch (error) {
-    console.error('Error fetching walk logs:', error);
-    res.status(500).json({ error: 'Failed to fetch walk logs' });
-  }
+    try {
+        const { sortOrder = 'desc' } = req.query;
+        const sortValue = sortOrder === 'desc' ? -1 : 1;
+        
+        const walkLogs = await WalkLog.find()
+            .populate('userId', 'firstName lastName')
+            .populate('marshallId', 'firstName lastName')
+            .sort({ date: sortValue, time: sortValue });
+        
+        res.status(200).json(walkLogs);
+    } catch (error) {
+        console.error('Error fetching walk logs:', error);
+        res.status(500).json({ error: 'Failed to fetch walk logs' });
+    }
 });
 
 // Route to get logs by marshall ID
 router.get('/logs/marshall/:marshallId', async (req, res) => {
-  try {
-    const walkLogs = await WalkLog.find({ marshallId: req.params.marshallId })
-      .populate('userId', 'firstName lastName')
-      .populate('marshallId', 'firstName lastName')
-      .sort({ date: -1 });
-    
-    res.status(200).json(walkLogs);
-  } catch (error) {
-    console.error('Error fetching marshall walk logs:', error);
-    res.status(500).json({ error: 'Failed to fetch walk logs' });
-  }
+    try {
+        const { sortOrder = 'desc' } = req.query;
+        const sortValue = sortOrder === 'desc' ? -1 : 1;
+        
+        const walkLogs = await WalkLog.find({ marshallId: req.params.marshallId })
+            .populate('userId', 'firstName lastName')
+            .populate('marshallId', 'firstName lastName')
+            .sort({ date: sortValue, time: sortValue });
+        
+        res.status(200).json(walkLogs);
+    } catch (error) {
+        console.error('Error fetching marshall walk logs:', error);
+        res.status(500).json({ error: 'Failed to fetch walk logs' });
+    }
 });
 
 // Route to update a walk log

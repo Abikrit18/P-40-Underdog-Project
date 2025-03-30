@@ -3,7 +3,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaPrint, FaSearch, FaFilter, FaCalendarAlt,FaAngleLeft, FaAngleRight } from "react-icons/fa"; 
+import { FaPrint, FaSearch, FaFilter, FaCalendarAlt,FaAngleLeft, FaAngleRight, FaSort } from "react-icons/fa"; 
 
 const WalkLog = () => {
     const [user, setUser] = useState(null);
@@ -23,6 +23,10 @@ const WalkLog = () => {
     const [dateFilter, setDateFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [searchParam, setSearchParam] = useState('all');
+
+    // Add new state for sorting
+    const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for most recent first
+    const [sortField, setSortField] = useState('date'); // default sort by date
 
     const token = localStorage.getItem("token");
 
@@ -65,10 +69,11 @@ const WalkLog = () => {
             setLoading(true);
             let response;
             
+            // Add sortOrder to the API requests
             if (role === 'admin') {
-                response = await axios.get("http://localhost:3000/walks/logs");
+                response = await axios.get(`http://localhost:3000/walks/logs?sortOrder=${sortOrder}`);
             } else if (role === 'Marshall') {
-                response = await axios.get(`http://localhost:3000/walks/logs/marshall/${userId}`);
+                response = await axios.get(`http://localhost:3000/walks/logs/marshall/${userId}?sortOrder=${sortOrder}`);
             }
             
             const logs = response.data;
@@ -89,6 +94,18 @@ const WalkLog = () => {
             toast.error("Failed to fetch walk logs");
             setLoading(false);
         }
+    };
+
+    // Add sorting function
+    const sortWalkLogs = (logs) => {
+        return [...logs].sort((a, b) => {
+            if (sortField === 'date') {
+                const dateA = new Date(`${a.date} ${a.time}`);
+                const dateB = new Date(`${b.date} ${b.time}`);
+                return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+            }
+            return 0;
+        });
     };
 
     // Apply filters and search
@@ -217,10 +234,17 @@ const WalkLog = () => {
             });
         }
         
+        // Sort the filtered results
+        result = [...result].sort((a, b) => {
+            const dateA = new Date(`${a.date} ${a.time}`);
+            const dateB = new Date(`${b.date} ${b.time}`);
+            return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+        });
+        
         setFilteredLogs(result);
         calculateTotalPages(result.length);
         setCurrentPage(1); // Reset to first page when filters change
-    }, [walkLogs, dateFilter, searchTerm, searchParam]);
+    }, [walkLogs, dateFilter, searchTerm, searchParam, sortOrder]);
 
     const calculateTotalPages = (recordCount) => {
         setTotalPages(Math.ceil(recordCount / recordsPerPage));
@@ -388,6 +412,29 @@ const WalkLog = () => {
         setSearchParam(e.target.value);
     };
 
+    // Add sorting handler
+    const handleSortChange = (e) => {
+        setSortOrder(e.target.value);
+        if (user) {
+            fetchWalkLogs(user.id, user.role);
+        }
+    };
+
+    // First, let's define the default sort order as a constant
+    const DEFAULT_SORT_ORDER = 'desc';
+
+    // Modify the reset button click handler
+    const handleReset = () => {
+        if (!user) return;
+        
+        setDateFilter('all');
+        setSearchTerm('');
+        setSearchParam('all');
+        setSortOrder(DEFAULT_SORT_ORDER);
+        // Re-fetch the walk logs with the current user's credentials
+        fetchWalkLogs(user.id, user.role);
+    };
+
     if (loading) return <div className="text-center p-8">Loading walk logs...</div>;
 
     return (
@@ -411,10 +458,10 @@ const WalkLog = () => {
             {/* Filters and Search Section - Now with blue background */}
             <div className="bg-blue-50 rounded-lg shadow-md p-4 mb-6 border border-blue-100">
                 <h3 className="text-blue-800 font-medium mb-3 flex items-center">
-                    <FaFilter className="inline mr-2" /> Filter
+                    <FaFilter className="inline mr-2" /> Filter & Sort
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {/* Date Filter Dropdown */}
                     <div>
                         <label className="block text-sm font-medium text-blue-700 mb-2">
@@ -483,6 +530,21 @@ const WalkLog = () => {
                             )}
                         </div>
                     </div>
+                    
+                    {/* New Sort Dropdown */}
+                    <div>
+                        <label className="block text-sm font-medium text-blue-700 mb-2">
+                            <FaSort className="inline mr-2" /> Sort by Time
+                        </label>
+                        <select 
+                            value={sortOrder}
+                            onChange={handleSortChange}
+                            className="block w-full p-2 bg-white border border-blue-200 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="desc">Most Recent First</option>
+                            <option value="asc">Oldest First</option>
+                        </select>
+                    </div>
                 </div>
                 
                 {/* Filter Stats & Reset Button */}
@@ -509,21 +571,28 @@ const WalkLog = () => {
                                                                                         searchParam === 'dogs' ? 'Dogs' : 'Status'}
                                 </span>
                             )}
+                            {sortOrder && (
+                                <span className="ml-2">
+                                    <span className="font-medium">Sort:</span> {
+                                        sortOrder === 'desc' ? 'Most Recent First' : 'Oldest First'
+                                    }
+                                </span>
+                            )}
                         </span>
                     </div>
                     
-                    {(dateFilter !== 'all' || searchTerm) && (
-                        <button 
-                            onClick={() => {
-                                setDateFilter('all');
-                                setSearchTerm('');
-                                setSearchParam('all');
-                            }} 
-                            className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                            Reset Filters
-                        </button>
-                    )}
+                    {/* Always show the reset button */}
+                    <button 
+                        onClick={handleReset} 
+                        className={`text-blue-600 hover:text-blue-800 font-medium ${
+                            // Add visual indication when filters are active
+                            (dateFilter !== 'all' || searchTerm || sortOrder !== DEFAULT_SORT_ORDER)
+                                ? 'opacity-100'
+                                : 'opacity-50'
+                        }`}
+                    >
+                        Reset All
+                    </button>
                 </div>
             </div>
             
@@ -554,7 +623,16 @@ const WalkLog = () => {
                     <table className="min-w-full">
                         <thead className="bg-gray-100">
                             <tr>
-                                <th className="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Date</th>
+                                <th className="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                    <div className="flex items-center">
+                                        Date/Time
+                                        {sortField === 'date' && (
+                                            <span className="ml-1">
+                                                {sortOrder === 'desc' ? '↓' : '↑'}
+                                            </span>
+                                        )}
+                                    </div>
+                                </th>
                                 <th className="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Time</th>
                                 <th className="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">User</th>
                                 <th className="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Marshall</th>
