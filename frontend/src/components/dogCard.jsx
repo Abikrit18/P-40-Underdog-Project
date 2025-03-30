@@ -410,6 +410,11 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
           </div>
         ) : (
           <div>
+            {/* Updated dog name styling */}
+            <h2 className="text-2xl font-bold text-maroon mb-2 hover:text-amber-800 transition-colors duration-300">
+              {dog.name}
+            </h2>
+            
             <div className="flex justify-between items-start">
               <div className="flex gap-2 items-center">
                 <PetsIcon className="text-amber-600" sx={{ fontSize: 18 }} />
