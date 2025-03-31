@@ -12,6 +12,7 @@ import Profile from './Pages/Profile';
 import Users from './Pages/Users';  
 import WalkLog from './Pages/WalkLog';
 import WaiverForm from "./Pages/WaiverForm";
+import DogLog from "./Pages/dogLog"; 
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -32,6 +33,7 @@ const App = () => {
             <Route path="/users" element={<Users />} />
             <Route path="/walk-logs" element={<WalkLog />} />
             <Route path="/waiver" element={<WaiverForm />} />
+            <Route path="/doglog" element={<DogLog />} />
           </Routes>
         
         <Footer />

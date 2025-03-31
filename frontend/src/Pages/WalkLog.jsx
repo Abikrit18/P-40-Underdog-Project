@@ -68,8 +68,7 @@ const WalkLog = () => {
             
             // Fallback to hardcoded dogs if fetching fails
             setAvailableDogs([
-                "Max", "Bella", "Charlie", "Lucy", "Cooper", "Luna", 
-                "Buddy", "Daisy", "Rocky", "Sadie", "Milo", "Bailey"
+                "Max"
             ]);
         }
     };
