@@ -3,7 +3,10 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaPrint, FaFilter, FaSearch, FaSort } from "react-icons/fa";
+import { 
+  FaPrint, FaFilter, FaSearch, FaSort, FaCalendarAlt, 
+  FaUser, FaWalking, FaDog, FaCheck, FaTimes, FaClipboardList 
+} from "react-icons/fa";
 import formatTimeForDisplay from '../components/Calendar/formatTime';
 
 const WalkLog = () => {
