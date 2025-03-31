@@ -136,18 +136,18 @@ const DogLog = () => {
                                 <FaSearch className="absolute left-3 top-3 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="           Search dogs.."
+                                    placeholder="Search dogs.."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10 p-2 border rounded-lg text-sm bg-gray-50 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full"
+                                    className="pl-10 p-2 border rounded-lg text-sm bg-gray-50 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full md:w-64 text-center"
                                 />
                             </div>
                             <div className="relative">
-                                <FaCalendarAlt className="absolute left-3 top-3 text-gray-400" />
+                                <FaCalendarAlt className="absolute right-3 top-3 text-green-700" />
                                 <select
                                     value={dateFilter}
                                     onChange={(e) => setDateFilter(e.target.value)}
-                                    className="pl-10 p-2 border rounded-lg text-sm bg-gray-50 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    className="pl-10 p-2 border rounded-lg text-sm bg-gray-50 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full md:w-64"
                                 >
                                     <option value="all">All Time</option>
                                     <option value="last7">Last 7 Days</option>
@@ -160,7 +160,7 @@ const DogLog = () => {
                 </div>
 
                 {/* Dashboard Content */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     {/* Summary Cards */}
                     <div className="bg-white rounded-xl shadow-md p-6 flex items-center">
                         <div className="rounded-full bg-blue-100 p-3 mr-4">
@@ -223,7 +223,7 @@ const DogLog = () => {
                             No dog walk data found for the selected criteria.
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto px-2 sm:px-4">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
