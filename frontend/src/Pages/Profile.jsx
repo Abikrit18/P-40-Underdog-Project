@@ -31,17 +31,34 @@ const Profile = () => {
 
     const fetchUserDetails = async (userId) => {
         try {
-            if (user?.role === "admin") {
-                const response = await axios.get("http://localhost:3000/walks");
-                setScheduledWalks(response.data);
-            } else {
-                const response = await axios.get(`http://localhost:3000/users/profile/${userId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+            const response = await axios.get(`http://localhost:3000/users/profile/${userId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            setUser(response.data);
+            
+            // Filter walks based on user role
+            if (response.data.role === "admin") {
+                // For admin, get actively scheduled walks, not completed walk logs
+                const walksResponse = await axios.get("http://localhost:3000/walks/active", {
+                    headers: { Authorization: `Bearer ${token}` },
                 });
-                setUser(response.data);
-                setScheduledWalks(response.data.walks || []);
+                setScheduledWalks(walksResponse.data || []);
+            } else if (response.data.role === "Marshall") {
+                // For Marshall, filter out only the walks they are responsible for
+                setScheduledWalks(
+                    response.data.walks?.filter(walk => 
+                        walk.marshall?._id === userId
+                    ) || []
+                );
+            } else {
+                // For regular users, show only their scheduled walks
+                setScheduledWalks(
+                    response.data.walks?.filter(walk => 
+                        walk.userid?._id === userId
+                    ) || []
+                );
             }
         } catch (error) {
             console.error("Error fetching user details:", error);
@@ -109,16 +126,40 @@ const Profile = () => {
         if (!confirmDelete) return;
 
         try {
-        await axios.delete(`http://localhost:3000/walks/delete/${walkId}`, {
-            data: { userId: user._id },
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        // Immediately update UI by removing the deleted walk
-        setScheduledWalks(prevWalks => prevWalks.filter(walk => walk._id !== walkId));
-        toast.success("Walk card successfully removed from profile and deleted.", {
-            position: "top-center",
-            autoClose: 2000
-        });
+            // For admin, we need to get the walk details first to notify users
+            if (user.role === 'admin') {
+                const walkDetails = scheduledWalks.find(walk => walk._id === walkId);
+                
+                // Delete the walk
+                await axios.delete(`http://localhost:3000/walks/delete/${walkId}`, {
+                    data: { 
+                        userId: user._id,
+                        notifyUser: true, // Flag to indicate this is an admin deletion
+                        affectedUsers: walkDetails?.userid?._id // Pass the user ID to be notified
+                    },
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                toast.success("Walk has been deleted and user has been notified.", {
+                    position: "top-center",
+                    autoClose: 2000
+                });
+            } else {
+                // Regular deletion for non-admin users
+                await axios.delete(`http://localhost:3000/walks/delete/${walkId}`, {
+                    data: { userId: user._id },
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                toast.success("Walk card successfully removed from profile and deleted.", {
+                    position: "top-center",
+                    autoClose: 2000
+                });
+            }
+            
+            // Immediately update UI by removing the deleted walk
+            setScheduledWalks(prevWalks => prevWalks.filter(walk => walk._id !== walkId));
+            
         } catch (error) {
             console.error("Error deleting walk:", error);
             toast.error("Failed to delete walk. Please try again.", {
@@ -172,44 +213,168 @@ const Profile = () => {
             </div>
 
             <div className="mt-6">
-                <h2 className="text-xl font-semibold">Scheduled Walks</h2>
+                <h2 className="text-xl font-semibold mb-4">Scheduled Walks</h2>
                 {currentWalks.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                        {currentWalks.map((walk) => (
-                            <div key={walk._id} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-                                <p><strong>Date:</strong> {walk.date}</p>
-                                <p><strong>Time:</strong> {formatTimeForDisplay(walk.time)}</p>
-                                <p><strong>Marshall:</strong> {walk.marshall?.firstName || "Unknown"}</p>
-                                <p><strong>Scheduled By:</strong> {walk.userid?.firstName || "Unknown"}</p>
-                                {user.role === 'admin' && (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+                            {currentWalks.map((walk) => (
+                                <div key={walk._id} className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                                    {/* Card Header with Date and Status */}
+                                    <div className="bg-blue-50 px-4 py-2 border-b border-gray-200">
+                                        <div className="flex justify-between items-center">
+                                            <h3 className="font-medium">{walk.date}</h3>
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                {user.role === "admin" ? "Scheduled" : "Upcoming"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Card Body */}
+                                    <div className="p-4">
+                                        <div className="flex items-center mb-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span className="text-lg">{formatTimeForDisplay(walk.time)}</span>
+                                        </div>
+                                        
+                                        <div className="flex items-start mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Marshall</p>
+                                                <p className="font-medium">{walk.marshall?.firstName} {walk.marshall?.lastName || "Unknown"}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Display user info always for admin and marshall, and conditionally for regular users */}
+                                        {(user.role === "admin" || user.role === "Marshall" || (user.role === "user" && user._id === walk.userid?._id)) && (
+                                            <div className="flex items-start">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                </svg>
+                                                <div>
+                                                    <p className="text-sm text-gray-500">User</p>
+                                                    <p className="font-medium">{walk.userid?.firstName} {walk.userid?.lastName || "Unknown"}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Card Actions */}
+                                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                        {user.role === 'admin' && (
+                                            <button
+                                                onClick={() => handleDeleteWalk(walk._id)}
+                                                className="w-full flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                Delete Walk
+                                            </button>
+                                        )}
+                                        
+                                        {user._id === walk.marshall?._id && (
+                                            <div className="flex flex-col space-y-2">
+                                                <button
+                                                    onClick={() => handleCompleteWalk(walk._id)}
+                                                    className="flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    Complete Walk
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDidNotShow(walk._id)}
+                                                    className="flex items-center justify-center px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                    </svg>
+                                                    Did Not Show Up
+                                                </button>
+                                            </div>
+                                        )}
+                                        
+                                        {user.role === "user" && user._id === walk.userid?._id && (
+                                            <button
+                                                onClick={() => handleDeleteWalk(walk._id)}
+                                                className="w-full flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                                Cancel Walk
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center mt-6">
+                                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                                     <button
-                                        onClick={() => handleDeleteWalk(walk._id)}
-                                        className="mt-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                        onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
+                                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                                            currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                        disabled={currentPage === 1}
                                     >
-                                        Delete Walk
+                                        <span className="sr-only">Previous</span>
+                                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
                                     </button>
-                                )}
-                                {user._id === walk.marshall?._id && (
-                                  <>
+                                    
+                                    {[...Array(totalPages)].map((_, i) => (
+                                        <button
+                                            key={i + 1}
+                                            onClick={() => paginate(i + 1)}
+                                            className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                                                currentPage === i + 1 ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'text-gray-500 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            {i + 1}
+                                        </button>
+                                    ))}
+                                    
                                     <button
-                                      onClick={() => handleCompleteWalk(walk._id)}
-                                      className="mt-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 w-full"
+                                        onClick={() => paginate(currentPage < totalPages ? currentPage + 1 : totalPages)}
+                                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                                            currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                        disabled={currentPage === totalPages}
                                     >
-                                      Complete Walk
+                                        <span className="sr-only">Next</span>
+                                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                        </svg>
                                     </button>
-                                    <button
-                                      onClick={() => handleDidNotShow(walk._id)}
-                                      className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 w-full"
-                                    >
-                                      Did Not Show Up
-                                    </button>
-                                  </>
-                                )}
+                                </nav>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                    </>
                 ) : (
-                    <p className="text-gray-500 mt-4">No scheduled walks available.</p>
+                    <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-8 mt-4 border border-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p className="text-gray-600 text-lg">No scheduled walks available.</p>
+                        {user.role !== 'admin' && (
+                            <Link to="/walk" className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-medium text-white hover:bg-blue-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                {user.role === "Marshall" ? "Add Available Time" : "Schedule a Walk"}
+                            </Link>
+                        )}
+                    </div>
                 )}
             </div>
         </div>

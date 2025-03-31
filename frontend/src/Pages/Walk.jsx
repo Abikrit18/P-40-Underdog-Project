@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -41,43 +41,104 @@ const Walk = () => {
     const handleSelectWalk = async (walkId, timeSlot) => {
         try {
             // Check waiver status
-        const waiverResponse = await axios.get(`http://localhost:3000/users/profile/${user.id}`);
-        if (!waiverResponse.data.waiverSigned) {
-            alert("You must sign the waiver before scheduling a walk.");
-            navigate("/waiver");
-            return;
-        }
-
+            const waiverResponse = await axios.get(`http://localhost:3000/users/profile/${user.id}`);
+            if (!waiverResponse.data.waiverSigned) {
+                alert("You must sign the waiver before scheduling a walk.");
+                navigate("/waiver");
+                return;
+            }
+            
             // Proceed to select the walk if waiver is signed
             await axios.post(`http://localhost:3000/walks/select-walk/${walkId}`, {
                 userId: user.id,
                 timeSlot,
             });
-
-            setAvailableTimesData(prevData => prevData.filter(walk => walk._id !== walkId));
+            
+            // Fully refresh the available times data instead of just filtering out the selected walk
+            await fetchTimeSlotAvailability();
+            
+            // If we're on the same date that was selected, update the filtered walks
+            if (selectedDate) {
+                const updatedAvailableTimes = await fetchTimeSlotAvailability();
+                const updatedWalksForDate = updatedAvailableTimes.filter(walk => walk.date === selectedDate);
+                setFilteredWalks(updatedWalksForDate);
+            }
+            
             alert("Walk successfully selected!");
         } catch (error) {
             console.error("Error selecting walk:", error);
-            alert("Failed to select walk.");
+            if (error.response && error.response.data && error.response.data.error) {
+                // Display the specific error message from the server
+                alert(`Failed to select walk: ${error.response.data.error}`);
+            } else {
+                alert("Failed to select walk.");
+            }
         }
     };
 
-    const fetchAvailableTimes = async () => {
+    // Fetch slot availability information for each time slot
+    const fetchTimeSlotAvailability = async () => {
         try {
+            // Clear existing events first to prevent duplicates
+            setEvents([]);
+            
             const response = await axios.get("http://localhost:3000/walks/available-times");
-    
-            setAvailableTimesData(response.data);
-        
-        // Highlight dates with available walks
-        const availableTimeEvents = response.data.map((walk) => ({
-            date: walk.date,
-            display: 'background',
-            className: 'has-available-time'
-        }));
-
-        setEvents((prevEvents) => [...prevEvents, ...availableTimeEvents]);
+            const walks = response.data;
+            
+            // Process the walks data to include availability information
+            const enhancedWalks = walks.map(walk => {
+                // If the walk doesn't have timeSlots array, create default values
+                if (!walk.timeSlots || walk.timeSlots.length === 0) {
+                    return {
+                        ...walk,
+                        timeSlotAvailability: walk.availableTimes.reduce((acc, time) => {
+                            acc[time] = { 
+                                bookedCount: 0, 
+                                maxBookings: 4, 
+                                isAvailable: true 
+                            };
+                            return acc;
+                        }, {})
+                    };
+                }
+                
+                // Create a mapping of time slots to their availability
+                const timeSlotAvailability = {};
+                walk.timeSlots.forEach(slot => {
+                    timeSlotAvailability[slot.time] = {
+                        bookedCount: slot.bookedCount,
+                        maxBookings: slot.maxBookings,
+                        isAvailable: slot.bookedCount < slot.maxBookings
+                    };
+                });
+                
+                return {
+                    ...walk,
+                    timeSlotAvailability
+                };
+            });
+            
+            setAvailableTimesData(enhancedWalks);
+            
+            // Highlight dates with available walks
+            const availableTimeEvents = enhancedWalks.map((walk) => ({
+                date: walk.date,
+                display: 'background',
+                className: 'has-available-time'
+            }));
+            
+            setEvents(availableTimeEvents);
+            
+            // Re-filter walks for selected date if a date is already selected
+            if (selectedDate) {
+                const walksForDate = enhancedWalks.filter((walk) => walk.date === selectedDate);
+                setFilteredWalks(walksForDate);
+            }
+            
+            return enhancedWalks;
         } catch (error) {
             console.error("Error fetching available times:", error);
+            return [];
         }
     };
 
@@ -96,7 +157,7 @@ const Walk = () => {
     };
 
     useEffect(() => {
-        fetchAvailableTimes();
+        fetchTimeSlotAvailability();
         fetchShelterTimes();
     }, []);
 
@@ -140,7 +201,7 @@ const Walk = () => {
             alert("Available time added successfully!");
     
             // Re-fetch available times to ensure marshall's details are updated
-            await fetchAvailableTimes();
+            await fetchTimeSlotAvailability();
             setAvailableDate("");
             setAvailableTime("");
         } catch (error) {
@@ -163,7 +224,7 @@ const Walk = () => {
             })
             .then(response => {
                 alert("Time updated successfully!");
-                fetchAvailableTimes();
+                fetchTimeSlotAvailability();
             })
             .catch(error => {
                 console.error("Error updating time:", error);
@@ -180,7 +241,7 @@ const Walk = () => {
                     data: { time: timeSlot }
                 });
                 alert("Time deleted successfully!");
-                fetchAvailableTimes();
+                fetchTimeSlotAvailability();
             } catch (error) {
                 console.error("Error deleting time:", error);
                 alert("Failed to delete time.");
@@ -254,6 +315,44 @@ const Walk = () => {
         return time >= shelterTime.startTime && time <= shelterTime.endTime;
     };
 
+    // Function to generate time slots at 30-minute intervals within shelter hours
+    const generateTimeOptions = (date) => {
+        // Find shelter hours for this date
+        const shelterTime = shelterTimes.find(st => st.date === date);
+        
+        if (!shelterTime) {
+            return [];
+        }
+        
+        const { startTime, endTime } = shelterTime;
+        const options = [];
+        
+        // Parse start and end times
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
+        
+        // Create a Date object for easier time manipulation
+        const startDate = new Date();
+        startDate.setHours(startHour, startMinute, 0, 0);
+        
+        const endDate = new Date();
+        endDate.setHours(endHour, endMinute, 0, 0);
+        
+        // Generate time slots at 30-minute intervals
+        const currentTime = new Date(startDate);
+        
+        while (currentTime <= endDate) {
+            const hours = currentTime.getHours().toString().padStart(2, '0');
+            const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+            options.push(`${hours}:${minutes}`);
+            
+            // Add 30 minutes
+            currentTime.setMinutes(currentTime.getMinutes() + 30);
+        }
+        
+        return options;
+    };
+
     // Alternative custom formatting function if you prefer
     const formatTimeForDisplay = (timeString) => {
         if (!timeString) return "N/A";
@@ -269,6 +368,147 @@ const Walk = () => {
             console.error("Error formatting time:", error);
             return timeString;
         }
+    };
+
+    // Generate 30-minute interval options for shelter hours
+    const generate30MinTimeOptions = () => {
+        const options = [];
+        for (let i = 0; i < 24 * 60; i += 30) {
+            const hours = String(Math.floor(i / 60)).padStart(2, '0');
+            const minutes = String(i % 60).padStart(2, '0');
+            options.push(`${hours}:${minutes}`);
+        }
+        return options;
+    };
+
+    // Enhanced dropdown scrollable time picker component
+    const EnhancedTimePicker = ({ value, onChange, options, placeholder, disabled }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const dropdownRef = useRef(null);
+        const scrollContainerRef = useRef(null);
+        const optionRefs = useRef({});
+        
+        // Close dropdown when clicking outside
+        useEffect(() => {
+            const handleClickOutside = (event) => {
+                if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                    setIsOpen(false);
+                }
+            };
+            
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+            };
+        }, []);
+        
+        // Scroll to selected value when dropdown opens
+        useEffect(() => {
+            if (isOpen && value && scrollContainerRef.current && optionRefs.current[value]) {
+                const scrollContainer = scrollContainerRef.current;
+                const optionElement = optionRefs.current[value];
+                
+                // Calculate position to center the selected item
+                const scrollTop = optionElement.offsetTop - 
+                    (scrollContainer.clientHeight / 2) + 
+                    (optionElement.offsetHeight / 2);
+                
+                scrollContainer.scrollTop = scrollTop;
+            }
+        }, [isOpen, value]);
+        
+        // Toggle dropdown
+        const toggleDropdown = () => {
+            if (!disabled) {
+                setIsOpen(!isOpen);
+            }
+        };
+        
+        // Handle option selection
+        const handleSelect = (option) => {
+            onChange({ target: { value: option } });
+            setIsOpen(false);
+        };
+        
+        return (
+            <div ref={dropdownRef} className="relative w-full">
+                {/* Selected value display / dropdown trigger */}
+                <div 
+                    onClick={toggleDropdown}
+                    className={`
+                        w-full px-4 py-2 rounded-md border flex justify-between items-center cursor-pointer
+                        ${disabled 
+                            ? 'bg-gray-100 text-gray-500 border-gray-300' 
+                            : 'bg-white text-gray-800 border-gray-300 hover:border-blue-400'}
+                        ${isOpen ? 'border-blue-500 ring-2 ring-blue-200' : ''}
+                    `}
+                >
+                    <span className={!value ? 'text-gray-500' : ''}>
+                        {value ? formatTimeForDisplay(value) : placeholder || "Select time"}
+                    </span>
+                    <svg 
+                        className={`w-4 h-4 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 0 20 20" 
+                        fill="currentColor"
+                    >
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                </div>
+                
+                {/* Dropdown menu */}
+                {isOpen && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                    <div 
+                        ref={scrollContainerRef}
+                        className="max-h-60 overflow-y-auto py-1 scrollbar-thin"
+                        style={{ scrollBehavior: 'smooth' }}
+                    >
+                        {options.length > 0 ? (
+                            options.map((option) => (
+                                <div
+                                    key={option}
+                                    ref={(el) => optionRefs.current[option] = el}
+                                    className={`
+                                        px-4 py-2 cursor-pointer text-sm hover:bg-blue-50
+                                        ${value === option ? 'bg-blue-100 font-medium' : ''}
+                                    `}
+                                    onClick={() => handleSelect(option)}
+                                >
+                                    {formatTimeForDisplay(option)}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="px-4 py-2 text-sm text-gray-500">
+                                No times available
+                            </div>
+                        )}
+                    </div>
+                    </div>
+                )}
+                
+                {/* Custom scrollbar styling */}
+                <style jsx>{`
+                    .scrollbar-thin::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    
+                    .scrollbar-thin::-webkit-scrollbar-track {
+                        background: #f1f1f1;
+                        border-radius: 3px;
+                    }
+                    
+                    .scrollbar-thin::-webkit-scrollbar-thumb {
+                        background: #c1c1c1;
+                        border-radius: 3px;
+                    }
+                    
+                    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+                        background: #a1a1a1;
+                    }
+                `}</style>
+            </div>
+        );
     };
 
     return (
@@ -313,18 +553,40 @@ const Walk = () => {
                             <input
                                 type="date"
                                 value={availableDate}
-                                onChange={(e) => setAvailableDate(e.target.value)}
+                                onChange={(e) => {
+                                    setAvailableDate(e.target.value);
+                                    setAvailableTime(''); // Reset time when date changes
+                                }}
                                 required
                                 className="form-input"
                             />
-                            <input
-                                type="time"
-                                value={availableTime}
-                                onChange={(e) => setAvailableTime(e.target.value)}
-                                required
-                                className="form-input"
-                            />
-                            <button type="submit" className="form-button small-button">Add Time</button>
+                            
+                            {availableDate ? (
+                                <EnhancedTimePicker
+                                    value={availableTime}
+                                    onChange={(e) => setAvailableTime(e.target.value)}
+                                    options={generateTimeOptions(availableDate)}
+                                    placeholder="Select Time"
+                                    disabled={!availableDate}
+                                />
+                            ) : (
+                                <div className="relative w-full">
+                                    <div className="w-full px-4 py-2 rounded-md border bg-gray-100 text-gray-500 border-gray-300 flex justify-between items-center">
+                                        <span className="text-gray-500">Select a date first</span>
+                                        <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <button 
+                                type="submit" 
+                                className="form-button small-button"
+                                disabled={!availableDate || !availableTime}
+                            >
+                                Add Time
+                            </button>
                         </form>
                     </div>
                 )}
@@ -348,28 +610,28 @@ const Walk = () => {
                             </div>
                             <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                            <input
-                                type="time"
+                            <EnhancedTimePicker
                                 value={shelterStartTime}
                                 onChange={(e) => setShelterStartTime(e.target.value)}
-                                required
-                                className="w-full p-2 border border-gray-300 rounded-md"
+                                options={generate30MinTimeOptions()}
+                                placeholder="Select start time"
                             />
                             </div>
                             <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                            <input
-                                type="time"
+                            <EnhancedTimePicker
                                 value={shelterEndTime}
                                 onChange={(e) => setShelterEndTime(e.target.value)}
-                                required
-                                className="w-full p-2 border border-gray-300 rounded-md"
+                                options={generate30MinTimeOptions().filter(time => time > shelterStartTime)}
+                                placeholder="Select end time"
+                                disabled={!shelterStartTime}
                             />
                             </div>
                         </div>
                         <button 
                             type="submit" 
                             className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
+                            disabled={!shelterDate || !shelterStartTime || !shelterEndTime}
                         >
                             Add Shelter Hours
                         </button>
@@ -422,44 +684,81 @@ const Walk = () => {
                 )}
                 <div className="mt-10 mb-16 px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredWalks.map((walk, index) =>
-                    walk.availableTimes.map((timeSlot, idx) => (
-                        <div key={`${index}-${idx}`} className="bg-white shadow-md rounded-lg p-6 border border-gray-300 flex flex-col justify-between">
-                            <h2 className="text-lg font-semibold text-gray-800">
-                                Marshall: {walk.marshall?.firstName || "Unknown"}
-                            </h2>
-                            <p className="text-gray-600">Date: {walk.date}</p>
-                            <p className="text-gray-600">Time: {formatTimeForDisplay(timeSlot)}</p>
-
-                <div className="flex gap-2 mt-2">
-                    {user?.id !== walk.marshall?._id && (
-                        <button
-                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md"
-                            onClick={() => handleSelectWalk(walk._id, timeSlot)}
+                    walk.availableTimes.map((timeSlot, idx) => {
+                        // Get availability info for this time slot
+                        const slotInfo = walk.timeSlotAvailability && walk.timeSlotAvailability[timeSlot];
+                        const bookedCount = slotInfo ? slotInfo.bookedCount : 0;
+                        const maxBookings = slotInfo ? slotInfo.maxBookings : 4;
+                        const isFullyBooked = bookedCount >= maxBookings;
+                        
+                        return (
+                        <div 
+                            key={`${index}-${idx}`} 
+                            className={`${isFullyBooked ? 'bg-red-50 border-red-300' : 'bg-white border-gray-300'} shadow-md rounded-lg p-6 border flex flex-col justify-between`}
                         >
-                            Select
-                        </button>
-                    )}
-                    {user?.id === walk.marshall?._id && (
-                        <>
-                            <button
-                                className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-                                onClick={() => handleEditTime(walk, timeSlot)}
-                            >
-                                Edit
-                            </button>
-                            <button
-                                className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
-                                onClick={() => handleDeleteTime(walk._id, timeSlot)}
-                            >
-                                Delete
-                            </button>
-                        </>
-                    )}
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-800">
+                                    Marshall: {walk.marshall?.firstName || "Unknown"}
+                                </h2>
+                                <p className="text-gray-600">Date: {walk.date}</p>
+                                <p className="text-gray-600">Time: {formatTimeForDisplay(timeSlot)}</p>
+                                
+                                {/* Display booking capacity */}
+                                <div className="mt-2">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span>Available Slots:</span>
+                                        <span className={`font-medium ${isFullyBooked ? 'text-red-600' : 'text-green-600'}`}>
+                                            {maxBookings - bookedCount} of {maxBookings}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                        <div 
+                                            className={`${isFullyBooked ? 'bg-red-600' : 'bg-green-600'} h-2 rounded-full`} 
+                                            style={{ width: `${(bookedCount / maxBookings) * 100}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                                
+                                {isFullyBooked && (
+                                    <div className="mt-2 py-1 px-2 bg-red-100 text-red-800 text-sm font-medium rounded">
+                                        Not Available
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-2 mt-4">
+                                {user?.id !== walk.marshall?._id && (
+                                    <button
+                                        className={`px-4 py-2 rounded-md ${isFullyBooked 
+                                            ? 'bg-gray-400 cursor-not-allowed' 
+                                            : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
+                                        onClick={() => !isFullyBooked && handleSelectWalk(walk._id, timeSlot)}
+                                        disabled={isFullyBooked}
+                                    >
+                                        {isFullyBooked ? 'Fully Booked' : 'Select'}
+                                    </button>
+                                )}
+                                {user?.id === walk.marshall?._id && (
+                                    <>
+                                        <button
+                                            className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                                            onClick={() => handleEditTime(walk, timeSlot)}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                            onClick={() => handleDeleteTime(walk._id, timeSlot)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )})
+                )}
                 </div>
-            </div>
-        ))
-    )}
-</div>
         </div>
     );
 };

@@ -14,6 +14,16 @@ const walkSchema = new mongoose.Schema({
     type: String 
   },
   availableTimes: [{ type: String }], // Stores available times per marshall for a date
+  timeSlots: [{
+    time: String,
+    bookedCount: { type: Number, default: 0 },
+    maxBookings: { type: Number, default: 4 }
+  }],
+  status: { 
+    type: String, 
+    enum: ['available', 'scheduled', 'filled'], 
+    default: 'available' 
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Walk', walkSchema);
