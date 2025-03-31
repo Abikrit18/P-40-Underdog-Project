@@ -10,6 +10,7 @@ const dogRoutes = require('./routes/dogRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const walkRoutes = require('./routes/walkRoutes');
 const shelterTimeRoutes = require('./routes/shelterTimeRoutes');
+const dogStatsRoutes = require('./routes/dogStatsRoutes');
 
 const app = express();
 const port = 3000;
@@ -34,6 +35,7 @@ app.use('/dogs', dogRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/walks', walkRoutes);
 app.use('/shelter-times', shelterTimeRoutes);
+app.use('/stats',dogStatsRoutes)
 
 // 404 Handler
 app.use((req, res) => {

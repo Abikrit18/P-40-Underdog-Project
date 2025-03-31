@@ -175,7 +175,7 @@ export default function Navbar() {
                                                 <>
                                                     <MenuItem>
                                                         <a href="/profile" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
-                                                            Your Profile
+                                                            Profile
                                                         </a>
                                                     </MenuItem>
                                                     
@@ -188,11 +188,13 @@ export default function Navbar() {
                                                         </MenuItem>
                                                     )}
 
-                                                    <MenuItem>
-                                                        <a href="/settings" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
-                                                            Settings
-                                                        </a>
-                                                    </MenuItem>
+                                                    {(userRole === 'admin' || userRole === 'Marshall') && (
+                                                        <MenuItem>
+                                                            <a href="/doglog" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
+                                                                dogLog
+                                                            </a>
+                                                        </MenuItem>
+                                                    )}
                                                     <MenuItem>
                                                         <button
                                                             onClick={handleLogout}
