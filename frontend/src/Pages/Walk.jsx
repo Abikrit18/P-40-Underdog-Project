@@ -24,6 +24,8 @@ const Walk = () => {
     const [shelterStartTime, setShelterStartTime] = useState("");
     const [shelterEndTime, setShelterEndTime] = useState("");
     const [shelterTimesLoading, setShelterTimesLoading] = useState(true);
+    const [completedWalks, setCompletedWalks] = useState([]);
+    const [isLoadingCompletedWalks, setIsLoadingCompletedWalks] = useState(false);
 
     const token = localStorage.getItem("token");
 
@@ -37,6 +39,41 @@ const Walk = () => {
             }
         }
     }, [token]);
+    
+    // Fetch user's completed walks
+    const fetchCompletedWalks = async (userId) => {
+        if (!userId) return;
+        
+        setIsLoadingCompletedWalks(true);
+        try {
+            const response = await axios.get(`http://localhost:3000/walks/logs`);
+            
+            // Filter walk logs for the current user
+            const userCompletedWalks = response.data.filter(walkLog => 
+                walkLog.userId?._id === userId && 
+                (walkLog.status === 'pending' || walkLog.status === 'completed')
+            );
+            
+            setCompletedWalks(userCompletedWalks);
+        } catch (error) {
+            console.error("Error fetching completed walks:", error);
+        } finally {
+            setIsLoadingCompletedWalks(false);
+        }
+    };
+    
+    // Check if a user has already completed a walk at this time slot
+    const hasCompletedWalkAtTimeSlot = (date, time) => {
+        if (!completedWalks.length) return false;
+        
+        return completedWalks.some(walk => walk.date === date && walk.time === time);
+    };
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchCompletedWalks(user.id);
+        }
+    }, [user]);
 
     const handleSelectWalk = async (walkId, timeSlot) => {
         try {
@@ -45,6 +82,13 @@ const Walk = () => {
             if (!waiverResponse.data.waiverSigned) {
                 alert("You must sign the waiver before scheduling a walk.");
                 navigate("/waiver");
+                return;
+            }
+            
+            // Check if user has already completed a walk at this time slot
+            const walk = availableTimesData.find(w => w._id === walkId);
+            if (walk && hasCompletedWalkAtTimeSlot(walk.date, timeSlot)) {
+                toast.error("You have already completed a walk at this time slot. Please select a different time.");
                 return;
             }
             
@@ -511,6 +555,105 @@ const Walk = () => {
         );
     };
 
+    // Render the time slot cards with visual indicators for completed walks
+    const renderTimeSlotCards = () => {
+        return filteredWalks.map((walk, index) =>
+            walk.availableTimes.map((timeSlot, idx) => {
+                // Get availability info for this time slot
+                const slotInfo = walk.timeSlotAvailability && walk.timeSlotAvailability[timeSlot];
+                const bookedCount = slotInfo ? slotInfo.bookedCount : 0;
+                const maxBookings = slotInfo ? slotInfo.maxBookings : 4;
+                const isFullyBooked = bookedCount >= maxBookings;
+                
+                // Check if the user has already completed a walk at this time
+                const alreadyCompletedWalk = hasCompletedWalkAtTimeSlot(walk.date, timeSlot);
+                
+                let cardStyle = "bg-white border-gray-300";
+                let statusMessage = null;
+                
+                if (isFullyBooked) {
+                    cardStyle = "bg-red-50 border-red-300";
+                    statusMessage = <div className="mt-2 py-1 px-2 bg-red-100 text-red-800 text-sm font-medium rounded">
+                        Not Available
+                    </div>;
+                } else if (alreadyCompletedWalk) {
+                    cardStyle = "bg-gray-100 border-gray-400";
+                    statusMessage = <div className="mt-2 py-1 px-2 bg-gray-200 text-gray-700 text-sm font-medium rounded">
+                        Already Completed
+                    </div>;
+                }
+                
+                return (
+                <div 
+                    key={`${index}-${idx}`} 
+                    className={`${cardStyle} shadow-md rounded-lg p-6 border flex flex-col justify-between`}
+                >
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-800">
+                            Marshall: {walk.marshall?.firstName || "Unknown"}
+                        </h2>
+                        <p className="text-gray-600">Date: {walk.date}</p>
+                        <p className="text-gray-600">Time: {formatTimeForDisplay(timeSlot)}</p>
+                        
+                        {/* Display booking capacity */}
+                        <div className="mt-2">
+                            <div className="flex justify-between items-center text-sm">
+                                <span>Available Slots:</span>
+                                <span className={`font-medium ${isFullyBooked ? 'text-red-600' : 'text-green-600'}`}>
+                                    {maxBookings - bookedCount} of {maxBookings}
+                                </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                <div 
+                                    className={`${isFullyBooked ? 'bg-red-600' : 'bg-green-600'} h-2 rounded-full`} 
+                                    style={{ width: `${(bookedCount / maxBookings) * 100}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                        
+                        {statusMessage}
+                    </div>
+
+                    <div className="flex gap-2 mt-4">
+                        {user?.id !== walk.marshall?._id && (
+                            <button
+                                className={`px-4 py-2 rounded-md ${
+                                    isFullyBooked || alreadyCompletedWalk 
+                                    ? 'bg-gray-400 cursor-not-allowed' 
+                                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                                }`}
+                                onClick={() => !isFullyBooked && !alreadyCompletedWalk && handleSelectWalk(walk._id, timeSlot)}
+                                disabled={isFullyBooked || alreadyCompletedWalk}
+                            >
+                                {isFullyBooked 
+                                  ? 'Fully Booked' 
+                                  : alreadyCompletedWalk 
+                                    ? 'Already Walked' 
+                                    : 'Select'}
+                            </button>
+                        )}
+                        {user?.id === walk.marshall?._id && (
+                            <>
+                                <button
+                                    className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                                    onClick={() => handleEditTime(walk, timeSlot)}
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                    onClick={() => handleDeleteTime(walk._id, timeSlot)}
+                                >
+                                    Delete
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )})
+        );
+    };
+
     return (
         <div>
             <h1 className="calendar-title" style={{ textAlign: "center", margin: "20px 0" }}>Walk Scheduling Calendar</h1>
@@ -682,82 +825,22 @@ const Walk = () => {
                         </button>
                     </div>
                 )}
-                <div className="mt-10 mb-16 px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredWalks.map((walk, index) =>
-                    walk.availableTimes.map((timeSlot, idx) => {
-                        // Get availability info for this time slot
-                        const slotInfo = walk.timeSlotAvailability && walk.timeSlotAvailability[timeSlot];
-                        const bookedCount = slotInfo ? slotInfo.bookedCount : 0;
-                        const maxBookings = slotInfo ? slotInfo.maxBookings : 4;
-                        const isFullyBooked = bookedCount >= maxBookings;
-                        
-                        return (
-                        <div 
-                            key={`${index}-${idx}`} 
-                            className={`${isFullyBooked ? 'bg-red-50 border-red-300' : 'bg-white border-gray-300'} shadow-md rounded-lg p-6 border flex flex-col justify-between`}
-                        >
-                            <div>
-                                <h2 className="text-lg font-semibold text-gray-800">
-                                    Marshall: {walk.marshall?.firstName || "Unknown"}
-                                </h2>
-                                <p className="text-gray-600">Date: {walk.date}</p>
-                                <p className="text-gray-600">Time: {formatTimeForDisplay(timeSlot)}</p>
-                                
-                                {/* Display booking capacity */}
-                                <div className="mt-2">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span>Available Slots:</span>
-                                        <span className={`font-medium ${isFullyBooked ? 'text-red-600' : 'text-green-600'}`}>
-                                            {maxBookings - bookedCount} of {maxBookings}
-                                        </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                                        <div 
-                                            className={`${isFullyBooked ? 'bg-red-600' : 'bg-green-600'} h-2 rounded-full`} 
-                                            style={{ width: `${(bookedCount / maxBookings) * 100}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                                
-                                {isFullyBooked && (
-                                    <div className="mt-2 py-1 px-2 bg-red-100 text-red-800 text-sm font-medium rounded">
-                                        Not Available
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex gap-2 mt-4">
-                                {user?.id !== walk.marshall?._id && (
-                                    <button
-                                        className={`px-4 py-2 rounded-md ${isFullyBooked 
-                                            ? 'bg-gray-400 cursor-not-allowed' 
-                                            : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
-                                        onClick={() => !isFullyBooked && handleSelectWalk(walk._id, timeSlot)}
-                                        disabled={isFullyBooked}
-                                    >
-                                        {isFullyBooked ? 'Fully Booked' : 'Select'}
-                                    </button>
-                                )}
-                                {user?.id === walk.marshall?._id && (
-                                    <>
-                                        <button
-                                            className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-                                            onClick={() => handleEditTime(walk, timeSlot)}
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
-                                            onClick={() => handleDeleteTime(walk._id, timeSlot)}
-                                        >
-                                            Delete
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    )})
+                
+                {/* If date is selected and no slots, show a message */}
+                {selectedDate && filteredWalks.length === 0 && (
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-blue-800 text-center">
+                            No available walk times for the selected date. Please select another date.
+                        </p>
+                    </div>
                 )}
+                
+                <div className="mt-10 mb-16 px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {isLoadingCompletedWalks ? (
+                        <div className="col-span-full text-center py-8">
+                            <p className="text-gray-600">Loading available walks...</p>
+                        </div>
+                    ) : renderTimeSlotCards()}
                 </div>
         </div>
     );

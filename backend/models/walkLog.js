@@ -7,7 +7,8 @@ const walkLogSchema = new mongoose.Schema({
   },
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
+    ref: 'User',
+    required: true
   },
   marshallId: { 
     type: mongoose.Schema.Types.ObjectId, 
@@ -35,5 +36,8 @@ const walkLogSchema = new mongoose.Schema({
     default: false
   }
 }, { timestamps: true });
+
+// Create a compound index for efficiently checking if a user has completed a walk for a specific date and time
+walkLogSchema.index({ userId: 1, date: 1, time: 1 });
 
 module.exports = mongoose.model('WalkLog', walkLogSchema);

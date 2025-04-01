@@ -145,6 +145,20 @@ router.post('/select-walk/:walkId', async (req, res) => {
             return res.status(404).json({ error: "Walk not found" });
         }
         
+        // Check if the user has already completed a walk for this specific date and time
+        const completedWalk = await WalkLog.findOne({
+            userId: userId,
+            date: walk.date,
+            time: timeSlot,
+            status: { $in: ['pending', 'completed'] } // Check for both pending and completed walks
+        });
+        
+        if (completedWalk) {
+            return res.status(400).json({ 
+                error: "You have already completed a walk at this time slot. Please select a different time." 
+            });
+        }
+        
         // Check if the requested time slot exists
         if (!walk.availableTimes.includes(timeSlot)) {
             return res.status(400).json({ error: "Time slot does not exist for this walk" });
