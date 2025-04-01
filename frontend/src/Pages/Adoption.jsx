@@ -1,128 +1,176 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const Adoption = () => {
+  // Animation variants
+  const fadeIn = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6 }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-['Poppins']">
       {/* Hero Section */}
-      <div className="relative rounded-xl overflow-hidden mb-12">
+      <motion.div 
+        className="relative rounded-xl overflow-hidden mb-12"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <img
           src="https://plus.unsplash.com/premium_photo-1692641997227-d2f3dc4ab021?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           alt="Dog adoption"
-          className="w-full h-80 object-cover"
+          className="w-full h-96 object-cover transform hover:scale-105 transition-transform duration-700"
         />
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50 flex items-center justify-center">
           <div className="text-center px-4">
-            <h1 className="text-4xl font-bold text-white mb-4">Adoption Process</h1>
-            <p className="text-xl text-white max-w-3xl">
+            <motion.h1 
+              className="text-5xl font-extrabold text-white mb-4 font-['Playfair_Display']"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              Adoption Process
+            </motion.h1>
+            <motion.p 
+              className="text-2xl text-white max-w-3xl font-light"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
               Find your perfect companion and give a deserving dog their forever home
-            </p>
+            </motion.p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Why Adopt Section */}
       <div className="mb-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-6">Why Adopt?</h2>
-          <p className="text-lg text-gray-700 max-w-3xl mx-auto mb-12">
+        <motion.div 
+          className="text-center mb-12"
+          {...fadeIn}
+        >
+          <h2 className="text-4xl font-bold mb-6 text-maroon font-['Playfair_Display']">Why Adopt?</h2>
+          <p className="text-xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed">
             When you adopt a dog, you're not just bringing home a pet; you're saving a life and making a difference.
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Reason 1 */}
-          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-            <div className="text-orange-700 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <motion.div 
+            className="bg-white rounded-lg shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-t-4 border-orange-500"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="text-orange-600 mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold mb-3">Save a Life</h3>
-            <p className="text-gray-700">
-              Each year, millions of dogs enter shelters. By choosing adoption, you're giving a deserving dog a second chance at happiness and making room for another dog in need.
+            <h3 className="text-2xl font-bold mb-4 text-orange-800">Save a Life</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Each year, millions of dogs enter shelters. By choosing adoption, you're giving a deserving dog a second chance at happiness.
             </p>
-          </div>
+          </motion.div>
 
           {/* Reason 2 */}
-          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-            <div className="text-orange-700 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <motion.div 
+            className="bg-white rounded-lg shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-t-4 border-orange-500"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="text-orange-600 mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold mb-3">Cost-Effective</h3>
-            <p className="text-gray-700">
+            <h3 className="text-2xl font-bold mb-4 text-orange-800">Cost-Effective</h3>
+            <p className="text-gray-600 leading-relaxed">
               Adoption fees include vaccinations, spay/neuter, microchipping, and initial vet checks - services that would cost significantly more if purchased separately.
             </p>
-          </div>
+          </motion.div>
 
           {/* Reason 3 */}
-          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-            <div className="text-orange-700 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <motion.div 
+            className="bg-white rounded-lg shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-t-4 border-orange-500"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="text-orange-600 mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold mb-3">Known History</h3>
-            <p className="text-gray-700">
+            <h3 className="text-2xl font-bold mb-4 text-orange-800">Known History</h3>
+            <p className="text-gray-600 leading-relaxed">
               Our dogs are thoroughly evaluated for health and temperament. We provide detailed information about their personality, behavior, and medical history.
             </p>
-          </div>
+          </motion.div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto mt-8">
           {/* Reason 4 */}
-          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+          <motion.div 
+            className="bg-white rounded-lg shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-t-4 border-orange-500"
+            whileHover={{ scale: 1.02 }}
+          >
             <div className="flex items-start gap-4">
-              <div className="text-orange-700">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="text-orange-600">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-2">Expert Support</h3>
-                <p className="text-gray-700">
+                <h3 className="text-2xl font-bold mb-4 text-orange-800">Expert Support</h3>
+                <p className="text-gray-600 leading-relaxed">
                   Get ongoing support from our experienced team, including training tips, behavioral advice, and medical guidance throughout your dog's life.
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Reason 5 */}
-          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+          <motion.div 
+            className="bg-white rounded-lg shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-t-4 border-orange-500"
+            whileHover={{ scale: 1.02 }}
+          >
             <div className="flex items-start gap-4">
-              <div className="text-orange-700">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="text-orange-600">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-2">Join Our Community</h3>
-                <p className="text-gray-700">
+                <h3 className="text-2xl font-bold mb-4 text-orange-800">Join Our Community</h3>
+                <p className="text-gray-600 leading-relaxed">
                   Become part of our growing family of adopters. Participate in exclusive events, share experiences, and connect with other dog lovers.
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Impact Stats */}
         <div className="bg-orange-50 rounded-xl p-8 mt-12 max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold text-orange-700 mb-2">500+</div>
-              <p className="text-gray-700">Dogs Adopted Last Year</p>
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+              <div className="text-5xl font-bold text-orange-600 mb-2 font-['Playfair_Display']">500+</div>
+              <p className="text-gray-700 text-lg">Dogs Adopted Last Year</p>
             </div>
-            <div>
-              <div className="text-4xl font-bold text-orange-700 mb-2">98%</div>
-              <p className="text-gray-700">Successful Adoptions</p>
+            <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+              <div className="text-5xl font-bold text-orange-600 mb-2 font-['Playfair_Display']">98%</div>
+              <p className="text-gray-700 text-lg">Successful Adoptions</p>
             </div>
-            <div>
-              <div className="text-4xl font-bold text-orange-700 mb-2">15+</div>
-              <p className="text-gray-700">Years of Experience</p>
+            <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+              <div className="text-5xl font-bold text-orange-600 mb-2 font-['Playfair_Display']">15+</div>
+              <p className="text-gray-700 text-lg">Years of Experience</p>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -378,21 +426,37 @@ const Adoption = () => {
         </div>
       </div>
 
-      {/* CTA */}
-      <div className="bg-red-900 rounded-xl p-8 text-center">
-        <h2 className="text-3xl font-bold text-white mb-4">Ready to Find Your Forever Friend?</h2>
-        <p className="text-xl text-white mb-8 max-w-3xl mx-auto">
+      {/* CTA Section with enhanced styling */}
+      <motion.div 
+        className="bg-gradient-to-r from-red-900 to-orange-800 rounded-xl p-12 text-center shadow-2xl"
+        whileHover={{ scale: 1.01 }}
+        transition={{ duration: 0.3 }}
+      >
+        <h2 className="text-4xl font-bold text-white mb-6 font-['Playfair_Display']">Ready to Find Your Forever Friend?</h2>
+        <p className="text-2xl text-white/90 mb-8 max-w-3xl mx-auto font-light">
           Take the first step toward bringing home a loving companion who needs you as much as you need them.
         </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <Link to="/dogs" className="bg-white text-orange-700 hover:bg-gray-100 font-bold py-3 px-8 rounded-full text-lg">
-            Browse Available Dogs
+        <div className="flex flex-wrap justify-center gap-6">
+          <Link to="/dogs">
+            <motion.button
+              className="bg-white text-orange-700 hover:bg-orange-50 font-bold py-4 px-8 rounded-full text-xl shadow-lg"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Browse Available Dogs
+            </motion.button>
           </Link>
-          <Link to="/application" className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-bold py-3 px-8 rounded-full text-lg">
-            Start Application
+          <Link to="/application">
+            <motion.button
+              className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-bold py-4 px-8 rounded-full text-xl"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Start Application
+            </motion.button>
           </Link>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
