@@ -4,6 +4,7 @@ const Walk = require('../models/walk'); // Import the Walk model
 const User = require('../models/User');
 const WalkLog = require('../models/walkLog'); // Import the WalkLog model
 
+
 // Endpoint to add time for a walk
 router.post('/add-time', async (req, res) => {
     try {
@@ -122,6 +123,22 @@ router.post('/select-walk/:walkId', async (req, res) => {
         const { walkId } = req.params;
         const { userId, timeSlot } = req.body;
         
+        // Check if the user already has any active scheduled walks
+        const user = await User.findById(userId).populate('walks');
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        // If user has any active scheduled walks, prevent them from scheduling another
+        if (user.walks && user.walks.length > 0) {
+            const activeWalks = user.walks.filter(walk => walk.status === 'scheduled');
+            if (activeWalks.length > 0) {
+                return res.status(400).json({ 
+                    error: "You already have an active scheduled walk. Please complete your current walk before scheduling another one." 
+                });
+            }
+        }
+        
         // Find the walk record
         const walk = await Walk.findById(walkId);
         if (!walk) {
@@ -174,7 +191,6 @@ router.post('/select-walk/:walkId', async (req, res) => {
         await bookedWalk.save();
         
         // Add the walk to the user's profile
-        const user = await User.findById(userId);
         user.walks.push(bookedWalk._id);
         await user.save();
         
