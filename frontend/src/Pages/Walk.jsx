@@ -49,7 +49,7 @@ const Walk = () => {
             }
             
             // Proceed to select the walk if waiver is signed
-            await axios.post(`http://localhost:3000/walks/select-walk/${walkId}`, {
+            const response = await axios.post(`http://localhost:3000/walks/select-walk/${walkId}`, {
                 userId: user.id,
                 timeSlot,
             });
@@ -64,14 +64,14 @@ const Walk = () => {
                 setFilteredWalks(updatedWalksForDate);
             }
             
-            alert("Walk successfully selected!");
+            toast.success("Walk successfully selected!");
         } catch (error) {
             console.error("Error selecting walk:", error);
             if (error.response && error.response.data && error.response.data.error) {
                 // Display the specific error message from the server
-                alert(`Failed to select walk: ${error.response.data.error}`);
+                toast.error(`Failed to select walk: ${error.response.data.error}`);
             } else {
-                alert("Failed to select walk.");
+                toast.error("Failed to select walk.");
             }
         }
     };

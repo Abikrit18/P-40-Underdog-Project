@@ -237,6 +237,23 @@ router.post('/complete/:walkId', async (req, res) => {
             return res.status(403).json({ error: "Unauthorized to complete this walk" });
         }
 
+        // Check if this time slot was fully booked before allowing it to be added back
+        let isSlotFullyBooked = false;
+        if (walk.date && walk.time && walk.marshall) {
+            const originalWalk = await Walk.findOne({ 
+                marshall: walk.marshall,
+                date: walk.date,
+                status: { $in: ['available', 'filled'] }
+            });
+            
+            if (originalWalk && originalWalk.timeSlots && originalWalk.timeSlots.length > 0) {
+                const timeSlot = originalWalk.timeSlots.find(ts => ts.time === walk.time);
+                if (timeSlot && timeSlot.bookedCount >= 4) {
+                    isSlotFullyBooked = true;
+                }
+            }
+        }
+
         // Create walk log entry
         const walkLog = new WalkLog({
             walkId: walk._id,
@@ -244,7 +261,8 @@ router.post('/complete/:walkId', async (req, res) => {
             marshallId: walk.marshall,
             date: walk.date,
             time: walk.time,
-            status: 'pending'
+            status: 'pending',
+            isTimeSlotFullyBooked: isSlotFullyBooked // Track if the slot was fully booked
         });
         await walkLog.save();
 
@@ -260,7 +278,8 @@ router.post('/complete/:walkId', async (req, res) => {
 
         res.status(200).json({ 
             message: "Walk marked as completed and log created",
-            logId: walkLog._id 
+            logId: walkLog._id,
+            isTimeSlotFullyBooked: isSlotFullyBooked
         });
     } catch (error) {
         console.error("Error completing walk:", error);
@@ -493,10 +512,18 @@ router.put('/logs/:logId', async (req, res) => {
 // Route to add an available time after a walk is completed
 router.post('/restore-available-time', async (req, res) => {
     try {
-        const { marshallId, date, time } = req.body;
+        const { marshallId, date, time, isTimeSlotFullyBooked } = req.body;
 
         if (!marshallId || !date || !time) {
             return res.status(400).json({ error: 'Marshall ID, date, and time are required' });
+        }
+
+        // If the time slot was fully booked (reached 4 users), don't restore it
+        if (isTimeSlotFullyBooked) {
+            return res.status(200).json({ 
+                message: 'Time slot was fully booked (4 users) and will remain unavailable',
+                wasRestored: false
+            });
         }
 
         // Check if there's already a walk record for this marshall and date
@@ -548,7 +575,8 @@ router.post('/restore-available-time', async (req, res) => {
 
         res.status(201).json({ 
             message: 'Time slot restored successfully', 
-            walk 
+            walk,
+            wasRestored: true
         });
     } catch (error) {
         console.error('Error restoring available time:', error);

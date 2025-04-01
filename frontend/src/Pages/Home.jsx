@@ -34,14 +34,26 @@ const Home = () => {
 
   // Sort walks by date and time for the timeline
   const sortedWalks = [...scheduledWalks].sort((a, b) => {
+    // Check if objects have the required properties
+    if (!a || !b) return 0;
+    
     // First compare dates
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
+    const dateA = a.date ? new Date(a.date) : new Date(0);
+    const dateB = b.date ? new Date(b.date) : new Date(0);
+    
     if (dateA > dateB) return 1;
     if (dateA < dateB) return -1;
     
-    // If dates are equal, compare times
-    return a.time.localeCompare(b.time);
+    // If dates are equal, compare times (safely)
+    if (a.time && b.time) {
+      return a.time.localeCompare(b.time);
+    }
+    
+    // Handle cases when one or both times are missing
+    if (!a.time) return 1; // Push items without time to the end
+    if (!b.time) return -1;
+    
+    return 0;
   });
 
   return (

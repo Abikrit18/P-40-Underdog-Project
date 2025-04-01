@@ -29,6 +29,10 @@ const walkLogSchema = new mongoose.Schema({
     type: String, 
     enum: ['pending', 'completed', 'incomplete'], 
     default: 'pending' 
+  },
+  isTimeSlotFullyBooked: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 
