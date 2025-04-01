@@ -271,6 +271,17 @@ const Walk = () => {
         }
     };
 
+    const generateTimeOptions = () => {
+        const options = [];
+        for (let hour = 0; hour < 24; hour++) {
+            for (let minute of ['00', '30']) {
+                const formattedHour = hour.toString().padStart(2, '0');
+                options.push(`${formattedHour}:${minute}`);
+            }
+        }
+        return options;
+    };
+
     return (
         <div>
             <h1 className="calendar-title" style={{ textAlign: "center", margin: "20px 0" }}>Walk Scheduling Calendar</h1>
@@ -348,23 +359,37 @@ const Walk = () => {
                             </div>
                             <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                            <input
-                                type="time"
+                            <select
                                 value={shelterStartTime}
                                 onChange={(e) => setShelterStartTime(e.target.value)}
                                 required
                                 className="w-full p-2 border border-gray-300 rounded-md"
-                            />
+                            >
+                                <option value="">Select start time</option>
+                                {generateTimeOptions().map(time => (
+                                    <option key={`start-${time}`} value={time}>
+                                        {formatTimeForDisplay(time)}
+                                    </option>
+                                ))}
+                            </select>
                             </div>
                             <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                            <input
-                                type="time"
+                            <select
                                 value={shelterEndTime}
                                 onChange={(e) => setShelterEndTime(e.target.value)}
                                 required
                                 className="w-full p-2 border border-gray-300 rounded-md"
-                            />
+                            >
+                                <option value="">Select end time</option>
+                                {generateTimeOptions()
+                                    .filter(time => time > shelterStartTime) // Only show times after start time
+                                    .map(time => (
+                                        <option key={`end-${time}`} value={time}>
+                                            {formatTimeForDisplay(time)}
+                                        </option>
+                                    ))}
+                            </select>
                             </div>
                         </div>
                         <button 
