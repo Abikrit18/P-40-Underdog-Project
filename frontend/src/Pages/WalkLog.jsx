@@ -61,7 +61,7 @@ const WalkLog = () => {
     const fetchDogs = async () => {
         try {
             // Fetch dogs data
-            const response = await axios.get("http://localhost:3000/dogs");  
+            const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/dogs");  
             // Extract just the dog names from the dog objects
             const dogNames = response.data.map(dog => dog.name);
             setAvailableDogs(dogNames);
@@ -82,9 +82,9 @@ const WalkLog = () => {
             let response;
             
             if (role === 'admin') {
-                response = await axios.get(`http://localhost:3000/walks/logs?sortOrder=${sortOrder}`);
+                response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/walks/logs?sortOrder=${sortOrder}`);
             } else if (role === 'Marshall') {
-                response = await axios.get(`http://localhost:3000/walks/logs/marshall/${userId}?sortOrder=${sortOrder}`);
+                response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/walks/logs/marshall/${userId}?sortOrder=${sortOrder}`);
             }
             
             const logs = response.data;
@@ -279,7 +279,7 @@ const WalkLog = () => {
 
     const handleSubmit = async (logId) => {
         try {
-            const logResponse = await axios.put(`http://localhost:3000/walks/logs/${logId}`, {
+            const logResponse = await axios.put(`https://p-40-underdog-project-backend.onrender.com/walks/logs/${logId}`, {
                 dogs: selectedDogs[logId],
                 status: 'completed'
             });
@@ -291,7 +291,7 @@ const WalkLog = () => {
             
             // Restore the time slot for the marshall to make it available again
             try {
-                await axios.post('http://localhost:3000/walks/restore-available-time', {
+                await axios.post('https://p-40-underdog-project-backend.onrender.com/walks/restore-available-time', {
                     marshallId: completedLog.marshallId,
                     date: completedLog.date,
                     time: completedLog.time

@@ -35,7 +35,7 @@ const DogLog = () => {
     const fetchLogs = async () => {
         setIsLoading(true);
         try {
-            const response = await axios.get("http://localhost:3000/stats/dogs/walk-counts");
+            const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/stats/dogs/walk-counts");
             setLogs(response.data);
             setFilteredLogs(response.data);
         } catch (error) {

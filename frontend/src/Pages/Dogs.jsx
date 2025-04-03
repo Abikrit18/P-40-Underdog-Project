@@ -103,7 +103,7 @@ const DogList = () => {
     formData.append('image', file);
     
     try {
-      const response = await axios.post('http://localhost:3000/api/upload', formData, {
+      const response = await axios.post('https://p-40-underdog-project-backend.onrender.com/api/upload', formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -137,7 +137,7 @@ const DogList = () => {
 
   const fetchDogs = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/dogs', {
+      const response = await axios.get('https://p-40-underdog-project-backend.onrender.com/dogs', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -258,7 +258,7 @@ const DogList = () => {
       return;
     }
     try {
-      const response = await axios.post('http://localhost:3000/dogs', newDog,
+      const response = await axios.post('https://p-40-underdog-project-backend.onrender.com/dogs', newDog,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -281,7 +281,7 @@ const DogList = () => {
 
   const handleDelete = async (dog) => {
     try {
-      await axios.delete(`http://localhost:3000/dogs/${dog._id}`, {
+      await axios.delete(`https://p-40-underdog-project-backend.onrender.com/dogs/${dog._id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -308,7 +308,7 @@ const DogList = () => {
 
   const handleEdit = async (updatedDog) => {
     try {
-      await axios.put(`http://localhost:3000/dogs/${updatedDog._id}`, updatedDog, {
+      await axios.put(`https://p-40-underdog-project-backend.onrender.com/dogs/${updatedDog._id}`, updatedDog, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
