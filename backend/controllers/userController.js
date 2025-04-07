@@ -90,5 +90,36 @@ const userProfile = async (req, res) => {
     }
 };
 
+const handleGoogleLogin = async (req, res) => {
+    const { email, firstName, lastName, googleId } = req.body;
+    
+    try {
+        // Check if user exists
+        let user = await User.findOne({ email });
+        
+        if (!user) {
+            // Create new user if doesn't exist
+            user = await User.create({
+                firstName,
+                lastName,
+                email,
+                password: `google_${googleId}`, // You might want to handle this differently
+                googleId
+            });
+        }
+        
+        const token = generateToken(user);
+        res.status(200).json({
+            message: 'Login successful',
+            token,
+            userId: user._id,
+            email: user.email,
+            role: user.role,
+        });
+    } catch (error) {
+        console.error('Error during Google login:', error);
+        res.status(500).json({ error: 'Failed to process Google login' });
+    }
+};
 
-export { registerUser, loginUser, getUsers, userProfile };
+export { registerUser, loginUser, handleGoogleLogin, getUsers, userProfile };

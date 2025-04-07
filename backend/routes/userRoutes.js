@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User'); // Import the User model
-const { registerUser, loginUser, getUsers, userProfile } = require('../controllers/userController');
+const { registerUser, loginUser, handleGoogleLogin, getUsers, userProfile } = require('../controllers/userController');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.post('/google-login', handleGoogleLogin);
 router.get('/', getUsers);
 router.get('/profile/:id', userProfile);
 

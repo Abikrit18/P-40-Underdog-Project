@@ -20,6 +20,7 @@
     "@heroicons/react": "^2.2.0",
     "@mui/icons-material": "^6.4.2",
     "@mui/material": "^6.4.2",
+    "@react-oauth/google": "^0.12.1",
     "@tailwindcss/vite": "^4.0.3",
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
