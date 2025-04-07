@@ -37,7 +37,7 @@ const Profile = () => {
                 },
             });
             setUser(response.data);
-            
+
             // Filter walks based on user role
             if (response.data.role === "admin") {
                 // For admin, get actively scheduled walks, not completed walk logs
@@ -48,14 +48,14 @@ const Profile = () => {
             } else if (response.data.role === "Marshall") {
                 // For Marshall, filter out only the walks they are responsible for
                 setScheduledWalks(
-                    response.data.walks?.filter(walk => 
+                    response.data.walks?.filter(walk =>
                         walk.marshall?._id === userId
                     ) || []
                 );
             } else {
                 // For regular users, show only their scheduled walks
                 setScheduledWalks(
-                    response.data.walks?.filter(walk => 
+                    response.data.walks?.filter(walk =>
                         walk.userid?._id === userId
                     ) || []
                 );
@@ -122,24 +122,27 @@ const Profile = () => {
     };
 
     const handleDeleteWalk = async (walkId) => {
-        const confirmDelete = window.confirm("Are you sure you want to delete this walk?");
+        const confirmDelete = window.confirm("Are you sure you want to cancel this walk?");
         if (!confirmDelete) return;
 
         try {
-            // For admin, we need to get the walk details first to notify users
+            // Get the walk details before deletion
+            const walkDetails = scheduledWalks.find(walk => walk._id === walkId);
+            const walkDate = walkDetails?.date;
+            const walkTime = walkDetails?.time;
+
+            // For admin, we need special handling to notify users
             if (user.role === 'admin') {
-                const walkDetails = scheduledWalks.find(walk => walk._id === walkId);
-                
                 // Delete the walk
                 await axios.delete(`http://localhost:3000/walks/delete/${walkId}`, {
-                    data: { 
+                    data: {
                         userId: user._id,
                         notifyUser: true, // Flag to indicate this is an admin deletion
                         affectedUsers: walkDetails?.userid?._id // Pass the user ID to be notified
                     },
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                
+
                 toast.success("Walk has been deleted and user has been notified.", {
                     position: "top-center",
                     autoClose: 2000
@@ -150,19 +153,27 @@ const Profile = () => {
                     data: { userId: user._id },
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                
-                toast.success("Walk card successfully removed from profile and deleted.", {
+
+                toast.success("Walk has been canceled.", {
                     position: "top-center",
                     autoClose: 2000
                 });
+
+                // If the walk was for a date/time that was fully booked, show additional message
+                if (walkDate && walkTime) {
+                    toast.info(`Note: If this time slot (${walkDate} at ${formatTimeForDisplay(walkTime)}) was fully booked with 4 users and any walks were completed, it will remain unavailable for new bookings.`, {
+                        position: "top-center",
+                        autoClose: 5000
+                    });
+                }
             }
-            
+
             // Immediately update UI by removing the deleted walk
             setScheduledWalks(prevWalks => prevWalks.filter(walk => walk._id !== walkId));
-            
+
         } catch (error) {
             console.error("Error deleting walk:", error);
-            toast.error("Failed to delete walk. Please try again.", {
+            toast.error("Failed to cancel walk. Please try again.", {
                 position: "top-center",
                 autoClose: 3000
             });
@@ -228,7 +239,7 @@ const Profile = () => {
                                             </span>
                                         </div>
                                     </div>
-                                    
+
                                     {/* Card Body */}
                                     <div className="p-4">
                                         <div className="flex items-center mb-3">
@@ -237,7 +248,7 @@ const Profile = () => {
                                             </svg>
                                             <span className="text-lg">{formatTimeForDisplay(walk.time)}</span>
                                         </div>
-                                        
+
                                         <div className="flex items-start mb-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -247,7 +258,7 @@ const Profile = () => {
                                                 <p className="font-medium">{walk.marshall?.firstName} {walk.marshall?.lastName || "Unknown"}</p>
                                             </div>
                                         </div>
-                                        
+
                                         {/* Display user info always for admin and marshall, and conditionally for regular users */}
                                         {(user.role === "admin" || user.role === "Marshall" || (user.role === "user" && user._id === walk.userid?._id)) && (
                                             <div className="flex items-start">
@@ -261,7 +272,7 @@ const Profile = () => {
                                             </div>
                                         )}
                                     </div>
-                                    
+
                                     {/* Card Actions */}
                                     <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
                                         {user.role === 'admin' && (
@@ -275,7 +286,7 @@ const Profile = () => {
                                                 Delete Walk
                                             </button>
                                         )}
-                                        
+
                                         {user._id === walk.marshall?._id && (
                                             <div className="flex flex-col space-y-2">
                                                 <button
@@ -298,7 +309,7 @@ const Profile = () => {
                                                 </button>
                                             </div>
                                         )}
-                                        
+
                                         {user.role === "user" && user._id === walk.userid?._id && (
                                             <button
                                                 onClick={() => handleDeleteWalk(walk._id)}
@@ -314,7 +325,7 @@ const Profile = () => {
                                 </div>
                             ))}
                         </div>
-                        
+
                         {/* Pagination */}
                         {totalPages > 1 && (
                             <div className="flex justify-center mt-6">
@@ -331,7 +342,7 @@ const Profile = () => {
                                             <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
                                     </button>
-                                    
+
                                     {[...Array(totalPages)].map((_, i) => (
                                         <button
                                             key={i + 1}
@@ -343,7 +354,7 @@ const Profile = () => {
                                             {i + 1}
                                         </button>
                                     ))}
-                                    
+
                                     <button
                                         onClick={() => paginate(currentPage < totalPages ? currentPage + 1 : totalPages)}
                                         className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
