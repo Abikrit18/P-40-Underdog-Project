@@ -52,7 +52,8 @@ export default function Login() {
                     });
                     const token = data.token;
                     localStorage.setItem('token', token);
-                    const decodedToken = jwtDecode(token);
+                    // Log the decoded token for debugging
+                    console.log('Regular login token decoded:', jwtDecode(token));
                     setTimeout(() => navigate('/profile'), 1000);
                 }
             } else {
@@ -74,7 +75,8 @@ export default function Login() {
 
     const handleGoogleSuccess = async (credentialResponse) => {
         const decoded = jwtDecode(credentialResponse.credential);
-        
+        console.log('Google credential decoded:', decoded);
+
         try {
             const response = await fetch('http://localhost:3000/users/google-login', {
                 method: 'POST',
@@ -88,12 +90,25 @@ export default function Login() {
             });
 
             const data = await response.json();
+            console.log('Google login response:', data);
+
             if (response.ok) {
                 toast.success('Login successful!', {
                     position: "top-center",
                     autoClose: 2000
                 });
+
+                // Store the token and trigger a storage event for other components
                 localStorage.setItem('token', data.token);
+
+                // Decode the token to verify it has the correct structure
+                try {
+                    const tokenDecoded = jwtDecode(data.token);
+                    console.log('Server token decoded:', tokenDecoded);
+                } catch (tokenError) {
+                    console.error('Error decoding server token:', tokenError);
+                }
+
                 setTimeout(() => navigate('/profile'), 1000);
             } else {
                 toast.error(data.error || 'An error occurred', {
@@ -116,26 +131,26 @@ export default function Login() {
                 <div className="max-w-md w-full space-y-8">
                     {/* Toast notifications container */}
                     <ToastContainer />
-                    
+
                     {/* Decorative elements */}
                     <div className="absolute -top-10 -left-10 w-40 h-40 bg-orange-200 rounded-full filter blur-3xl opacity-40"></div>
                     <div className="absolute top-1/2 right-10 w-60 h-60 bg-red-200 rounded-full filter blur-3xl opacity-40"></div>
-                    
+
                     <div className="bg-white shadow-2xl rounded-xl p-8 relative overflow-hidden z-10 border-t-4 border-red-900">
                         {/* Decorative corner accent */}
                         <div className="absolute top-0 right-0 w-16 h-16 bg-orange-700 -rotate-45 transform translate-x-5 -translate-y-5"></div>
-                        
+
                         <div className="text-center">
                             <h2 className="mt-4 text-3xl font-extrabold text-gray-900">
                                 {isRegistering ? 'Create Your Account' : 'Welcome Back!'}
                             </h2>
                             <p className="mt-2 text-sm text-gray-600">
-                                {isRegistering 
-                                    ? 'Join our community of dog lovers' 
+                                {isRegistering
+                                    ? 'Join our community of dog lovers'
                                     : 'Sign in to continue your journey with UnderDogs'}
                             </p>
                         </div>
-                        
+
                         <div className="mt-4 mb-6">
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
@@ -145,7 +160,7 @@ export default function Login() {
                                     <span className="px-2 bg-white text-gray-500">Or continue with</span>
                                 </div>
                             </div>
-                            
+
                             <div className="mt-6 flex justify-center">
                                 <GoogleLogin
                                     onSuccess={handleGoogleSuccess}
@@ -159,7 +174,7 @@ export default function Login() {
                                 />
                             </div>
                         </div>
-                        
+
                         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                             <div className="space-y-4">
                                 {isRegistering && (
@@ -208,7 +223,7 @@ export default function Login() {
                                         </div>
                                     </>
                                 )}
-                                
+
                                 <div>
                                     <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                                         Email Address
@@ -231,7 +246,7 @@ export default function Login() {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div>
                                     <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                                         Password
@@ -274,7 +289,7 @@ export default function Login() {
                                             </svg>
                                         )}
                                     </span>
-                                    {isLoading 
+                                    {isLoading
                                         ? (isRegistering ? 'Creating Account...' : 'Signing In...')
                                         : (isRegistering ? 'Create Account' : 'Sign In')
                                     }

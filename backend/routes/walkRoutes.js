@@ -3,6 +3,7 @@ const router = express.Router();
 const Walk = require('../models/walk'); // Import the Walk model
 const User = require('../models/User');
 const WalkLog = require('../models/walkLog'); // Import the WalkLog model
+const { createSystemNotification } = require('../controllers/notificationController'); // Import notification controller
 
 
 // Endpoint to add time for a walk
@@ -292,6 +293,31 @@ router.post('/select-walk/:walkId', async (req, res) => {
             await walk.save();
         }
 
+        // Create notifications for both user and marshall
+        // Get marshall's name for the notification
+        const marshallData = await User.findById(walk.marshall, 'firstName lastName');
+        const userNotificationContent = `You have scheduled a walk on ${walk.date} at ${timeSlot}.`;
+        const marshallNotificationContent = `${user.firstName} ${user.lastName} has scheduled a walk with you on ${walk.date} at ${timeSlot}.`;
+
+        // Send notification to user
+        await createSystemNotification(
+            userId,
+            userNotificationContent,
+            'walk',
+            walk._id,
+            'Walk'
+        );
+
+        // Send notification to marshall
+        await createSystemNotification(
+            walk.marshall,
+            marshallNotificationContent,
+            'walk',
+            walk._id,
+            'Walk',
+            userId
+        );
+
         res.status(200).json({
             message: "Walk successfully scheduled",
             walk: bookedWalk,
@@ -387,6 +413,28 @@ router.post('/complete/:walkId', async (req, res) => {
 
         // Remove walk from Walk collection
         await Walk.findByIdAndDelete(req.params.walkId);
+
+        // Create completion notifications
+        const userData = await User.findById(walk.userid, 'firstName lastName');
+        const marshallData = await User.findById(walk.marshall, 'firstName lastName');
+
+        // Notification for user
+        await createSystemNotification(
+            walk.userid,
+            `Your walk on ${walk.date} at ${walk.time} has been marked as completed.`,
+            'walk',
+            walkLog._id,
+            'WalkLog'
+        );
+
+        // Notification for marshall
+        await createSystemNotification(
+            walk.marshall,
+            `The walk with ${userData.firstName} ${userData.lastName} on ${walk.date} at ${walk.time} has been marked as completed.`,
+            'walk',
+            walkLog._id,
+            'WalkLog'
+        );
 
         res.status(200).json({
             message: "Walk marked as completed and log created",
@@ -559,6 +607,28 @@ router.post('/incomplete/:walkId', async (req, res) => {
 
         // Remove walk from Walk collection
         await Walk.findByIdAndDelete(req.params.walkId);
+
+        // Create incomplete walk notifications
+        const userData = await User.findById(walk.userid, 'firstName lastName');
+        const marshallData = await User.findById(walk.marshall, 'firstName lastName');
+
+        // Notification for user
+        await createSystemNotification(
+            walk.userid,
+            `Your walk on ${walk.date} at ${walk.time} has been marked as incomplete by the marshall.`,
+            'walk',
+            walkLog._id,
+            'WalkLog'
+        );
+
+        // Notification for marshall
+        await createSystemNotification(
+            walk.marshall,
+            `You have marked the walk with ${userData.firstName} ${userData.lastName} on ${walk.date} at ${walk.time} as incomplete.`,
+            'walk',
+            walkLog._id,
+            'WalkLog'
+        );
 
         res.status(200).json({ message: "Walk marked as incomplete and removed from profiles", logId: walkLog._id });
     } catch (error) {

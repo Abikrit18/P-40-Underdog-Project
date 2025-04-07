@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import NotificationBell from './NotificationBell';
 
 const navigation = [
     { name: 'Home', href: '/' },
@@ -61,7 +62,7 @@ export default function Navbar() {
                 checkAuthStatus();
             }
         };
-        
+
         window.addEventListener('storage', handleStorageChange);
         return () => {
             window.removeEventListener('storage', handleStorageChange);
@@ -159,6 +160,11 @@ export default function Navbar() {
                                 </div>
 
                                 <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+                                    {isLoggedIn && (
+                                        <div className="mr-3">
+                                            <NotificationBell />
+                                        </div>
+                                    )}
                                     <Menu as="div" className="relative">
                                         <div>
                                             <MenuButton className="relative flex items-center justify-center rounded-full text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-red-900 focus:outline-none w-8 h-8">
@@ -178,7 +184,7 @@ export default function Navbar() {
                                                             Profile
                                                         </a>
                                                     </MenuItem>
-                                                    
+
                                                     {/* Admin-only Settings 2 */}
                                                     {userRole === 'admin' && (
                                                         <MenuItem>
