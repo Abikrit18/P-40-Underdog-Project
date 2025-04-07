@@ -3,12 +3,13 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
 // Create the context
-export const NotificationContext = createContext();
+const NotificationContext = createContext();
 
 // Create a custom hook to use the notification context
-export const useNotifications = () => useContext(NotificationContext);
+const useNotifications = () => useContext(NotificationContext);
 
-export const NotificationProvider = ({ children }) => {
+// Provider component
+function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -241,4 +242,6 @@ export const NotificationProvider = ({ children }) => {
       {children}
     </NotificationContext.Provider>
   );
-};
+}
+
+export { NotificationContext, useNotifications, NotificationProvider };
