@@ -11,6 +11,7 @@ const Profile = () => {
     const [user, setUser] = useState(null);
     const [scheduledWalks, setScheduledWalks] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
     const walksPerPage = 9;
 
     const token = localStorage.getItem("token");
@@ -184,8 +185,17 @@ const Profile = () => {
     // Pagination Logic
     const indexOfLastWalk = currentPage * walksPerPage;
     const indexOfFirstWalk = indexOfLastWalk - walksPerPage;
-    const currentWalks = scheduledWalks.slice(indexOfFirstWalk, indexOfLastWalk);
-    const totalPages = Math.ceil(scheduledWalks.length / walksPerPage);
+    const filteredWalks = scheduledWalks.filter(walk => {
+        const search = searchQuery.toLowerCase();
+        const dateMatch = walk.date.toLowerCase().includes(search);
+        const userMatch =
+            walk.userid?.firstName?.toLowerCase().includes(search) ||
+            walk.userid?.lastName?.toLowerCase().includes(search);
+        return dateMatch || userMatch;
+    });
+
+    const currentWalks = filteredWalks.slice(indexOfFirstWalk, indexOfLastWalk);
+    const totalPages = Math.ceil(filteredWalks.length / walksPerPage);
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -228,7 +238,18 @@ const Profile = () => {
             </div>
 
             <div className="mt-6">
-                <h2 className="text-xl font-semibold mb-4">Scheduled Walks</h2>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 space-y-2 md:space-y-0">
+                    <h2 className="text-xl font-semibold">Scheduled Walks</h2>
+                    {user.role === "admin" && (
+                    <input
+                            type="text"
+                            placeholder="Search by date or user..."
+                    className="shadow-lg focus:border-2 border-gray-300 px-5 py-3 rounded-xl w-68 transition-all focus:w-72 outline-none"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    )}
+                </div>
                 {currentWalks.length > 0 ? (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
