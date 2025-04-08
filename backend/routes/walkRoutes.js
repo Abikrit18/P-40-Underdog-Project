@@ -299,23 +299,36 @@ router.post('/select-walk/:walkId', async (req, res) => {
         const userNotificationContent = `You have scheduled a walk on ${walk.date} at ${timeSlot}.`;
         const marshallNotificationContent = `${user.firstName} ${user.lastName} has scheduled a walk with you on ${walk.date} at ${timeSlot}.`;
 
-        // Send notification to user
+        // Send notification to user with email
         await createSystemNotification(
             userId,
             userNotificationContent,
             'walk',
             walk._id,
-            'Walk'
+            'Walk',
+            null,
+            true, // Send email
+            {
+                action: 'scheduled',
+                walk: { date: walk.date, time: timeSlot },
+                marshall: marshallData
+            }
         );
 
-        // Send notification to marshall
+        // Send notification to marshall with email
         await createSystemNotification(
             walk.marshall,
             marshallNotificationContent,
             'walk',
             walk._id,
             'Walk',
-            userId
+            userId,
+            true, // Send email
+            {
+                action: 'scheduled',
+                walk: { date: walk.date, time: timeSlot },
+                marshall: marshallData
+            }
         );
 
         res.status(200).json({
@@ -418,22 +431,34 @@ router.post('/complete/:walkId', async (req, res) => {
         const userData = await User.findById(walk.userid, 'firstName lastName');
         const marshallData = await User.findById(walk.marshall, 'firstName lastName');
 
-        // Notification for user
+        // Notification for user with email
         await createSystemNotification(
             walk.userid,
             `Your walk on ${walk.date} at ${walk.time} has been marked as completed.`,
             'walk',
             walkLog._id,
-            'WalkLog'
+            'WalkLog',
+            null,
+            true, // Send email
+            {
+                action: 'completed',
+                walk: { date: walk.date, time: walk.time }
+            }
         );
 
-        // Notification for marshall
+        // Notification for marshall with email
         await createSystemNotification(
             walk.marshall,
             `The walk with ${userData.firstName} ${userData.lastName} on ${walk.date} at ${walk.time} has been marked as completed.`,
             'walk',
             walkLog._id,
-            'WalkLog'
+            'WalkLog',
+            null,
+            true, // Send email
+            {
+                action: 'completed',
+                walk: { date: walk.date, time: walk.time }
+            }
         );
 
         res.status(200).json({
@@ -612,22 +637,34 @@ router.post('/incomplete/:walkId', async (req, res) => {
         const userData = await User.findById(walk.userid, 'firstName lastName');
         const marshallData = await User.findById(walk.marshall, 'firstName lastName');
 
-        // Notification for user
+        // Notification for user with email
         await createSystemNotification(
             walk.userid,
             `Your walk on ${walk.date} at ${walk.time} has been marked as incomplete by the marshall.`,
             'walk',
             walkLog._id,
-            'WalkLog'
+            'WalkLog',
+            null,
+            true, // Send email
+            {
+                action: 'canceled',
+                walk: { date: walk.date, time: walk.time }
+            }
         );
 
-        // Notification for marshall
+        // Notification for marshall with email
         await createSystemNotification(
             walk.marshall,
             `You have marked the walk with ${userData.firstName} ${userData.lastName} on ${walk.date} at ${walk.time} as incomplete.`,
             'walk',
             walkLog._id,
-            'WalkLog'
+            'WalkLog',
+            null,
+            true, // Send email
+            {
+                action: 'canceled',
+                walk: { date: walk.date, time: walk.time }
+            }
         );
 
         res.status(200).json({ message: "Walk marked as incomplete and removed from profiles", logId: walkLog._id });

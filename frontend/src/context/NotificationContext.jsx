@@ -141,6 +141,18 @@ function NotificationProvider({ children }) {
       });
 
       console.log('Notifications response:', response.data);
+
+      // Compare with current notifications to detect new ones
+      const currentIds = new Set(notifications.map(n => n._id));
+      const newNotifications = response.data.notifications.filter(n => !currentIds.has(n._id));
+
+      // If there are new notifications, play a sound
+      if (newNotifications.length > 0 && notifications.length > 0) {
+        // Play notification sound
+        const audio = new Audio('/notification-sound.mp3');
+        audio.play().catch(e => console.log('Error playing notification sound:', e));
+      }
+
       setNotifications(response.data.notifications);
       setUnreadCount(response.data.unreadCount);
     } catch (error) {

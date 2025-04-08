@@ -4,6 +4,9 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Walk from '../models/walk.js';
 
+// Import the notification controller for sending welcome notifications
+import { createSystemNotification } from '../controllers/notificationController.js';
+
 const generateToken = (user) => {
     return jwt.sign({ id: user._id, role: user.role, userName: `${user.firstName} ${user.lastName}` }, process.env.JWT_SECRET, { expiresIn: '1h' });
 };
@@ -18,6 +21,23 @@ const registerUser = async (req, res) => {
 
         const hashedPassword = await hash(password, 10);
         const newUser = await User.create({ firstName, lastName, email, password: hashedPassword });
+
+        // Send welcome notification with email
+        try {
+            await createSystemNotification(
+                newUser._id,
+                `Welcome to P-40 Underdogs, ${firstName}! We're excited to have you join our community.`,
+                'user',
+                newUser._id,
+                'User',
+                null,
+                true, // Send email
+                { action: 'welcome' }
+            );
+        } catch (notificationError) {
+            console.error('Error sending welcome notification:', notificationError);
+            // Continue even if notification fails
+        }
 
         res.status(201).json({ message: 'User registered successfully', userId: newUser._id });
     } catch (error) {
@@ -37,6 +57,21 @@ const loginUser = async (req, res) => {
         if (!isPasswordValid) return res.status(400).json({ error: 'Invalid email or password' });
 
         const token = generateToken(user);
+
+        // Send login notification (in-app only, no email)
+        try {
+            await createSystemNotification(
+                user._id,
+                `You have successfully logged in to your account.`,
+                'user',
+                user._id,
+                'User'
+            );
+        } catch (notificationError) {
+            console.error('Error sending login notification:', notificationError);
+            // Continue even if notification fails
+        }
+
         res.status(200).json({
             message: 'Login successful',
             token,
@@ -92,11 +127,13 @@ const userProfile = async (req, res) => {
 
 const handleGoogleLogin = async (req, res) => {
     const { email, firstName, lastName, googleId } = req.body;
-    
+
     try {
         // Check if user exists
         let user = await User.findOne({ email });
-        
+
+        let isNewUser = false;
+
         if (!user) {
             // Create new user if doesn't exist
             user = await User.create({
@@ -106,9 +143,44 @@ const handleGoogleLogin = async (req, res) => {
                 password: `google_${googleId}`, // You might want to handle this differently
                 googleId
             });
+            isNewUser = true;
         }
-        
+
         const token = generateToken(user);
+
+        // If this is a new user, send a welcome notification with email
+        if (isNewUser) {
+            try {
+                await createSystemNotification(
+                    user._id,
+                    `Welcome to P-40 Underdogs, ${firstName}! We're excited to have you join our community.`,
+                    'user',
+                    user._id,
+                    'User',
+                    null,
+                    true, // Send email
+                    { action: 'welcome' }
+                );
+            } catch (notificationError) {
+                console.error('Error sending welcome notification:', notificationError);
+                // Continue even if notification fails
+            }
+        } else {
+            // Send login notification (in-app only, no email)
+            try {
+                await createSystemNotification(
+                    user._id,
+                    `You have successfully logged in to your account with Google.`,
+                    'user',
+                    user._id,
+                    'User'
+                );
+            } catch (notificationError) {
+                console.error('Error sending login notification:', notificationError);
+                // Continue even if notification fails
+            }
+        }
+
         res.status(200).json({
             message: 'Login successful',
             token,

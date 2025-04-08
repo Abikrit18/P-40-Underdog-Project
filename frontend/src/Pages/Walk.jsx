@@ -208,14 +208,22 @@ const Walk = () => {
           });
 
           // Process the shelter times to ensure dates are normalized
-          const processedShelterTimes = response.data.map(time => ({
-            ...time,
-            // Store both the original date and a normalized version for comparison
-            originalDate: time.date,
-            normalizedDate: normalizeDateString(time.date)
-          }));
+          const processedShelterTimes = response.data.map(time => {
+            const normalizedDate = normalizeDateString(time.date);
+            return {
+              ...time,
+              // Store both the original date and a normalized version for comparison
+              originalDate: time.date,
+              normalizedDate: normalizedDate
+            };
+          });
 
-          console.log('Fetched shelter times:', processedShelterTimes);
+          console.log('Fetched shelter times with normalized dates:', processedShelterTimes.map(st => ({
+            id: st._id,
+            date: st.date,
+            normalizedDate: st.normalizedDate
+          })));
+
           setShelterTimes(processedShelterTimes);
           setShelterTimesLoading(false);
         } catch (error) {
@@ -242,7 +250,18 @@ const Walk = () => {
         }
 
         // Check if there are shelter hours for this date using the normalized date field
-        const matchingShelterTime = shelterTimes.find(st => st.normalizedDate === normalizedDate);
+        // Try both the normalized date and the original date for maximum compatibility
+        let matchingShelterTime = shelterTimes.find(st => st.normalizedDate === normalizedDate);
+
+        if (!matchingShelterTime) {
+            // Try finding by original date as a fallback
+            matchingShelterTime = shelterTimes.find(st => normalizeDateString(st.date) === normalizedDate);
+
+            if (matchingShelterTime) {
+                console.log('Found shelter time using date normalization fallback:', matchingShelterTime);
+            }
+        }
+
         const hasShelterHours = !!matchingShelterTime;
 
         console.log('Shelter hours check:', {
@@ -404,8 +423,24 @@ const Walk = () => {
 
         console.log('Checking if time is within shelter hours:', { date, normalizedDate, time });
 
+        // Debug: Log all shelter times to help diagnose the issue
+        console.log('All shelter times:', shelterTimes.map(st => ({
+            id: st._id,
+            date: st.date,
+            originalDate: st.originalDate,
+            normalizedDate: st.normalizedDate,
+            startTime: st.startTime,
+            endTime: st.endTime
+        })));
+
         // Find the shelter time for this date using the normalized date field
-        const shelterTime = shelterTimes.find(st => st.normalizedDate === normalizedDate);
+        // Try both the normalized date and the original date for maximum compatibility
+        let shelterTime = shelterTimes.find(st => st.normalizedDate === normalizedDate);
+
+        if (!shelterTime) {
+            // Try finding by original date as a fallback
+            shelterTime = shelterTimes.find(st => normalizeDateString(st.date) === normalizedDate);
+        }
 
         // If no shelter time is set for this date, return false
         if (!shelterTime) {
@@ -456,7 +491,17 @@ const Walk = () => {
         })));
 
         // Find shelter hours for this date using the normalized date field
-        const shelterTime = shelterTimes.find(st => st.normalizedDate === normalizedDate);
+        // Try both the normalized date and the original date for maximum compatibility
+        let shelterTime = shelterTimes.find(st => st.normalizedDate === normalizedDate);
+
+        if (!shelterTime) {
+            // Try finding by original date as a fallback
+            shelterTime = shelterTimes.find(st => normalizeDateString(st.date) === normalizedDate);
+
+            if (shelterTime) {
+                console.log('Found shelter time using date normalization fallback:', shelterTime);
+            }
+        }
 
         if (!shelterTime) {
             console.log(`No shelter time found for date: ${date} (normalized: ${normalizedDate})`);

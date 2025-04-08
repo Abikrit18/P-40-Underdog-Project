@@ -5,6 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Link } from "react-router-dom";
 import formatTimeForDisplay from "../components/Calendar/formatTime";
+import PushNotificationManager from "../components/PushNotificationManager";
 
 const Profile = () => {
     const [user, setUser] = useState(null);
@@ -205,7 +206,10 @@ const Profile = () => {
             <hr className="my-4" />
 
             <div className="mt-6 space-y-3 bg-white shadow-md rounded-lg p-6 border border-gray-200">
-                <h2 className="text-xl font-semibold text-center text-gray-800">User Information</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-800">User Information</h2>
+                    <PushNotificationManager />
+                </div>
                 <p><strong>Name:</strong> {user.firstName} {user.lastName}</p>
                 <p><strong>Email:</strong> {user.email}</p>
                 <p><strong>Role:</strong> {user.role}</p>

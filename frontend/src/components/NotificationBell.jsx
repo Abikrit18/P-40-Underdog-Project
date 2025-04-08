@@ -5,16 +5,30 @@ import {
   Notifications as NotificationsIcon,
   NotificationsNone as NotificationsNoneIcon
 } from '@mui/icons-material';
+import '../styles/notifications.css';
 
 const NotificationBell = () => {
-  const { unreadCount } = useNotifications();
+  const { unreadCount, notifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
+  const [hasNewNotifications, setHasNewNotifications] = useState(false);
   const bellRef = useRef(null);
+  const prevUnreadCountRef = useRef(unreadCount);
 
   // Toggle notification panel
   const togglePanel = () => {
     setIsOpen(prev => !prev);
+    if (hasNewNotifications) {
+      setHasNewNotifications(false);
+    }
   };
+
+  // Check for new notifications
+  useEffect(() => {
+    if (unreadCount > prevUnreadCountRef.current) {
+      setHasNewNotifications(true);
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount]);
 
   // Close panel when clicking outside
   useEffect(() => {
@@ -33,9 +47,10 @@ const NotificationBell = () => {
   return (
     <div className="relative flex items-center" ref={bellRef}>
       <button
-        className="relative p-2 text-white rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center"
+        className={`relative p-2 text-white rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center ${hasNewNotifications ? 'animate-pulse' : ''}`}
         onClick={togglePanel}
         aria-label="Notifications"
+        title={`${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`}
       >
         {unreadCount > 0 ? (
           <NotificationsIcon className="text-orange-400 h-6 w-6" />
@@ -44,7 +59,7 @@ const NotificationBell = () => {
         )}
 
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+          <span className={`absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full ${hasNewNotifications ? 'notification-badge-pulse' : ''}`}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}

@@ -126,7 +126,7 @@ export default function Login() {
     };
 
     return (
-        <GoogleOAuthProvider clientId="180294962643-39n35uqjbeklanr5q4a3drs776juavhs.apps.googleusercontent.com">
+        <GoogleOAuthProvider clientId="973872477079-ee3h58a8lb38h9nfgtdm1kqdnrp9r0e4.apps.googleusercontent.com">
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-100 to-red-50 py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-md w-full space-y-8">
                     {/* Toast notifications container */}

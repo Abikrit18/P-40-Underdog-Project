@@ -55,13 +55,35 @@ export const normalizeDateString = (dateStr) => {
     }
 
     try {
-        // Parse the date and format it consistently
-        const date = new Date(dateStr);
-        if (isNaN(date.getTime())) return ""; // Invalid date
+        // Create a new date object with the date string
+        // Use the date constructor with explicit year, month, day to avoid timezone issues
+        let date;
 
-        return formatDateString(date);
+        if (typeof dateStr === 'string' && dateStr.includes('-')) {
+            // Parse YYYY-MM-DD format
+            const [year, month, day] = dateStr.split('-').map(Number);
+            // Create date with local timezone (month is 0-indexed in JS Date)
+            date = new Date(year, month - 1, day);
+        } else {
+            // Handle other formats
+            date = new Date(dateStr);
+        }
+
+        if (isNaN(date.getTime())) {
+            console.error("Invalid date:", dateStr);
+            return ""; // Invalid date
+        }
+
+        // Format the date consistently
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        const normalized = `${year}-${month}-${day}`;
+        console.log(`Normalized date: ${dateStr} → ${normalized}`);
+        return normalized;
     } catch (error) {
-        console.error("Error normalizing date string:", error);
+        console.error("Error normalizing date string:", error, dateStr);
         return "";
     }
 };
