@@ -18,8 +18,8 @@ export default function Login() {
         e.preventDefault();
         setIsLoading(true);
         const endpoint = isRegistering
-            ? 'http://localhost:3000/users/register'
-            : 'http://localhost:3000/users/login';
+            ? 'https://p-40-underdog-project-backend.onrender.com/users/register'
+            : 'https://p-40-underdog-project-backend.onrender.com/users/login';
 
         const bodyData = isRegistering
             ? { firstName, lastName, email, password }
@@ -78,7 +78,7 @@ export default function Login() {
         console.log('Google credential decoded:', decoded);
 
         try {
-            const response = await fetch('http://localhost:3000/users/google-login', {
+            const response = await fetch('https://p-40-underdog-project-backend.onrender.com/users/google-login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

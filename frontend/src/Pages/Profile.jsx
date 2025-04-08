@@ -32,7 +32,7 @@ const Profile = () => {
 
     const fetchUserDetails = async (userId) => {
         try {
-            const response = await axios.get(`http://localhost:3000/users/profile/${userId}`, {
+            const response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/users/profile/${userId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -42,7 +42,7 @@ const Profile = () => {
             // Filter walks based on user role
             if (response.data.role === "admin") {
                 // For admin, get actively scheduled walks, not completed walk logs
-                const walksResponse = await axios.get("http://localhost:3000/walks/active", {
+                const walksResponse = await axios.get("https://p-40-underdog-project-backend.onrender.com/walks/active", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setScheduledWalks(walksResponse.data || []);
@@ -75,7 +75,7 @@ const Profile = () => {
         if (!confirmComplete) return;
 
         try {
-            await axios.post(`http://localhost:3000/walks/complete/${walkId}`, { userId: user._id }, {
+            await axios.post(`https://p-40-underdog-project-backend.onrender.com/walks/complete/${walkId}`, { userId: user._id }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -101,7 +101,7 @@ const Profile = () => {
         if (!confirm) return;
 
         try {
-            await axios.post(`http://localhost:3000/walks/incomplete/${walkId}`, { userId: user._id }, {
+            await axios.post(`https://p-40-underdog-project-backend.onrender.com/walks/incomplete/${walkId}`, { userId: user._id }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -135,7 +135,7 @@ const Profile = () => {
             // For admin, we need special handling to notify users
             if (user.role === 'admin') {
                 // Delete the walk
-                await axios.delete(`http://localhost:3000/walks/delete/${walkId}`, {
+                await axios.delete(`https://p-40-underdog-project-backend.onrender.com/walks/delete/${walkId}`, {
                     data: {
                         userId: user._id,
                         notifyUser: true, // Flag to indicate this is an admin deletion
@@ -150,7 +150,7 @@ const Profile = () => {
                 });
             } else {
                 // Regular deletion for non-admin users
-                await axios.delete(`http://localhost:3000/walks/delete/${walkId}`, {
+                await axios.delete(`https://p-40-underdog-project-backend.onrender.com/walks/delete/${walkId}`, {
                     data: { userId: user._id },
                     headers: { Authorization: `Bearer ${token}` },
                 });
