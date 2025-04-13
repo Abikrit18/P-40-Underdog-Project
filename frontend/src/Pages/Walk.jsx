@@ -525,15 +525,18 @@ const Walk = () => {
         let currentMinutes = startMinutes;
 
         // Check if we need to skip past times for today
-        const isToday = !isDateInPast(date) && new Date(date).getDate() === new Date().getDate();
-        const now = new Date();
-        const currentTimeMinutes = isToday ? (now.getHours() * 60) + now.getMinutes() : 0;
+        const inputDate = new Date(date);
+        const todayDate = new Date();
+        const isToday =
+            inputDate.getFullYear() === todayDate.getFullYear() &&
+            inputDate.getMonth() === todayDate.getMonth() &&
+            inputDate.getDate() === todayDate.getDate();
 
-        // Start from the next available 30-minute slot if it's today
         if (isToday) {
-            // Round up to the next 30-minute interval
+            const now = new Date();
+            const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
             const roundedCurrentTime = Math.ceil((currentTimeMinutes + 5) / 30) * 30;
-            currentMinutes = Math.max(startMinutes, roundedCurrentTime);
+            currentMinutes = Math.max(currentMinutes, roundedCurrentTime);
         }
 
         while (currentMinutes <= endMinutes) {
