@@ -132,16 +132,6 @@
     }
 }
  .fc-daygrid-day.has-available-time::after {
-<<<<<<< HEAD
-    content: '';
-    position: absolute;
-    bottom: 4px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 6px;
-    height: 6px;
-    background-color: #4caf50;
-=======
     content: '✔';
     position: absolute;
     bottom: 4px;
@@ -150,11 +140,17 @@
     color: rgb(46, 31, 89);
     background-color: #e0f2f1;
     padding: 2px;
->>>>>>> 49e1aa556b727fb6c91b23a0096a15e8115695a9
     border-radius: 50%;
 }
 
 .fc-header-toolbar {
     width: 100%;
-    padding: 0 1rem;
+    padding: 0 1rem;    
+}
+
+.fc-day-disabled {
+    background-color: #f5f5f5;
+    color: #999 !important;
+    pointer-events: none;
+    opacity: 0.6;
 }

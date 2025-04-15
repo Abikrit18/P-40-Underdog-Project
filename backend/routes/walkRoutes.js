@@ -90,9 +90,13 @@ router.post('/add-time', async (req, res) => {
 // Endpoint to get all available times with Marshall details
 router.get('/available-times', async (req, res) => {
     try {
-        // Get all walks with available times
-        const availableTimes = await Walk.find({ availableTimes: { $exists: true, $ne: [] } })
-            .populate('marshall', 'firstName'); // Populate the firstName of the Marshall
+    // Get all walks with available times, excluding past dates
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const availableTimes = await Walk.find({
+        availableTimes: { $exists: true, $ne: [] },
+        date: { $gte: today.toISOString().split('T')[0] }
+    }).populate('marshall', 'firstName'); // Populate the firstName of the Marshall
 
         // For each walk, filter out any time slots that were ever fully booked
         const filteredAvailableTimes = [];
