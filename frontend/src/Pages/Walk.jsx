@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -10,6 +10,7 @@ import { jwtDecode } from "jwt-decode";
 import "../App.css";
 import { toast } from "react-toastify";
 import { formatTimeForDisplay, isDateInPast, normalizeDateString } from "../utils/dateUtils";
+import { parseISO, isToday as isTodayFns } from 'date-fns';
 
 const Walk = () => {
     const navigate = useNavigate();
@@ -490,18 +491,10 @@ const Walk = () => {
             endTime: st.endTime
         })));
 
-        // Find shelter hours for this date using the normalized date field
-        // Try both the normalized date and the original date for maximum compatibility
-        let shelterTime = shelterTimes.find(st => st.normalizedDate === normalizedDate);
-
-        if (!shelterTime) {
-            // Try finding by original date as a fallback
-            shelterTime = shelterTimes.find(st => normalizeDateString(st.date) === normalizedDate);
-
-            if (shelterTime) {
-                console.log('Found shelter time using date normalization fallback:', shelterTime);
-            }
-        }
+        let shelterTime = shelterTimes.find(st =>
+            normalizeDateString(st.normalizedDate) === normalizedDate ||
+            normalizeDateString(st.date) === normalizedDate
+        );
 
         if (!shelterTime) {
             console.log(`No shelter time found for date: ${date} (normalized: ${normalizedDate})`);
@@ -525,18 +518,18 @@ const Walk = () => {
         let currentMinutes = startMinutes;
 
         // Check if we need to skip past times for today
-        const inputDate = new Date(date);
-        const todayDate = new Date();
-        const isToday =
-            inputDate.getFullYear() === todayDate.getFullYear() &&
-            inputDate.getMonth() === todayDate.getMonth() &&
-            inputDate.getDate() === todayDate.getDate();
+        const inputDate = parseISO(date);
+        const isToday = isTodayFns(inputDate);
 
         if (isToday) {
             const now = new Date();
             const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
             const roundedCurrentTime = Math.ceil((currentTimeMinutes + 5) / 30) * 30;
             currentMinutes = Math.max(currentMinutes, roundedCurrentTime);
+            if (currentMinutes > endMinutes) {
+                console.log('Current time is past shelter end time, no time options available for today.');
+                return [];
+            }
         }
 
         while (currentMinutes <= endMinutes) {
