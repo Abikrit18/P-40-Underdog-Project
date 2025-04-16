@@ -136,7 +136,7 @@ function NotificationProvider({ children }) {
     setLoading(true);
     try {
       console.log(`Fetching notifications for user: ${userId}`);
-      const response = await axios.get(`http://localhost:3000/notifications/user/${userId}`, {
+      const response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/notifications/user/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -172,7 +172,7 @@ function NotificationProvider({ children }) {
     if (!token) return;
 
     try {
-      await axios.put(`http://localhost:3000/notifications/${notificationId}/read`, {}, {
+      await axios.put(`https://p-40-underdog-project-backend.onrender.com/notifications/${notificationId}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -199,7 +199,7 @@ function NotificationProvider({ children }) {
     if (!token) return;
 
     try {
-      await axios.put(`http://localhost:3000/notifications/user/${userId}/read-all`, {}, {
+      await axios.put(`https://p-40-underdog-project-backend.onrender.com/notifications/user/${userId}/read-all`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -220,7 +220,7 @@ function NotificationProvider({ children }) {
     if (!token) return;
 
     try {
-      await axios.delete(`http://localhost:3000/notifications/${notificationId}`, {
+      await axios.delete(`https://p-40-underdog-project-backend.onrender.com/notifications/${notificationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

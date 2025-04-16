@@ -31,7 +31,7 @@ const Users = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get("http://localhost:3000/users", {
+            const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/users", {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setUsers(response.data);
@@ -48,7 +48,7 @@ const Users = () => {
     const handleRoleChange = async (userId, newRole) => {
         try {
             await axios.put(
-                `http://localhost:3000/users/${userId}/role`,
+                `https://p-40-underdog-project-backend.onrender.com/users/${userId}/role`,
                 { role: newRole },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -84,7 +84,7 @@ const Users = () => {
         if (!window.confirm("Are you sure you want to delete this user?")) return;
     
         try {
-            await axios.delete(`http://localhost:3000/users/${userId}`, {
+            await axios.delete(`https://p-40-underdog-project-backend.onrender.com/users/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
     

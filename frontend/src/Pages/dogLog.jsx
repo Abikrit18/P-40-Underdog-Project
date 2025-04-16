@@ -33,6 +33,7 @@ const DogLog = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchLogs = async () => {
+
     setIsLoading(true);
     try {
         const response = await axios.get("http://localhost:3000/walks/logs?sortOrder=desc");

@@ -86,7 +86,7 @@ const PushNotificationManager = () => {
       
       if (!subscription) {
         // Get public key from server
-        const response = await axios.get('http://localhost:3000/notifications/vapid-public-key');
+        const response = await axios.get('https://p-40-underdog-project-backend.onrender.com/notifications/vapid-public-key');
         const vapidPublicKey = response.data.vapidPublicKey;
         
         // Convert the key to the format required by the browser
@@ -100,7 +100,7 @@ const PushNotificationManager = () => {
       }
       
       // Send the subscription to the server
-      await axios.post('http://localhost:3000/notifications/push-subscription', {
+      await axios.post('https://p-40-underdog-project-backend.onrender.com/notifications/push-subscription', {
         userId,
         subscription: JSON.stringify(subscription)
       }, {
@@ -145,7 +145,7 @@ const PushNotificationManager = () => {
       await subscription.unsubscribe();
       
       // Notify server
-      await axios.delete(`http://localhost:3000/notifications/push-subscription/${userId}`, {
+      await axios.delete(`https://p-40-underdog-project-backend.onrender.com/notifications/push-subscription/${userId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       
