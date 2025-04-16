@@ -33,17 +33,42 @@ const DogLog = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchLogs = async () => {
-        setIsLoading(true);
-        try {
-            const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/stats/dogs/walk-counts");
-            setLogs(response.data);
-            setFilteredLogs(response.data);
-        } catch (error) {
-            console.error("Error fetching dog logs", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+
+    setIsLoading(true);
+    try {
+        const response = await axios.get("http://localhost:3000/walks/logs?sortOrder=desc");
+        const walkLogs = response.data;
+
+        const dogStats = {};
+
+        // Since logs are sorted by date descending, the first occurrence will be the latest
+        walkLogs.forEach(log => {
+            if (log.status !== 'completed') return;
+            const walkDate = log.date;
+
+                (log.dogs || []).forEach(dog => {
+                    if (!dogStats[dog]) {
+                        dogStats[dog] = {
+                            _id: dog,
+                            totalWalks: 1,
+                            lastWalked: walkDate  // First occurrence = most recent
+                        };
+                    } else {
+                        dogStats[dog].totalWalks += 1;
+                        // Do NOT update lastWalked again
+                    }
+                });
+        });
+
+        const statsArray = Object.values(dogStats);
+        setLogs(statsArray);
+        setFilteredLogs(statsArray);
+    } catch (error) {
+        console.error("Error fetching walk logs", error);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     useEffect(() => {
         fetchLogs();
@@ -54,43 +79,28 @@ const DogLog = () => {
     }, [dateFilter, logs, searchTerm]);
 
     const applyFilters = () => {
-        // First apply date filter
         let filtered = logs;
-
+ 
         if (dateFilter !== "all") {
             const today = new Date();
             let fromDate = new Date();
-
+ 
             if (dateFilter === "last7") fromDate.setDate(today.getDate() - 7);
             if (dateFilter === "last14") fromDate.setDate(today.getDate() - 14);
             if (dateFilter === "lastMonth") fromDate.setMonth(today.getMonth() - 1);
-
-            filtered = logs.map(log => {
-                const recentWalks = log.walks?.filter(walk => {
-                    const walkDate = new Date(walk.date);
-                    return walkDate.toISOString().split("T")[0] >= fromDate.toISOString().split("T")[0]
-                        && walkDate.toISOString().split("T")[0] <= today.toISOString().split("T")[0];
-                }) || [];
-
-                return {
-                    _id: log._id,
-                    totalWalks: recentWalks.length
-                };
-            }).filter(log => log.totalWalks > 0);
-        } else {
-            filtered = logs.map(log => ({
-                _id: log._id,
-                totalWalks: log.totalWalks || 0
-            }));
+ 
+            filtered = logs.filter(log => {
+                const lastWalkedDate = new Date(log.lastWalked);
+                return lastWalkedDate >= fromDate && lastWalkedDate <= today;
+            });
         }
-
-        // Then apply search filter
+ 
         if (searchTerm.trim()) {
             filtered = filtered.filter(log =>
                 log._id.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
-
+ 
         setFilteredLogs(filtered);
     };
 
@@ -209,9 +219,19 @@ const DogLog = () => {
 
                 {/* Table Section */}
                 <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div className="p-6 border-b border-gray-200">
-                        <h2 className="text-lg font-semibold">Detailed Statistics</h2>
-                        <p className="text-sm text-gray-500">Complete list of dogs and their walk counts</p>
+                    <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+                        <div>
+                            <h2 className="text-lg font-semibold">Detailed Statistics</h2>
+                            <p className="text-sm text-gray-500">Complete list of dogs and their walk counts</p>
+                        </div>
+                        <div className="flex justify-end mt-2 md:mt-0 w-full md:w-auto">
+                            <button
+                                onClick={fetchLogs}
+                                className="bg-green-700 hover:bg-green-900 text-white px-4 py-2 rounded-md text-sm shadow-sm transition-all duration-200 w-full md:w-auto min-w-fit"
+                            >
+                                🔄 Refresh
+                            </button>
+                        </div>
                     </div>
 
                     {isLoading ? (
@@ -230,9 +250,12 @@ const DogLog = () => {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Dog Name
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Total Walks
-                                        </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Total Walks
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Last Walked
+                                </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -249,9 +272,11 @@ const DogLog = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <div className="text-sm text-gray-900">{log.totalWalks}</div>
-                                                    <div className="ml-2 w-24 bg-gray-200 rounded-full h-2">
+                                                <div className="flex flex-col">
+                                            <div className="flex items-center">
+                                                <div className="text-sm text-gray-900">{log.totalWalks}</div>
+                                            </div>
+                                                    <div className="ml-2 w-24 bg-gray-200 rounded-full h-2 mt-1">
                                                         <div
                                                             className="bg-blue-600 h-2 rounded-full"
                                                             style={{
@@ -260,7 +285,10 @@ const DogLog = () => {
                                                         ></div>
                                                     </div>
                                                 </div>
-                                            </td>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            {log.lastWalked}
+                                        </td>
                                         </tr>
                                     ))}
                                 </tbody>
