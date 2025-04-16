@@ -6,6 +6,7 @@ import Home from "./Pages/Home";
 import Dogs from "./Pages/Dogs";
 import Walk from "./Pages/Walk";
 import Adoption from "./Pages/Adoption";
+import Application from "./Pages/Application";
 import Donation from './Pages/Donation';
 import Login from './Pages/Login';
 import Profile from './Pages/Profile';
@@ -35,6 +36,7 @@ const App = () => {
               <Route path="/users" element={<Users />} />
               <Route path="/walk-logs" element={<WalkLog />} />
               <Route path="/waiver" element={<WaiverForm />} />
+              <Route path="/application" element={<Application />} />
               <Route path="/doglog" element={<DogLog />} />
             </Routes>
 

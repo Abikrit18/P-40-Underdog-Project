@@ -13,6 +13,7 @@ const shelterTimeRoutes = require('./routes/shelterTimeRoutes');
 const dogStatsRoutes = require('./routes/dogStatsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const pushNotificationRoutes = require('./routes/pushNotificationRoutes');
+const emailRoutes = require('./routes/emailRoutes');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -40,6 +41,7 @@ app.use('/shelter-times', shelterTimeRoutes);
 app.use('/stats', dogStatsRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/notifications', pushNotificationRoutes); // Using the same base path for push notifications
+app.use('/api/email', emailRoutes);
 
 // 404 Handler
 app.use((req, res) => {

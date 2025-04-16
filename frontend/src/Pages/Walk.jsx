@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -10,6 +10,7 @@ import { jwtDecode } from "jwt-decode";
 import "../App.css";
 import { toast } from "react-toastify";
 import { formatTimeForDisplay, isDateInPast, normalizeDateString } from "../utils/dateUtils";
+import { parseISO, isToday as isTodayFns } from 'date-fns';
 
 const Walk = () => {
     const navigate = useNavigate();
@@ -145,7 +146,10 @@ const Walk = () => {
             const walks = response.data;
 
             // Process the walks data to include availability information
-            const enhancedWalks = walks.map(walk => {
+            const todayStr = normalizeDateString(new Date());
+            const enhancedWalks = walks
+                .filter(walk => normalizeDateString(walk.date) >= todayStr)
+                .map(walk => {
                 // If the walk doesn't have timeSlots array, create default values
                 if (!walk.timeSlots || walk.timeSlots.length === 0) {
                     return {
@@ -208,15 +212,17 @@ const Walk = () => {
           });
 
           // Process the shelter times to ensure dates are normalized
-          const processedShelterTimes = response.data.map(time => {
-            const normalizedDate = normalizeDateString(time.date);
-            return {
-              ...time,
-              // Store both the original date and a normalized version for comparison
-              originalDate: time.date,
-              normalizedDate: normalizedDate
-            };
-          });
+          const todayStr = normalizeDateString(new Date());
+          const processedShelterTimes = response.data
+              .map(time => {
+                  const normalizedDate = normalizeDateString(time.date);
+                  return {
+                      ...time,
+                      originalDate: time.date,
+                      normalizedDate: normalizedDate
+                  };
+              })
+              .filter(time => time.normalizedDate >= todayStr);
 
           console.log('Fetched shelter times with normalized dates:', processedShelterTimes.map(st => ({
             id: st._id,
@@ -490,18 +496,10 @@ const Walk = () => {
             endTime: st.endTime
         })));
 
-        // Find shelter hours for this date using the normalized date field
-        // Try both the normalized date and the original date for maximum compatibility
-        let shelterTime = shelterTimes.find(st => st.normalizedDate === normalizedDate);
-
-        if (!shelterTime) {
-            // Try finding by original date as a fallback
-            shelterTime = shelterTimes.find(st => normalizeDateString(st.date) === normalizedDate);
-
-            if (shelterTime) {
-                console.log('Found shelter time using date normalization fallback:', shelterTime);
-            }
-        }
+        let shelterTime = shelterTimes.find(st =>
+            normalizeDateString(st.normalizedDate) === normalizedDate ||
+            normalizeDateString(st.date) === normalizedDate
+        );
 
         if (!shelterTime) {
             console.log(`No shelter time found for date: ${date} (normalized: ${normalizedDate})`);
@@ -525,15 +523,18 @@ const Walk = () => {
         let currentMinutes = startMinutes;
 
         // Check if we need to skip past times for today
-        const isToday = !isDateInPast(date) && new Date(date).getDate() === new Date().getDate();
-        const now = new Date();
-        const currentTimeMinutes = isToday ? (now.getHours() * 60) + now.getMinutes() : 0;
+        const inputDate = parseISO(date);
+        const isToday = isTodayFns(inputDate);
 
-        // Start from the next available 30-minute slot if it's today
         if (isToday) {
-            // Round up to the next 30-minute interval
+            const now = new Date();
+            const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
             const roundedCurrentTime = Math.ceil((currentTimeMinutes + 5) / 30) * 30;
-            currentMinutes = Math.max(startMinutes, roundedCurrentTime);
+            currentMinutes = Math.max(currentMinutes, roundedCurrentTime);
+            if (currentMinutes > endMinutes) {
+                console.log('Current time is past shelter end time, no time options available for today.');
+                return [];
+            }
         }
 
         while (currentMinutes <= endMinutes) {
@@ -807,6 +808,20 @@ const Walk = () => {
                     dateClick={handleDateClick}
                     events={events}
                     height="auto"
+                selectAllow={({ start }) => {
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    return start >= today;
+                }}
+                dayCellClassNames={(arg) => {
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const date = arg.date;
+                    if (date < today) {
+                        return ['fc-day-disabled'];
+                    }
+                    return [];
+                }}
                 />
                 {user?.role === "Marshall" && (
                     <div className="mt-4 mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
