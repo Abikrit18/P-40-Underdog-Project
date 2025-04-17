@@ -36,7 +36,7 @@ const DogLog = () => {
 
     setIsLoading(true);
     try {
-        const response = await axios.get("http://localhost:3000/walks/logs?sortOrder=desc");
+    const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/walks/logs?sortOrder=desc");
         const walkLogs = response.data;
 
         const dogStats = {};
