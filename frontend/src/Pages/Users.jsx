@@ -174,13 +174,14 @@ const Users = () => {
                             <th className="py-2 px-4 border">Email</th>
                             <th className="py-2 px-4 border">Role</th>
                             <th className="py-2 px-4 border">Total Walks</th>
+                            <th className="py-2 px-4 border">Waiver Status</th>
                             <th className="py-2 px-4 border">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {currentUsers.length === 0 ? (
                             <tr>
-                                <td colSpan="5" className="text-center py-4">
+                                <td colSpan="6" className="text-center py-4">
                                     No users found.
                                 </td>
                             </tr>
@@ -204,6 +205,9 @@ const Users = () => {
                                         )}
                                     </td>
                                     <td className="py-2 px-4 border">{user.totalWalks}</td>
+                                    <td className="py-2 px-4 border">
+                                        {user.waiverSigned ? "Signed" : "Not Signed"}
+                                    </td>
                                     <td className="py-2 px-1 border text-center w-28">
                                         {currentUser.role === "admin" && user.role !== "admin" && (
                                             <button
