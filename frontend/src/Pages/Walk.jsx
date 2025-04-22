@@ -39,7 +39,7 @@ const Walk = () => {
     const [defaultIsClosed, setDefaultIsClosed] = useState(false);
 
     // Tab state for shelter hours configuration
-    const [shelterConfigTab, setShelterConfigTab] = useState('specific');
+    const [shelterConfigTab, setShelterConfigTab] = useState('default');
 
     const token = localStorage.getItem("token");
 
@@ -731,17 +731,16 @@ const Walk = () => {
         if (!date) return [];
 
         // Normalize the date for consistent comparison
-        const normalizedDate = normalizeDateString(date);
+        let normalizedDate = normalizeDateString(date);
+        // Just for debugging purposes - trying to see what happens with date + 1
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        const nextDayNormalized = normalizeDateString(nextDay.toISOString().split('T')[0]);
+        console.log('Current date:', date, 'Next day:', nextDay.toISOString().split('T')[0]);
+        normalizedDate = nextDayNormalized;
 
         // Debug: Log all shelter times and the date we're looking for
         console.log('Looking for shelter time for date:', date, 'normalized:', normalizedDate);
-        console.log('All shelter times:', shelterTimes.map(st => ({
-            id: st._id,
-            date: st.date,
-            normalized: st.normalizedDate,
-            startTime: st.startTime,
-            endTime: st.endTime
-        })));
 
         let shelterTime = shelterTimes.find(st =>
             normalizeDateString(st.normalizedDate) === normalizedDate ||
@@ -816,6 +815,7 @@ const Walk = () => {
         const dropdownRef = useRef(null);
         const scrollContainerRef = useRef(null);
         const optionRefs = useRef({});
+        console.log("time options:", options);
 
         // Debug: Log the options being passed to the component
         useEffect(() => {
@@ -963,85 +963,167 @@ const Walk = () => {
                 const isPermanentlyRemoved = walk.permanentlyRemovedTimeSlots &&
                     walk.permanentlyRemovedTimeSlots.includes(timeSlot);
 
-                let cardStyle = "bg-white border-gray-300";
-                let statusMessage = null;
+                // Determine card style and status based on conditions
+                let cardStyle, statusBadge, progressColor, buttonStyle, buttonText, buttonIcon;
 
                 if (isFullyBooked || isPermanentlyRemoved) {
-                    cardStyle = "bg-red-50 border-red-300";
-                    statusMessage = <div className="mt-2 py-1 px-2 bg-red-100 text-red-800 text-sm font-medium rounded">
-                        Not Available
-                    </div>;
+                    // Fully booked or permanently removed slots
+                    cardStyle = "bg-red-50 border-red-200 border-2";
+                    statusBadge = (
+                        <div className="absolute top-4 right-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                                </svg>
+                                Fully Booked
+                            </span>
+                        </div>
+                    );
+                    progressColor = "bg-red-500";
+                    buttonStyle = "bg-gray-400 cursor-not-allowed text-white";
+                    buttonText = "Fully Booked";
+                    buttonIcon = (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                        </svg>
+                    );
                 } else if (alreadyTakenWalk) {
-                    cardStyle = "bg-gray-100 border-gray-400";
-                    statusMessage = <div className="mt-2 py-1 px-2 bg-gray-200 text-gray-700 text-sm font-medium rounded">
-                        Already Scheduled
-                    </div>;
+                    // Already scheduled walks
+                    cardStyle = "bg-blue-50 border-blue-200 border-2";
+                    statusBadge = (
+                        <div className="absolute top-4 right-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                Your Walk
+                            </span>
+                        </div>
+                    );
+                    progressColor = "bg-blue-500";
+                    buttonStyle = "bg-blue-400 cursor-not-allowed text-white";
+                    buttonText = "Already Scheduled";
+                    buttonIcon = (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                    );
+                } else {
+                    // Available slots
+                    cardStyle = "bg-white border-green-200 border hover:border-green-300 hover:shadow-lg transition-all duration-200";
+                    statusBadge = availableSlots <= 1 ? (
+                        <div className="absolute top-4 right-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                Last Spot
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="absolute top-4 right-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                Available
+                            </span>
+                        </div>
+                    );
+                    progressColor = availableSlots <= 1 ? "bg-yellow-500" : "bg-green-500";
+                    buttonStyle = "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow transition-all duration-200";
+                    buttonText = "Select";
+                    buttonIcon = (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                    );
                 }
 
                 return (
                 <div
                     key={`${index}-${idx}`}
-                    className={`${cardStyle} shadow-md rounded-lg p-6 border flex flex-col justify-between`}
+                    className={`${cardStyle} shadow-md rounded-lg p-6 border relative flex flex-col justify-between`}
                 >
-                    <div>
-                        <h2 className="text-lg font-semibold text-gray-800">
-                            Marshall: {walk.marshall?.firstName || "Unknown"}
-                        </h2>
-                        <p className="text-gray-600">Date: {walk.date}</p>
-                        <p className="text-gray-600">Time: {formatTimeForDisplay(timeSlot)}</p>
+                    {statusBadge}
 
-                        {/* Display booking capacity */}
-                        <div className="mt-2">
-                            <div className="flex justify-between items-center text-sm">
-                                <span>Available Slots:</span>
-                                <span className={`font-medium ${isFullyBooked || isPermanentlyRemoved ? 'text-red-600' : 'text-green-600'}`}>
-                                    {isPermanentlyRemoved ? '0' : availableSlots} of {maxBookings}
+                    <div className="mt-2">
+                        {/* Date and Time Section */}
+                        <div className="flex items-center mb-3">
+                            <div className="bg-indigo-100 p-2 rounded-full mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Date & Time</h3>
+                                <p className="text-base font-semibold text-gray-800">{walk.date}, {formatTimeForDisplay(timeSlot)}</p>
+                            </div>
+                        </div>
+
+                        {/* Marshall Section */}
+                        <div className="flex items-center mb-4">
+                            <div className="bg-purple-100 p-2 rounded-full mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Marshall</h3>
+                                <p className="text-base font-semibold text-gray-800">{walk.marshall?.firstName || "Unknown"}</p>
+                            </div>
+                        </div>
+
+                        {/* Booking Capacity Section */}
+                        <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Booking Capacity</span>
+                                <span className={`text-sm font-bold ${isFullyBooked || isPermanentlyRemoved ? 'text-red-600' : alreadyTakenWalk ? 'text-blue-600' : availableSlots <= 1 ? 'text-yellow-600' : 'text-green-600'}`}>
+                                    {isPermanentlyRemoved ? '0' : availableSlots} of {maxBookings} spots left
                                 </span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div className="w-full bg-gray-200 rounded-full h-2.5">
                                 <div
-                                    className={`${isFullyBooked || isPermanentlyRemoved ? 'bg-red-600' : 'bg-green-600'} h-2 rounded-full`}
+                                    className={`${progressColor} h-2.5 rounded-full transition-all duration-300`}
                                     style={{ width: `${isPermanentlyRemoved ? 100 : (bookedCount / maxBookings) * 100}%` }}
                                 ></div>
                             </div>
                         </div>
-
-                        {statusMessage}
                     </div>
 
-                    <div className="flex gap-2 mt-4">
+                    {/* Action Buttons */}
+                    <div className="mt-2">
                         {user?.id !== walk.marshall?._id && (
                             <button
-                                className={`px-4 py-2 rounded-md ${
-                                    isFullyBooked || isPermanentlyRemoved || alreadyTakenWalk
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-blue-500 hover:bg-blue-600 text-white'
-                                }`}
+                                className={`w-full flex justify-center items-center px-4 py-2.5 rounded-md text-sm font-medium ${buttonStyle}`}
                                 onClick={() => !isFullyBooked && !isPermanentlyRemoved && !alreadyTakenWalk && handleSelectWalk(walk._id, timeSlot)}
                                 disabled={isFullyBooked || isPermanentlyRemoved || alreadyTakenWalk}
                             >
-                                {isFullyBooked || isPermanentlyRemoved
-                                  ? 'Fully Booked'
-                                  : alreadyTakenWalk
-                                    ? 'Already Scheduled'
-                                    : 'Select'}
+                                {buttonIcon}
+                                {buttonText}
                             </button>
                         )}
                         {user?.id === walk.marshall?._id && (
-                            <>
+                            <div className="flex gap-2">
                                 <button
-                                    className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                                    className="flex-1 flex justify-center items-center px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-sm font-medium shadow-sm hover:shadow transition-all duration-200"
                                     onClick={() => handleEditTime(walk, timeSlot)}
                                 >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                    </svg>
                                     Edit
                                 </button>
                                 <button
-                                    className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                    className="flex-1 flex justify-center items-center px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm font-medium shadow-sm hover:shadow transition-all duration-200"
                                     onClick={() => handleDeleteTime(walk._id, timeSlot)}
                                 >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
                                     Delete
                                 </button>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -1076,324 +1158,502 @@ const Walk = () => {
                 }}
                 />
                 {user?.role === "Marshall" && (
-                    <div className="mt-4 mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <h3 className="text-blue-800 font-medium mb-2">Available Shelter Hours</h3>
-                        {shelterTimesLoading ? (
-                        <p>Loading shelter hours...</p>
-                        ) : shelterTimes.length === 0 ? (
-                        <p className="text-red-500">No shelter hours available. Please contact admin.</p>
-                        ) : (
-                        <div className="space-y-1">
-                            {shelterTimes.map(time => {
-                                const isSelectedDate = selectedDate && normalizeDateString(selectedDate) === time.normalizedDate;
-                                return (
-                                    <div key={time._id} className={`text-sm p-2 rounded ${isSelectedDate ? 'bg-blue-100 font-bold' : ''}`}>
-                                        <span className="font-medium">{time.date}:</span> {formatTimeForDisplay(time.startTime)} to {formatTimeForDisplay(time.endTime)}
-                                        {isSelectedDate && <span className="ml-2 text-blue-600">(Selected)</span>}
-                                    </div>
-                                );
-                            })}
+                    <div className="mt-8 bg-white shadow-lg rounded-lg overflow-hidden border border-indigo-100">
+                        {/* Header */}
+                        <div className="bg-indigo-600 px-6 py-4">
+                            <h2 className="text-xl font-bold text-white">Add Available Walk Time</h2>
+                            <p className="text-indigo-100 mt-1 text-sm">Schedule times when you're available to walk dogs</p>
                         </div>
-                        )}
-                        <p className="mt-2 text-sm text-blue-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        You can only schedule walks during these hours
-                        </p>
-                    </div>
-                    )}
-                {user?.role === "Marshall" && (
-                    <div className="form-container">
-                        <form onSubmit={handleAvailableTimeSubmit} className="add-time-form">
-                            <input
-                                type="date"
-                                value={availableDate}
-                                onChange={(e) => {
-                                    const newDate = e.target.value;
-                                    console.log('Date input changed:', newDate);
-                                    setAvailableDate(newDate);
-                                    setAvailableTime(''); // Reset time when date changes
 
-                                    // Debug: Check if shelter hours exist for this date
-                                    const normalizedNewDate = normalizeDateString(newDate);
-                                    const hasShelterHours = shelterTimes.some(st => st.normalizedDate === normalizedNewDate);
-                                    console.log('Has shelter hours for selected date:', hasShelterHours);
-
-                                    // Generate time options for debugging
-                                    const timeOptions = generateTimeOptions(newDate);
-                                    console.log('Generated time options for new date:', timeOptions);
-                                }}
-                                required
-                                className="form-input"
-                            />
-
-                            {availableDate ? (
-                                <EnhancedTimePicker
-                                    value={availableTime}
-                                    onChange={(e) => setAvailableTime(e.target.value)}
-                                    options={generateTimeOptions(availableDate)}
-                                    placeholder="Select Time"
-                                    disabled={!availableDate}
-                                />
-                            ) : (
-                                <div className="relative w-full">
-                                    <div className="w-full px-4 py-2 rounded-md border bg-gray-100 text-gray-500 border-gray-300 flex justify-between items-center">
-                                        <span className="text-gray-500">Select a date first</span>
-                                        <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Form */}
+                                <div className="bg-white rounded-lg border border-gray-200 p-5">
+                                    <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586l-1.707 1.707a1 1 0 00 1.414 1.414l2-2a1 1 0 00.293-.707V7a1 1 0 00-1-1z" clipRule="evenodd" />
                                         </svg>
+                                        Schedule New Time Slot
+                                    </h3>
+                                    <form onSubmit={handleAvailableTimeSubmit} className="space-y-5">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                            <input
+                                                type="date"
+                                                value={availableDate}
+                                                onChange={(e) => {
+                                                    const newDate = e.target.value;
+                                                    console.log('Date input changed:', newDate);
+                                                    setAvailableDate(newDate);
+                                                    setAvailableTime(''); // Reset time when date changes
+
+                                                    // Debug: Check if shelter hours exist for this date
+                                                    const normalizedNewDate = normalizeDateString(newDate);
+                                                    const hasShelterHours = shelterTimes.some(st => st.normalizedDate === normalizedNewDate);
+                                                    console.log('Has shelter hours for selected date:', hasShelterHours);
+
+                                                    // Generate time options for debugging
+                                                    const timeOptions = generateTimeOptions(newDate);
+                                                    console.log('Generated time options for new date:', timeOptions);
+                                                }}
+                                                required
+                                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                            {availableDate ? (
+                                                <EnhancedTimePicker
+                                                    value={availableTime}
+                                                    onChange={(e) => setAvailableTime(e.target.value)}
+                                                    options={generateTimeOptions(availableDate)}
+                                                    placeholder="Select Time"
+                                                    disabled={!availableDate}
+                                                />
+                                            ) : (
+                                                <div className="relative w-full">
+                                                    <div className="w-full px-4 py-2 rounded-md border bg-gray-100 text-gray-500 border-gray-300 flex justify-between items-center">
+                                                        <span className="text-gray-500">Select a date first</span>
+                                                        <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="pt-3">
+                                            <button
+                                                type="submit"
+                                                className={`w-full px-4 py-2 text-white rounded-md shadow-sm transition-all duration-200 ${!availableDate || !availableTime ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                                disabled={!availableDate || !availableTime}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                                                </svg>
+                                                Add Time Slot
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                {/* Shelter Hours Info */}
+                                <div className="bg-blue-50 rounded-lg border border-blue-100 p-5">
+                                    <h3 className="text-lg font-medium text-blue-800 mb-4 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                        </svg>
+                                        Available Shelter Hours
+                                    </h3>
+                                    {shelterTimesLoading ? (
+                                        <div className="flex justify-center items-center p-8">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                            <span className="ml-2 text-blue-600">Loading hours...</span>
+                                        </div>
+                                    ) : shelterTimes.length === 0 ? (
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto text-red-400 mb-2" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                            </svg>
+                                            <p className="text-red-800">No shelter hours available</p>
+                                            <p className="text-red-600 text-sm mt-1">Please contact an administrator to set up shelter hours</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                                            {shelterTimes.map(time => {
+                                                const isSelectedDate = selectedDate && normalizeDateString(selectedDate) === time.normalizedDate;
+                                                return (
+                                                    <div
+                                                        key={time._id}
+                                                        className={`p-3 rounded-md border ${isSelectedDate ? 'bg-blue-100 border-blue-300' : 'bg-white border-gray-200'}`}
+                                                    >
+                                                        <div className="flex justify-between items-center">
+                                                            <span className={`font-medium ${isSelectedDate ? 'text-blue-800' : 'text-gray-700'}`}>{time.date}</span>
+                                                            {isSelectedDate && (
+                                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                    Selected
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="mt-1 text-sm text-gray-600">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block mr-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                                            </svg>
+                                                            {formatTimeForDisplay(time.startTime)} to {formatTimeForDisplay(time.endTime)}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    <div className="mt-4 p-3 bg-blue-100 rounded-md border border-blue-200">
+                                        <p className="text-sm text-blue-700 flex items-start">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                            </svg>
+                                            <span>You can only schedule walks during these hours. The time slots you add will be available for users to book dog walks.</span>
+                                        </p>
                                     </div>
                                 </div>
-                            )}
-
-                            <button
-                                type="submit"
-                                className="form-button small-button"
-                                disabled={!availableDate || !availableTime}
-                            >
-                                Add Time
-                            </button>
-                        </form>
+                            </div>
+                        </div>
                     </div>
                 )}
                 </div>
                 {user?.role === "admin" && (
-                    <div className="mt-8 bg-white shadow-md rounded-lg p-6 border border-gray-300">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Set Shelter Hours</h2>
-                        <p className="text-gray-600 mb-4">Define the time windows when marshalls can schedule dog walks</p>
+                    <div className="mt-8 bg-white shadow-lg rounded-lg overflow-hidden border border-indigo-100">
+                        {/* Header */}
+                        <div className="bg-indigo-600 px-6 py-4">
+                            <h2 className="text-xl font-bold text-white">Set Shelter Hours</h2>
+                            <p className="text-indigo-100 mt-1 text-sm">Define the time windows when marshalls can schedule dog walks</p>
+                        </div>
 
                         {/* Tabs for specific dates vs default hours */}
-                        <div className="mb-6 border-b border-gray-200">
+                        <div className="bg-gray-100 border-b border-gray-200">
                             <ul className="flex flex-wrap -mb-px text-sm font-medium text-center">
                                 <li className="mr-2">
                                     <button
-                                        className={`inline-block p-4 rounded-t-lg ${shelterConfigTab === 'specific' ? 'border-b-2 border-blue-600 text-blue-600' : 'border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300'}`}
+                                        className={`inline-block p-4 rounded-t-lg ${shelterConfigTab === 'specific' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white' : 'border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300'}`}
                                         onClick={() => setShelterConfigTab('specific')}
                                     >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                                        </svg>
                                         Specific Dates
                                     </button>
                                 </li>
                                 <li className="mr-2">
                                     <button
-                                        className={`inline-block p-4 rounded-t-lg ${shelterConfigTab === 'default' ? 'border-b-2 border-blue-600 text-blue-600' : 'border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300'}`}
+                                        className={`inline-block p-4 rounded-t-lg ${shelterConfigTab === 'default' ? 'border-b-2 border-indigo-600 text-indigo-600 bg-white' : 'border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300'}`}
                                         onClick={() => setShelterConfigTab('default')}
                                     >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                        </svg>
                                         Default Hours
                                     </button>
                                 </li>
                             </ul>
                         </div>
 
-                        {/* Specific Date Form */}
-                        {shelterConfigTab === 'specific' && (
-                            <form onSubmit={handleShelterTimeSubmit} className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                                        <input
-                                            type="date"
-                                            value={shelterDate}
-                                            onChange={(e) => setShelterDate(e.target.value)}
-                                            required
-                                            className="w-full p-2 border border-gray-300 rounded-md"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                                        <EnhancedTimePicker
-                                            value={shelterStartTime}
-                                            onChange={(e) => setShelterStartTime(e.target.value)}
-                                            options={generate30MinTimeOptions()}
-                                            placeholder="Select start time"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                                        <EnhancedTimePicker
-                                            value={shelterEndTime}
-                                            onChange={(e) => setShelterEndTime(e.target.value)}
-                                            options={generate30MinTimeOptions().filter(time => time > shelterStartTime)}
-                                            placeholder="Select end time"
-                                            disabled={!shelterStartTime}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex items-center mt-2">
-                                    <input
-                                        type="checkbox"
-                                        id="isClosed"
-                                        checked={shelterIsClosed}
-                                        onChange={(e) => setShelterIsClosed(e.target.checked)}
-                                        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                    />
-                                    <label htmlFor="isClosed" className="ml-2 block text-sm text-gray-700">
-                                        Mark shelter as closed on this date
-                                    </label>
-                                </div>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
-                                    disabled={!shelterDate || (!shelterIsClosed && (!shelterStartTime || !shelterEndTime))}
-                                >
-                                    Add Specific Date Hours
-                                </button>
-                            </form>
-                        )}
+                        {/* Content */}
+                        <div className="p-6">
+                            {/* Specific Date Form */}
+                            {shelterConfigTab === 'specific' && (
+                                <div>
+                                    {/* Custom Date Form */}
+                                    <div className="bg-white rounded-lg border border-gray-200 p-5">
+                                        <h3 className="text-lg font-medium text-gray-800 mb-4">Set Hours for Specific Date</h3>
+                                        <form onSubmit={handleShelterTimeSubmit} className="space-y-5">
+                                            {/* Closed Day Toggle */}
+                                            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md border border-gray-200">
+                                                <label htmlFor="shelterIsClosed" className="font-medium text-gray-700 flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${shelterIsClosed ? 'text-red-500' : 'text-gray-400'}`} viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                    Shelter is closed on this date
+                                                </label>
+                                                <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="shelterIsClosed"
+                                                        checked={shelterIsClosed}
+                                                        onChange={(e) => setShelterIsClosed(e.target.checked)}
+                                                        className="absolute w-6 h-6 opacity-0 z-10 cursor-pointer"
+                                                    />
+                                                    <div className={`w-12 h-6 rounded-full transition-colors duration-200 ease-in-out ${shelterIsClosed ? 'bg-red-500' : 'bg-gray-300'}`}></div>
+                                                    <div className={`absolute left-0 top-0 bg-white w-6 h-6 rounded-full transition-transform duration-200 ease-in-out transform ${shelterIsClosed ? 'translate-x-6 border-red-500' : 'border-gray-300'} border-2`}></div>
+                                                </div>
+                                            </div>
 
-                        {/* Default Hours Form */}
-                        {shelterConfigTab === 'default' && (
-                            <div>
-                                <form onSubmit={handleDefaultShelterTimeSubmit} className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Day of Week</label>
-                                            <select
-                                                value={defaultDayOfWeek}
-                                                onChange={(e) => setDefaultDayOfWeek(parseInt(e.target.value))}
-                                                required
-                                                className="w-full p-2 border border-gray-300 rounded-md"
-                                            >
-                                                <option value="">Select day</option>
-                                                <option value="0">Sunday</option>
-                                                <option value="1">Monday</option>
-                                                <option value="2">Tuesday</option>
-                                                <option value="3">Wednesday</option>
-                                                <option value="4">Thursday</option>
-                                                <option value="5">Friday</option>
-                                                <option value="6">Saturday</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                                            <EnhancedTimePicker
-                                                value={defaultStartTime}
-                                                onChange={(e) => setDefaultStartTime(e.target.value)}
-                                                options={generate30MinTimeOptions()}
-                                                placeholder="Select start time"
-                                                disabled={defaultIsClosed}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                                            <EnhancedTimePicker
-                                                value={defaultEndTime}
-                                                onChange={(e) => setDefaultEndTime(e.target.value)}
-                                                options={generate30MinTimeOptions().filter(time => time > defaultStartTime)}
-                                                placeholder="Select end time"
-                                                disabled={!defaultStartTime || defaultIsClosed}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center mt-2">
-                                        <input
-                                            type="checkbox"
-                                            id="defaultIsClosed"
-                                            checked={defaultIsClosed}
-                                            onChange={(e) => setDefaultIsClosed(e.target.checked)}
-                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                        />
-                                        <label htmlFor="defaultIsClosed" className="ml-2 block text-sm text-gray-700">
-                                            Shelter is closed on this day
-                                        </label>
-                                    </div>
-                                    <div className="flex space-x-4">
-                                        <button
-                                            type="submit"
-                                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
-                                            disabled={defaultDayOfWeek === "" || (!defaultIsClosed && (!defaultStartTime || !defaultEndTime))}
-                                        >
-                                            Set Default Hours
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleInitializeDefaultHours}
-                                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md"
-                                        >
-                                            Initialize Default Hours (10AM-3PM Mon-Fri)
-                                        </button>
-                                    </div>
-                                </form>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                                    <input
+                                                        type="date"
+                                                        value={shelterDate}
+                                                        onChange={(e) => setShelterDate(e.target.value)}
+                                                        required
+                                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                                    />
+                                                </div>
+                                                <div className={shelterIsClosed ? 'opacity-50' : ''}>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                                    <EnhancedTimePicker
+                                                        value={shelterStartTime}
+                                                        onChange={(e) => setShelterStartTime(e.target.value)}
+                                                        options={generate30MinTimeOptions()}
+                                                        placeholder="Select start time"
+                                                        disabled={shelterIsClosed}
+                                                    />
+                                                </div>
+                                                <div className={shelterIsClosed || !shelterStartTime ? 'opacity-50' : ''}>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                                    <EnhancedTimePicker
+                                                        value={shelterEndTime}
+                                                        onChange={(e) => setShelterEndTime(e.target.value)}
+                                                        options={generate30MinTimeOptions().filter(time => time > shelterStartTime)}
+                                                        placeholder="Select end time"
+                                                        disabled={!shelterStartTime || shelterIsClosed}
+                                                    />
+                                                </div>
+                                            </div>
 
-                                {/* Display Default Hours */}
-                                <div className="mt-6">
-                                    <h3 className="text-lg font-medium text-gray-800 mb-2">Default Shelter Hours</h3>
-                                    {shelterTimesLoading ? (
-                                        <p>Loading default hours...</p>
-                                    ) : defaultShelterTimes.length === 0 ? (
-                                        <p className="text-gray-500">No default hours have been set</p>
-                                    ) : (
-                                        <div className="space-y-2 mt-3">
-                                            {defaultShelterTimes.map(time => {
-                                                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                                                const dayName = dayNames[time.dayOfWeek];
-                                                return (
+                                            <div className="pt-3">
+                                                <button
+                                                    type="submit"
+                                                    className={`w-full px-4 py-2 text-white rounded-md shadow-sm transition-all duration-200 ${!shelterDate || (!shelterIsClosed && (!shelterStartTime || !shelterEndTime)) ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                                    disabled={!shelterDate || (!shelterIsClosed && (!shelterStartTime || !shelterEndTime))}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                    </svg>
+                                                    Save Date Settings
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                    {/* Display Specific Date Hours */}
+                                    <div className="mt-8">
+                                        <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                                            </svg>
+                                            Specific Date Schedule
+                                        </h3>
+                                        {shelterTimesLoading ? (
+                                            <div className="flex justify-center items-center p-8">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                                <span className="ml-2 text-indigo-600">Loading hours...</span>
+                                            </div>
+                                        ) : specificShelterTimes.length === 0 ? (
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto text-yellow-400 mb-2" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                                </svg>
+                                                <p className="text-yellow-800">No specific date hours have been set</p>
+                                                <p className="text-yellow-600 text-sm mt-1">Use the form above to define hours for specific dates</p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+                                                {specificShelterTimes.map(time => (
                                                     <div
                                                         key={time._id}
-                                                        className="flex justify-between items-center p-3 bg-gray-50 border border-gray-200 rounded-md"
+                                                        className={`flex justify-between items-center p-4 rounded-lg shadow-sm border ${time.isClosed ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}
                                                     >
                                                         <div>
-                                                            <span className="font-medium">{dayName}</span>:
-                                                            {time.isClosed ? (
-                                                                <span className="ml-2 text-red-600">Closed</span>
-                                                            ) : (
-                                                                <span className="ml-2">{formatTimeForDisplay(time.startTime)} to {formatTimeForDisplay(time.endTime)}</span>
-                                                            )}
+                                                            <span className="font-bold text-gray-800">{time.date}</span>
+                                                            <div className="mt-1">
+                                                                {time.isClosed ? (
+                                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                        Closed
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                        {formatTimeForDisplay(time.startTime)} - {formatTimeForDisplay(time.endTime)}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         <button
                                                             onClick={() => handleDeleteShelterTime(time._id)}
-                                                            className="text-red-500 hover:text-red-700"
+                                                            className="p-2 rounded-full hover:bg-white transition-colors duration-200"
+                                                            title="Delete this schedule"
                                                         >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 hover:text-red-600" viewBox="0 0 20 20" fill="currentColor">
                                                                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                                                             </svg>
                                                         </button>
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Display Current Specific Date Shelter Hours */}
-                        {shelterConfigTab === 'specific' && (
-                            <div className="mt-6">
-                                <h3 className="text-lg font-medium text-gray-800 mb-2">Current Specific Date Hours</h3>
-                                {shelterTimesLoading ? (
-                                    <p>Loading shelter hours...</p>
-                                ) : specificShelterTimes.length === 0 ? (
-                                    <p className="text-gray-500">No specific date hours have been set</p>
-                                ) : (
-                                    <div className="space-y-2 mt-3">
-                                        {specificShelterTimes.map(time => (
-                                            <div
-                                                key={time._id}
-                                                className="flex justify-between items-center p-3 bg-gray-50 border border-gray-200 rounded-md"
-                                            >
-                                                <div>
-                                                    <span className="font-medium">{time.date}</span>:
-                                                    {time.isClosed ? (
-                                                        <span className="ml-2 text-red-600">Closed</span>
-                                                    ) : (
-                                                        <span className="ml-2">{formatTimeForDisplay(time.startTime)} to {formatTimeForDisplay(time.endTime)}</span>
-                                                    )}
-                                                </div>
-                                                <button
-                                                    onClick={() => handleDeleteShelterTime(time._id)}
-                                                    className="text-red-500 hover:text-red-700"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                            {/* Default Hours Form */}
+                            {shelterConfigTab === 'default' && (
+                                <div>
+                                    {/* Quick Action Button */}
+                                    <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-blue-800 font-medium">Quick Setup</h3>
+                                            <p className="text-blue-600 text-sm mt-1">Set standard hours (10AM-3PM Monday-Friday, closed on weekends)</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleInitializeDefaultHours}
+                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200 shadow-sm flex items-center"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                                            </svg>
+                                            Initialize Default Hours
+                                        </button>
+                                    </div>
+
+                                    {/* Custom Hours Form */}
+                                    <div className="bg-white rounded-lg border border-gray-200 p-5">
+                                        <h3 className="text-lg font-medium text-gray-800 mb-4">Custom Day Settings</h3>
+                                        <form onSubmit={handleDefaultShelterTimeSubmit} className="space-y-5">
+                                            {/* Closed Day Toggle */}
+                                            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md border border-gray-200">
+                                                <label htmlFor="defaultIsClosed" className="font-medium text-gray-700 flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 mr-2 ${defaultIsClosed ? 'text-red-500' : 'text-gray-400'}`} viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
                                                     </svg>
+                                                    Shelter is closed on this day
+                                                </label>
+                                                <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="defaultIsClosed"
+                                                        checked={defaultIsClosed}
+                                                        onChange={(e) => setDefaultIsClosed(e.target.checked)}
+                                                        className="absolute w-6 h-6 opacity-0 z-10 cursor-pointer"
+                                                    />
+                                                    <div className={`w-12 h-6 rounded-full transition-colors duration-200 ease-in-out ${defaultIsClosed ? 'bg-red-500' : 'bg-gray-300'}`}></div>
+                                                    <div className={`absolute left-0 top-0 bg-white w-6 h-6 rounded-full transition-transform duration-200 ease-in-out transform ${defaultIsClosed ? 'translate-x-6 border-red-500' : 'border-gray-300'} border-2`}></div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Day of Week</label>
+                                                    <select
+                                                        value={defaultDayOfWeek}
+                                                        onChange={(e) => setDefaultDayOfWeek(parseInt(e.target.value))}
+                                                        required
+                                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                                                    >
+                                                        <option value="">Select day</option>
+                                                        <option value="0">Sunday</option>
+                                                        <option value="1">Monday</option>
+                                                        <option value="2">Tuesday</option>
+                                                        <option value="3">Wednesday</option>
+                                                        <option value="4">Thursday</option>
+                                                        <option value="5">Friday</option>
+                                                        <option value="6">Saturday</option>
+                                                    </select>
+                                                </div>
+                                                <div className={defaultIsClosed ? 'opacity-50' : ''}>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                                    <EnhancedTimePicker
+                                                        value={defaultStartTime}
+                                                        onChange={(e) => setDefaultStartTime(e.target.value)}
+                                                        options={generate30MinTimeOptions()}
+                                                        placeholder="Select start time"
+                                                        disabled={defaultIsClosed}
+                                                    />
+                                                </div>
+                                                <div className={defaultIsClosed || !defaultStartTime ? 'opacity-50' : ''}>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                                    <EnhancedTimePicker
+                                                        value={defaultEndTime}
+                                                        onChange={(e) => setDefaultEndTime(e.target.value)}
+                                                        options={generate30MinTimeOptions().filter(time => time > defaultStartTime)}
+                                                        placeholder="Select end time"
+                                                        disabled={!defaultStartTime || defaultIsClosed}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-3">
+                                                <button
+                                                    type="submit"
+                                                    className={`w-full px-4 py-2 text-white rounded-md shadow-sm transition-all duration-200 ${defaultDayOfWeek === "" || (!defaultIsClosed && (!defaultStartTime || !defaultEndTime)) ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                                    disabled={defaultDayOfWeek === "" || (!defaultIsClosed && (!defaultStartTime || !defaultEndTime))}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                    </svg>
+                                                    Save Day Settings
                                                 </button>
                                             </div>
-                                        ))}
+                                        </form>
                                     </div>
-                                )}
-                            </div>
-                        )}
+
+                                    {/* Display Default Hours */}
+                                    <div className="mt-8">
+                                        <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                            </svg>
+                                            Current Schedule
+                                        </h3>
+                                        {shelterTimesLoading ? (
+                                            <div className="flex justify-center items-center p-8">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                                <span className="ml-2 text-indigo-600">Loading hours...</span>
+                                            </div>
+                                        ) : defaultShelterTimes.length === 0 ? (
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto text-yellow-400 mb-2" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                                </svg>
+                                                <p className="text-yellow-800">No default hours have been set</p>
+                                                <p className="text-yellow-600 text-sm mt-1">Use the form above or the quick setup button to define shelter hours</p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+                                                {defaultShelterTimes.map(time => {
+                                                    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                                                    const dayName = dayNames[time.dayOfWeek];
+                                                    return (
+                                                        <div
+                                                            key={time._id}
+                                                            className={`flex justify-between items-center p-4 rounded-lg shadow-sm border ${time.isClosed ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}
+                                                        >
+                                                            <div>
+                                                                <span className="font-bold text-gray-800">{dayName}</span>
+                                                                <div className="mt-1">
+                                                                    {time.isClosed ? (
+                                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                                                <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                                                                            </svg>
+                                                                            Closed
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                                            </svg>
+                                                                            {formatTimeForDisplay(time.startTime)} - {formatTimeForDisplay(time.endTime)}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleDeleteShelterTime(time._id)}
+                                                                className="p-2 rounded-full hover:bg-white transition-colors duration-200"
+                                                                title="Delete this schedule"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 hover:text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                                                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 

@@ -70,4 +70,27 @@ walkSchema.methods.permanentlyRemoveTimeSlot = function(timeSlot) {
   return this;
 };
 
+// Method to restore a time slot when a user cancels a walk
+walkSchema.methods.restoreTimeSlot = function(timeSlot) {
+  // Remove from the permanently removed list if it exists there
+  if (this.permanentlyRemovedTimeSlots && this.permanentlyRemovedTimeSlots.includes(timeSlot)) {
+    this.permanentlyRemovedTimeSlots = this.permanentlyRemovedTimeSlots.filter(t => t !== timeSlot);
+  }
+
+  // Add back to available times if not already there
+  if (!this.availableTimes.includes(timeSlot)) {
+    this.availableTimes.push(timeSlot);
+  }
+
+  // Mark as not permanently removed in the timeSlots array
+  if (this.timeSlots && this.timeSlots.length > 0) {
+    const slot = this.timeSlots.find(ts => ts.time === timeSlot);
+    if (slot) {
+      slot.permanentlyRemoved = false;
+    }
+  }
+
+  return this;
+};
+
 module.exports = mongoose.model('Walk', walkSchema);

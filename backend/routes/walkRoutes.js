@@ -715,18 +715,14 @@ router.delete('/delete/:walkId', async (req, res) => {
                 status: 'completed'
             });
 
-            // Also check if the time slot is permanently removed in the Walk model
-            const originalWalkCheck = await Walk.findOne({
-                marshall: walkToDelete.marshall,
-                date: walkToDelete.date
-            });
+            // No need to check if the time slot is permanently removed anymore
+            // We'll restore it regardless if it wasn't fully booked and completed
 
-            const isPermanentlyRemoved = originalWalkCheck &&
-                originalWalkCheck.isTimeSlotPermanentlyRemoved(walkToDelete.time);
-
-            // If the time slot was ever fully booked and completed or is permanently removed, don't reinstate it
-            if (wasEverFullyBookedAndCompleted || isPermanentlyRemoved) {
-                console.log(`Time slot ${walkToDelete.date} ${walkToDelete.time} was fully booked and completed or permanently removed. Not reinstating.`);
+            // If the time slot was ever fully booked and completed, don't reinstate it
+            // But if it's just marked as permanently removed without being fully booked and completed,
+            // we should restore it when a user cancels
+            if (wasEverFullyBookedAndCompleted) {
+                console.log(`Time slot ${walkToDelete.date} ${walkToDelete.time} was fully booked and completed. Not reinstating.`);
             } else {
                 // Otherwise, proceed with normal cancellation logic
                 const originalWalk = await Walk.findOne({
@@ -759,19 +755,12 @@ router.delete('/delete/:walkId', async (req, res) => {
                             // Check if this time slot was ever fully booked (reached 4 users)
                             const wasEverFullyBooked = timeSlot.bookedCount >= timeSlot.maxBookings;
 
-                            // If the time was removed from available times because it was fully booked,
-                            // add it back ONLY if it was never fully booked with completed walks
-                            // Also check if the time slot is not permanently removed
-                            if (!originalWalk.isTimeSlotPermanentlyRemoved(walkToDelete.time) &&
-                                !originalWalk.availableTimes.includes(walkToDelete.time)) {
-                                originalWalk.availableTimes.push(walkToDelete.time);
-                                console.log(`Added time ${walkToDelete.time} back to available times`);
-
-                                // Also make sure the permanentlyRemoved flag is set to false
-                                if (timeSlot.permanentlyRemoved) {
-                                    timeSlot.permanentlyRemoved = false;
-                                    console.log(`Marked time slot ${walkToDelete.time} as not permanently removed`);
-                                }
+                            // If the time slot was removed from available times because it was fully booked,
+                            // restore it using the restoreTimeSlot method
+                            // This will handle adding it back to available times and removing it from permanentlyRemovedTimeSlots
+                            if (!wasEverFullyBooked) {
+                                originalWalk.restoreTimeSlot(walkToDelete.time);
+                                console.log(`Restored time slot ${walkToDelete.time} to available times`);
                             }
 
                             // Update status if needed
