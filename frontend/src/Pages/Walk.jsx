@@ -734,7 +734,7 @@ const Walk = () => {
         let normalizedDate = normalizeDateString(date);
         // Just for debugging purposes - trying to see what happens with date + 1
         const nextDay = new Date(date);
-        nextDay.setDate(nextDay.getDate() + 1);
+        nextDay.setDate(nextDay.getDate());
         const nextDayNormalized = normalizeDateString(nextDay.toISOString().split('T')[0]);
         console.log('Current date:', date, 'Next day:', nextDay.toISOString().split('T')[0]);
         normalizedDate = nextDayNormalized;
