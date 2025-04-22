@@ -25,9 +25,21 @@ const Walk = () => {
     const [shelterDate, setShelterDate] = useState("");
     const [shelterStartTime, setShelterStartTime] = useState("");
     const [shelterEndTime, setShelterEndTime] = useState("");
+    const [shelterIsClosed, setShelterIsClosed] = useState(false);
     const [shelterTimesLoading, setShelterTimesLoading] = useState(true);
     const [completedWalks, setCompletedWalks] = useState([]);
     const [isLoadingCompletedWalks, setIsLoadingCompletedWalks] = useState(false);
+
+    // State for default shelter hours
+    const [defaultShelterTimes, setDefaultShelterTimes] = useState([]);
+    const [specificShelterTimes, setSpecificShelterTimes] = useState([]);
+    const [defaultDayOfWeek, setDefaultDayOfWeek] = useState("");
+    const [defaultStartTime, setDefaultStartTime] = useState("");
+    const [defaultEndTime, setDefaultEndTime] = useState("");
+    const [defaultIsClosed, setDefaultIsClosed] = useState(false);
+
+    // Tab state for shelter hours configuration
+    const [shelterConfigTab, setShelterConfigTab] = useState('specific');
 
     const token = localStorage.getItem("token");
 
@@ -50,12 +62,13 @@ const Walk = () => {
         try {
             const response = await axios.get(`http://localhost:3000/walks/logs`);
 
-            // Filter walk logs for the current user
+            // Filter walk logs for the current user - only include walks that have been explicitly marked as completed or incomplete
             const userCompletedWalks = response.data.filter(walkLog =>
                 walkLog.userId?._id === userId &&
-                (walkLog.status === 'pending' || walkLog.status === 'completed')
+                (walkLog.status === 'completed' || walkLog.status === 'incomplete')
             );
 
+            console.log('Completed walks:', userCompletedWalks);
             setCompletedWalks(userCompletedWalks);
         } catch (error) {
             console.error("Error fetching completed walks:", error);
@@ -68,12 +81,48 @@ const Walk = () => {
     const hasCompletedWalkAtTimeSlot = (date, time) => {
         if (!completedWalks.length) return false;
 
-        return completedWalks.some(walk => walk.date === date && walk.time === time);
+        return completedWalks.some(walk =>
+            walk.date === date &&
+            walk.time === time &&
+            (walk.status === 'completed' || walk.status === 'incomplete')
+        );
+    };
+
+    // Fetch user's scheduled walks
+    const [scheduledUserWalks, setScheduledUserWalks] = useState([]);
+
+    const fetchUserScheduledWalks = async (userId) => {
+        if (!userId) return;
+
+        try {
+            const response = await axios.get(`http://localhost:3000/users/profile/${userId}`);
+            if (response.data && response.data.walks) {
+                setScheduledUserWalks(response.data.walks);
+            }
+        } catch (error) {
+            console.error("Error fetching user's scheduled walks:", error);
+        }
+    };
+
+    // Check if a user already has a scheduled walk at this time slot
+    const hasScheduledWalkAtTimeSlot = (date, time) => {
+        if (!scheduledUserWalks.length) return false;
+
+        return scheduledUserWalks.some(walk => walk.date === date && walk.time === time);
+    };
+
+    // Combined check for both completed and scheduled walks
+    const isWalkAlreadyTaken = (date, time) => {
+        const isScheduled = hasScheduledWalkAtTimeSlot(date, time);
+        const isCompleted = hasCompletedWalkAtTimeSlot(date, time);
+        console.log(`Walk ${date} at ${time}: isScheduled=${isScheduled}, isCompleted=${isCompleted}`);
+        return isScheduled || isCompleted;
     };
 
     useEffect(() => {
         if (user?.id) {
             fetchCompletedWalks(user.id);
+            fetchUserScheduledWalks(user.id);
         }
     }, [user]);
 
@@ -87,11 +136,55 @@ const Walk = () => {
                 return;
             }
 
-            // Check if user has already completed a walk at this time slot
+            // Check if user has already completed or scheduled a walk at this time slot
             const walk = availableTimesData.find(w => w._id === walkId);
-            if (walk && hasCompletedWalkAtTimeSlot(walk.date, timeSlot)) {
-                toast.error("You have already completed a walk at this time slot. Please select a different time.");
+            if (walk && isWalkAlreadyTaken(walk.date, timeSlot)) {
+                toast.error("You already have a walk scheduled or completed at this time slot. Please select a different time.");
                 return;
+            }
+
+            // Optimistically update the UI before the API call
+            // Create a copy of the available times data
+            const updatedAvailableTimesData = availableTimesData.map(w => {
+                if (w._id === walkId) {
+                    // Create a copy of the walk object
+                    const updatedWalk = { ...w };
+
+                    // Find the time slot in the timeSlots array
+                    if (updatedWalk.timeSlots && updatedWalk.timeSlots.length > 0) {
+                        const timeSlotObj = updatedWalk.timeSlots.find(ts => ts.time === timeSlot);
+                        if (timeSlotObj) {
+                            // Increment the booking count
+                            timeSlotObj.bookedCount += 1;
+
+                            // Update the timeSlotAvailability object
+                            if (updatedWalk.timeSlotAvailability && updatedWalk.timeSlotAvailability[timeSlot]) {
+                                updatedWalk.timeSlotAvailability[timeSlot].bookedCount += 1;
+
+                                // Check if the time slot is now fully booked
+                                const isFullyBooked = timeSlotObj.bookedCount >= timeSlotObj.maxBookings;
+                                updatedWalk.timeSlotAvailability[timeSlot].isAvailable = !isFullyBooked;
+
+                                // If fully booked, remove from available times
+                                if (isFullyBooked && updatedWalk.availableTimes) {
+                                    updatedWalk.availableTimes = updatedWalk.availableTimes.filter(t => t !== timeSlot);
+                                }
+                            }
+                        }
+                    }
+
+                    return updatedWalk;
+                }
+                return w;
+            });
+
+            // Update the state with the optimistically updated data
+            setAvailableTimesData(updatedAvailableTimesData);
+
+            // Update the filtered walks if we're on the selected date
+            if (selectedDate) {
+                const updatedWalksForDate = updatedAvailableTimesData.filter(walk => walk.date === selectedDate);
+                setFilteredWalks(updatedWalksForDate);
             }
 
             // Proceed to select the walk if waiver is signed
@@ -100,20 +193,22 @@ const Walk = () => {
                 timeSlot,
             });
 
-            // Fetch the updated available times immediately
+            // After successful API call, fetch the updated available times to ensure data consistency
             const updatedTimesResponse = await axios.get("http://localhost:3000/walks/available-times");
             const updatedTimes = updatedTimesResponse.data;
+            console.log('Updated available times:', updatedTimes);
             setAvailableTimesData(updatedTimes);
 
-            // Update the filtered walks if we're on the selected date
-            if (selectedDate) {
-                const updatedWalksForDate = updatedTimes.filter(walk => walk.date === selectedDate);
-                setFilteredWalks(updatedWalksForDate);
-            }
+            // Update the filtered walks again with the server data
+            // if (selectedDate) {
+            //     const updatedWalksForDate = updatedTimes.filter(walk => walk.date === selectedDate);
+            //     setFilteredWalks(updatedWalksForDate);
+            // }
 
             // Refresh the user's completed walks to include this new scheduled walk
             if (user?.id) {
                 fetchCompletedWalks(user.id);
+                fetchUserScheduledWalks(user.id);
             }
 
             // Show a more prominent success message
@@ -127,6 +222,10 @@ const Walk = () => {
             });
         } catch (error) {
             console.error("Error selecting walk:", error);
+
+            // Revert the optimistic update by fetching the actual data
+            fetchTimeSlotAvailability();
+
             if (error.response && error.response.data && error.response.data.error) {
                 // Display the specific error message from the server
                 toast.error(`Failed to select walk: ${error.response.data.error}`);
@@ -168,10 +267,15 @@ const Walk = () => {
                 // Create a mapping of time slots to their availability
                 const timeSlotAvailability = {};
                 walk.timeSlots.forEach(slot => {
+                    // Check if the slot is permanently removed
+                    const isPermanentlyRemoved = slot.permanentlyRemoved ||
+                        (walk.permanentlyRemovedTimeSlots && walk.permanentlyRemovedTimeSlots.includes(slot.time));
+
                     timeSlotAvailability[slot.time] = {
                         bookedCount: slot.bookedCount,
                         maxBookings: slot.maxBookings,
-                        isAvailable: slot.bookedCount < slot.maxBookings
+                        isAvailable: !isPermanentlyRemoved && slot.bookedCount < slot.maxBookings,
+                        isPermanentlyRemoved: isPermanentlyRemoved
                     };
                 });
 
@@ -207,13 +311,20 @@ const Walk = () => {
 
     const fetchShelterTimes = async () => {
         try {
-          const response = await axios.get("http://localhost:3000/shelter-times", {
+          // First, get all specific date shelter times
+          const specificResponse = await axios.get("http://localhost:3000/shelter-times", {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
           });
 
-          // Process the shelter times to ensure dates are normalized
+          // Then, get default shelter times
+          const defaultsResponse = await axios.get("http://localhost:3000/shelter-times/defaults", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          });
+
+          // Process the specific shelter times to ensure dates are normalized
           const todayStr = normalizeDateString(new Date());
-          const processedShelterTimes = response.data
+          const processedSpecificTimes = specificResponse.data
+              .filter(time => !time.isDefault) // Filter out any default times that might be in the response
               .map(time => {
                   const normalizedDate = normalizeDateString(time.date);
                   return {
@@ -224,13 +335,59 @@ const Walk = () => {
               })
               .filter(time => time.normalizedDate >= todayStr);
 
-          console.log('Fetched shelter times with normalized dates:', processedShelterTimes.map(st => ({
-            id: st._id,
-            date: st.date,
-            normalizedDate: st.normalizedDate
-          })));
+          // Process default times
+          const defaultTimes = defaultsResponse.data;
 
-          setShelterTimes(processedShelterTimes);
+          console.log('Fetched specific shelter times:', processedSpecificTimes.length);
+          console.log('Fetched default shelter times:', defaultTimes.length);
+
+          // Combine both types of shelter times
+          const combinedTimes = [...processedSpecificTimes];
+
+          // For the next 30 days, check if we need to add default times
+          const today = new Date();
+          for (let i = 0; i < 30; i++) {
+            const date = new Date(today);
+            date.setDate(date.getDate() + i);
+            const dateStr = date.toISOString().split('T')[0];
+            const normalizedDateStr = normalizeDateString(dateStr);
+
+            // Skip if we already have a specific time for this date
+            if (processedSpecificTimes.some(time => time.normalizedDate === normalizedDateStr)) {
+              continue;
+            }
+
+            // Get the day of week (0 = Sunday, 1 = Monday, etc.)
+            const dayOfWeek = date.getDay();
+
+            // Find the default time for this day of week
+            const defaultTime = defaultTimes.find(time => time.dayOfWeek === dayOfWeek);
+
+            if (defaultTime) {
+              // Create a virtual shelter time entry based on the default
+              combinedTimes.push({
+                _id: `default-${dateStr}`, // Virtual ID
+                date: dateStr,
+                normalizedDate: normalizedDateStr,
+                startTime: defaultTime.startTime,
+                endTime: defaultTime.endTime,
+                isDefault: false, // Mark as false so it's treated like a regular entry
+                isVirtualDefault: true, // But add this flag to know it's derived from a default
+                isClosed: defaultTime.isClosed,
+                dayOfWeek: dayOfWeek
+              });
+            }
+          }
+
+          console.log('Combined shelter times (specific + defaults):', combinedTimes.length);
+
+          // Set the combined times for general use
+          setShelterTimes(combinedTimes);
+
+          // Also set separate lists for the admin interface
+          setDefaultShelterTimes(defaultTimes);
+          setSpecificShelterTimes(processedSpecificTimes);
+
           setShelterTimesLoading(false);
         } catch (error) {
           console.error("Error fetching shelter times:", error);
@@ -242,6 +399,18 @@ const Walk = () => {
     useEffect(() => {
         fetchTimeSlotAvailability();
         fetchShelterTimes();
+
+        // Listen for refresh events from other components
+        const handleRefreshAvailableTimes = (event) => {
+            console.log('Received refreshAvailableTimes event:', event.detail);
+            fetchTimeSlotAvailability();
+        };
+
+        window.addEventListener('refreshAvailableTimes', handleRefreshAvailableTimes);
+
+        return () => {
+            window.removeEventListener('refreshAvailableTimes', handleRefreshAvailableTimes);
+        };
     }, []);
 
     const handleDateClick = (arg) => {
@@ -369,13 +538,13 @@ const Walk = () => {
     const handleShelterTimeSubmit = async (e) => {
         e.preventDefault();
 
-        if (!shelterDate || !shelterStartTime || !shelterEndTime) {
+        if (!shelterDate || (!shelterIsClosed && (!shelterStartTime || !shelterEndTime))) {
           toast.error("Please fill in all shelter time fields");
           return;
         }
 
-        // Validate start time is before end time
-        if (shelterStartTime >= shelterEndTime) {
+        // Validate start time is before end time if not closed
+        if (!shelterIsClosed && shelterStartTime >= shelterEndTime) {
           toast.error("Start time must be before end time");
           return;
         }
@@ -385,8 +554,10 @@ const Walk = () => {
             "http://localhost:3000/shelter-times",
             {
               date: shelterDate,
-              startTime: shelterStartTime,
-              endTime: shelterEndTime
+              startTime: shelterIsClosed ? "00:00" : shelterStartTime,
+              endTime: shelterIsClosed ? "00:00" : shelterEndTime,
+              createdBy: user?.id,
+              isClosed: shelterIsClosed
             },
             {
               headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
@@ -400,9 +571,85 @@ const Walk = () => {
           setShelterDate("");
           setShelterStartTime("");
           setShelterEndTime("");
+          setShelterIsClosed(false);
         } catch (error) {
           console.error("Error adding shelter time:", error);
-          toast.error("Failed to add shelter hours");
+          if (error.response && error.response.data && error.response.data.message) {
+            toast.error(error.response.data.message);
+          } else {
+            toast.error("Failed to add shelter hours");
+          }
+        }
+    };
+
+    const handleDefaultShelterTimeSubmit = async (e) => {
+        e.preventDefault();
+
+        if (defaultDayOfWeek === "" || (!defaultIsClosed && (!defaultStartTime || !defaultEndTime))) {
+          toast.error("Please fill in all default shelter time fields");
+          return;
+        }
+
+        // Validate start time is before end time if not closed
+        if (!defaultIsClosed && defaultStartTime >= defaultEndTime) {
+          toast.error("Start time must be before end time");
+          return;
+        }
+
+        try {
+          await axios.post(
+            "http://localhost:3000/shelter-times/defaults",
+            {
+              dayOfWeek: defaultDayOfWeek,
+              startTime: defaultIsClosed ? "00:00" : defaultStartTime,
+              endTime: defaultIsClosed ? "00:00" : defaultEndTime,
+              createdBy: user?.id,
+              isClosed: defaultIsClosed
+            },
+            {
+              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            }
+          );
+
+          toast.success("Default shelter hours set successfully");
+          fetchShelterTimes();
+
+          // Reset form
+          setDefaultDayOfWeek("");
+          setDefaultStartTime("");
+          setDefaultEndTime("");
+          setDefaultIsClosed(false);
+        } catch (error) {
+          console.error("Error setting default shelter time:", error);
+          if (error.response && error.response.data && error.response.data.message) {
+            toast.error(error.response.data.message);
+          } else {
+            toast.error("Failed to set default shelter hours");
+          }
+        }
+    };
+
+    const handleInitializeDefaultHours = async () => {
+        if (!window.confirm("This will set up default shelter hours (10AM-3PM Monday-Friday, closed on weekends). Continue?")) {
+          return;
+        }
+
+        try {
+          await axios.post(
+            "http://localhost:3000/shelter-times/initialize-defaults",
+            {
+              createdBy: user?.id
+            },
+            {
+              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            }
+          );
+
+          toast.success("Default shelter hours initialized successfully");
+          fetchShelterTimes();
+        } catch (error) {
+          console.error("Error initializing default shelter hours:", error);
+          toast.error("Failed to initialize default shelter hours");
         }
     };
 
@@ -707,22 +954,27 @@ const Walk = () => {
                 const bookedCount = slotInfo ? slotInfo.bookedCount : 0;
                 const maxBookings = slotInfo ? slotInfo.maxBookings : 4;
                 const isFullyBooked = bookedCount >= maxBookings;
+                const availableSlots = maxBookings - bookedCount;
 
-                // Check if the user has already completed a walk at this time
-                const alreadyCompletedWalk = hasCompletedWalkAtTimeSlot(walk.date, timeSlot);
+                // Check if the user has already completed or scheduled a walk at this time
+                const alreadyTakenWalk = isWalkAlreadyTaken(walk.date, timeSlot);
+
+                // Check if the time slot is permanently removed
+                const isPermanentlyRemoved = walk.permanentlyRemovedTimeSlots &&
+                    walk.permanentlyRemovedTimeSlots.includes(timeSlot);
 
                 let cardStyle = "bg-white border-gray-300";
                 let statusMessage = null;
 
-                if (isFullyBooked) {
+                if (isFullyBooked || isPermanentlyRemoved) {
                     cardStyle = "bg-red-50 border-red-300";
                     statusMessage = <div className="mt-2 py-1 px-2 bg-red-100 text-red-800 text-sm font-medium rounded">
                         Not Available
                     </div>;
-                } else if (alreadyCompletedWalk) {
+                } else if (alreadyTakenWalk) {
                     cardStyle = "bg-gray-100 border-gray-400";
                     statusMessage = <div className="mt-2 py-1 px-2 bg-gray-200 text-gray-700 text-sm font-medium rounded">
-                        Already Completed
+                        Already Scheduled
                     </div>;
                 }
 
@@ -742,14 +994,14 @@ const Walk = () => {
                         <div className="mt-2">
                             <div className="flex justify-between items-center text-sm">
                                 <span>Available Slots:</span>
-                                <span className={`font-medium ${isFullyBooked ? 'text-red-600' : 'text-green-600'}`}>
-                                    {maxBookings - bookedCount} of {maxBookings}
+                                <span className={`font-medium ${isFullyBooked || isPermanentlyRemoved ? 'text-red-600' : 'text-green-600'}`}>
+                                    {isPermanentlyRemoved ? '0' : availableSlots} of {maxBookings}
                                 </span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                                 <div
-                                    className={`${isFullyBooked ? 'bg-red-600' : 'bg-green-600'} h-2 rounded-full`}
-                                    style={{ width: `${(bookedCount / maxBookings) * 100}%` }}
+                                    className={`${isFullyBooked || isPermanentlyRemoved ? 'bg-red-600' : 'bg-green-600'} h-2 rounded-full`}
+                                    style={{ width: `${isPermanentlyRemoved ? 100 : (bookedCount / maxBookings) * 100}%` }}
                                 ></div>
                             </div>
                         </div>
@@ -761,17 +1013,17 @@ const Walk = () => {
                         {user?.id !== walk.marshall?._id && (
                             <button
                                 className={`px-4 py-2 rounded-md ${
-                                    isFullyBooked || alreadyCompletedWalk
+                                    isFullyBooked || isPermanentlyRemoved || alreadyTakenWalk
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-blue-500 hover:bg-blue-600 text-white'
                                 }`}
-                                onClick={() => !isFullyBooked && !alreadyCompletedWalk && handleSelectWalk(walk._id, timeSlot)}
-                                disabled={isFullyBooked || alreadyCompletedWalk}
+                                onClick={() => !isFullyBooked && !isPermanentlyRemoved && !alreadyTakenWalk && handleSelectWalk(walk._id, timeSlot)}
+                                disabled={isFullyBooked || isPermanentlyRemoved || alreadyTakenWalk}
                             >
-                                {isFullyBooked
+                                {isFullyBooked || isPermanentlyRemoved
                                   ? 'Fully Booked'
-                                  : alreadyCompletedWalk
-                                    ? 'Already Walked'
+                                  : alreadyTakenWalk
+                                    ? 'Already Scheduled'
                                     : 'Select'}
                             </button>
                         )}
@@ -911,80 +1163,239 @@ const Walk = () => {
                         <h2 className="text-xl font-semibold text-gray-800 mb-4">Set Shelter Hours</h2>
                         <p className="text-gray-600 mb-4">Define the time windows when marshalls can schedule dog walks</p>
 
-                        <form onSubmit={handleShelterTimeSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                            <input
-                                type="date"
-                                value={shelterDate}
-                                onChange={(e) => setShelterDate(e.target.value)}
-                                required
-                                className="w-full p-2 border border-gray-300 rounded-md"
-                            />
-                            </div>
-                            <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                            <EnhancedTimePicker
-                                value={shelterStartTime}
-                                onChange={(e) => setShelterStartTime(e.target.value)}
-                                options={generate30MinTimeOptions()}
-                                placeholder="Select start time"
-                            />
-                            </div>
-                            <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                            <EnhancedTimePicker
-                                value={shelterEndTime}
-                                onChange={(e) => setShelterEndTime(e.target.value)}
-                                options={generate30MinTimeOptions().filter(time => time > shelterStartTime)}
-                                placeholder="Select end time"
-                                disabled={!shelterStartTime}
-                            />
-                            </div>
+                        {/* Tabs for specific dates vs default hours */}
+                        <div className="mb-6 border-b border-gray-200">
+                            <ul className="flex flex-wrap -mb-px text-sm font-medium text-center">
+                                <li className="mr-2">
+                                    <button
+                                        className={`inline-block p-4 rounded-t-lg ${shelterConfigTab === 'specific' ? 'border-b-2 border-blue-600 text-blue-600' : 'border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300'}`}
+                                        onClick={() => setShelterConfigTab('specific')}
+                                    >
+                                        Specific Dates
+                                    </button>
+                                </li>
+                                <li className="mr-2">
+                                    <button
+                                        className={`inline-block p-4 rounded-t-lg ${shelterConfigTab === 'default' ? 'border-b-2 border-blue-600 text-blue-600' : 'border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300'}`}
+                                        onClick={() => setShelterConfigTab('default')}
+                                    >
+                                        Default Hours
+                                    </button>
+                                </li>
+                            </ul>
                         </div>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
-                            disabled={!shelterDate || !shelterStartTime || !shelterEndTime}
-                        >
-                            Add Shelter Hours
-                        </button>
-                        </form>
 
-                        {/* Display Current Shelter Hours */}
-                        <div className="mt-6">
-                        <h3 className="text-lg font-medium text-gray-800 mb-2">Current Shelter Hours</h3>
-                        {shelterTimesLoading ? (
-                            <p>Loading shelter hours...</p>
-                        ) : shelterTimes.length === 0 ? (
-                            <p className="text-gray-500">No shelter hours have been set</p>
-                        ) : (
-                            <div className="space-y-2 mt-3">
-                            {shelterTimes.map(time => (
-                                <div
-                                key={time._id}
-                                className="flex justify-between items-center p-3 bg-gray-50 border border-gray-200 rounded-md"
-                                >
-                                <div>
-                                    <span className="font-medium">{time.date}</span>:
-                                    <span className="ml-2">{formatTimeForDisplay(time.startTime)} to {formatTimeForDisplay(time.endTime)}</span>
+                        {/* Specific Date Form */}
+                        {shelterConfigTab === 'specific' && (
+                            <form onSubmit={handleShelterTimeSubmit} className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                        <input
+                                            type="date"
+                                            value={shelterDate}
+                                            onChange={(e) => setShelterDate(e.target.value)}
+                                            required
+                                            className="w-full p-2 border border-gray-300 rounded-md"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                        <EnhancedTimePicker
+                                            value={shelterStartTime}
+                                            onChange={(e) => setShelterStartTime(e.target.value)}
+                                            options={generate30MinTimeOptions()}
+                                            placeholder="Select start time"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                        <EnhancedTimePicker
+                                            value={shelterEndTime}
+                                            onChange={(e) => setShelterEndTime(e.target.value)}
+                                            options={generate30MinTimeOptions().filter(time => time > shelterStartTime)}
+                                            placeholder="Select end time"
+                                            disabled={!shelterStartTime}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex items-center mt-2">
+                                    <input
+                                        type="checkbox"
+                                        id="isClosed"
+                                        checked={shelterIsClosed}
+                                        onChange={(e) => setShelterIsClosed(e.target.checked)}
+                                        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                    />
+                                    <label htmlFor="isClosed" className="ml-2 block text-sm text-gray-700">
+                                        Mark shelter as closed on this date
+                                    </label>
                                 </div>
                                 <button
-                                    onClick={() => handleDeleteShelterTime(time._id)}
-                                    className="text-red-500 hover:text-red-700"
+                                    type="submit"
+                                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
+                                    disabled={!shelterDate || (!shelterIsClosed && (!shelterStartTime || !shelterEndTime))}
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
+                                    Add Specific Date Hours
                                 </button>
+                            </form>
+                        )}
+
+                        {/* Default Hours Form */}
+                        {shelterConfigTab === 'default' && (
+                            <div>
+                                <form onSubmit={handleDefaultShelterTimeSubmit} className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Day of Week</label>
+                                            <select
+                                                value={defaultDayOfWeek}
+                                                onChange={(e) => setDefaultDayOfWeek(parseInt(e.target.value))}
+                                                required
+                                                className="w-full p-2 border border-gray-300 rounded-md"
+                                            >
+                                                <option value="">Select day</option>
+                                                <option value="0">Sunday</option>
+                                                <option value="1">Monday</option>
+                                                <option value="2">Tuesday</option>
+                                                <option value="3">Wednesday</option>
+                                                <option value="4">Thursday</option>
+                                                <option value="5">Friday</option>
+                                                <option value="6">Saturday</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                            <EnhancedTimePicker
+                                                value={defaultStartTime}
+                                                onChange={(e) => setDefaultStartTime(e.target.value)}
+                                                options={generate30MinTimeOptions()}
+                                                placeholder="Select start time"
+                                                disabled={defaultIsClosed}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                            <EnhancedTimePicker
+                                                value={defaultEndTime}
+                                                onChange={(e) => setDefaultEndTime(e.target.value)}
+                                                options={generate30MinTimeOptions().filter(time => time > defaultStartTime)}
+                                                placeholder="Select end time"
+                                                disabled={!defaultStartTime || defaultIsClosed}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center mt-2">
+                                        <input
+                                            type="checkbox"
+                                            id="defaultIsClosed"
+                                            checked={defaultIsClosed}
+                                            onChange={(e) => setDefaultIsClosed(e.target.checked)}
+                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                        />
+                                        <label htmlFor="defaultIsClosed" className="ml-2 block text-sm text-gray-700">
+                                            Shelter is closed on this day
+                                        </label>
+                                    </div>
+                                    <div className="flex space-x-4">
+                                        <button
+                                            type="submit"
+                                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md"
+                                            disabled={defaultDayOfWeek === "" || (!defaultIsClosed && (!defaultStartTime || !defaultEndTime))}
+                                        >
+                                            Set Default Hours
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleInitializeDefaultHours}
+                                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md"
+                                        >
+                                            Initialize Default Hours (10AM-3PM Mon-Fri)
+                                        </button>
+                                    </div>
+                                </form>
+
+                                {/* Display Default Hours */}
+                                <div className="mt-6">
+                                    <h3 className="text-lg font-medium text-gray-800 mb-2">Default Shelter Hours</h3>
+                                    {shelterTimesLoading ? (
+                                        <p>Loading default hours...</p>
+                                    ) : defaultShelterTimes.length === 0 ? (
+                                        <p className="text-gray-500">No default hours have been set</p>
+                                    ) : (
+                                        <div className="space-y-2 mt-3">
+                                            {defaultShelterTimes.map(time => {
+                                                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                                                const dayName = dayNames[time.dayOfWeek];
+                                                return (
+                                                    <div
+                                                        key={time._id}
+                                                        className="flex justify-between items-center p-3 bg-gray-50 border border-gray-200 rounded-md"
+                                                    >
+                                                        <div>
+                                                            <span className="font-medium">{dayName}</span>:
+                                                            {time.isClosed ? (
+                                                                <span className="ml-2 text-red-600">Closed</span>
+                                                            ) : (
+                                                                <span className="ml-2">{formatTimeForDisplay(time.startTime)} to {formatTimeForDisplay(time.endTime)}</span>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleDeleteShelterTime(time._id)}
+                                                            className="text-red-500 hover:text-red-700"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
                             </div>
                         )}
-                        </div>
+
+                        {/* Display Current Specific Date Shelter Hours */}
+                        {shelterConfigTab === 'specific' && (
+                            <div className="mt-6">
+                                <h3 className="text-lg font-medium text-gray-800 mb-2">Current Specific Date Hours</h3>
+                                {shelterTimesLoading ? (
+                                    <p>Loading shelter hours...</p>
+                                ) : specificShelterTimes.length === 0 ? (
+                                    <p className="text-gray-500">No specific date hours have been set</p>
+                                ) : (
+                                    <div className="space-y-2 mt-3">
+                                        {specificShelterTimes.map(time => (
+                                            <div
+                                                key={time._id}
+                                                className="flex justify-between items-center p-3 bg-gray-50 border border-gray-200 rounded-md"
+                                            >
+                                                <div>
+                                                    <span className="font-medium">{time.date}</span>:
+                                                    {time.isClosed ? (
+                                                        <span className="ml-2 text-red-600">Closed</span>
+                                                    ) : (
+                                                        <span className="ml-2">{formatTimeForDisplay(time.startTime)} to {formatTimeForDisplay(time.endTime)}</span>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDeleteShelterTime(time._id)}
+                                                    className="text-red-500 hover:text-red-700"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    )}
+                )}
 
                 {user?.totalWalks === 0 && !user?.waiverSigned && (
                     <div className="mt-4">

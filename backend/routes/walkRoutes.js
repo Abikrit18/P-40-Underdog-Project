@@ -3,6 +3,7 @@ const router = express.Router();
 const Walk = require('../models/walk'); // Import the Walk model
 const User = require('../models/User');
 const WalkLog = require('../models/walkLog'); // Import the WalkLog model
+const UserWalk = require('../models/UserWalk'); // Import the UserWalk model
 const { createSystemNotification } = require('../controllers/notificationController'); // Import notification controller
 
 
@@ -109,19 +110,68 @@ router.get('/available-times', async (req, res) => {
                 isTimeSlotFullyBooked: true
             });
 
-            // Filter out fully booked time slots
-            if (fullyBookedSlots.length > 0) {
-                walk.availableTimes = walk.availableTimes.filter(time => !fullyBookedSlots.includes(time));
+            // Also check the walk's permanently removed time slots
+            const permanentlyRemovedSlots = walk.permanentlyRemovedTimeSlots || [];
+
+            // Combine both lists of unavailable slots
+            const unavailableSlots = [...new Set([...fullyBookedSlots, ...permanentlyRemovedSlots])];
+
+            // Update booking counts for each time slot
+            if (walk.timeSlots && walk.timeSlots.length > 0) {
+                for (const timeSlot of walk.timeSlots) {
+                    // Count actual bookings for this time slot
+                    const actualBookings = await UserWalk.countDocuments({
+                        walkId: walk._id,
+                        date: walk.date,
+                        time: timeSlot.time,
+                        status: 'scheduled'
+                    });
+
+                    // Update the booking count
+                    if (timeSlot.bookedCount !== actualBookings) {
+                        console.log(`Updating booking count for ${walk.date} at ${timeSlot.time} from ${timeSlot.bookedCount} to ${actualBookings}`);
+                        timeSlot.bookedCount = actualBookings;
+                        await walk.save();
+                    }
+                }
+            }
+
+            // Filter out fully booked and permanently removed time slots
+            if (unavailableSlots.length > 0) {
+                walk.availableTimes = walk.availableTimes.filter(time => !unavailableSlots.includes(time));
 
                 // If there are still available times after filtering, add to result
                 if (walk.availableTimes.length > 0) {
                     filteredAvailableTimes.push(walk);
                 }
             } else {
-                filteredAvailableTimes.push(walk);
+                // Also check if any time slots are marked as permanently removed in the timeSlots array
+                if (walk.timeSlots && walk.timeSlots.length > 0) {
+                    const permanentlyRemovedTimes = walk.timeSlots
+                        .filter(slot => slot.permanentlyRemoved)
+                        .map(slot => slot.time);
+
+                    if (permanentlyRemovedTimes.length > 0) {
+                        walk.availableTimes = walk.availableTimes.filter(time => !permanentlyRemovedTimes.includes(time));
+                    }
+
+                    // Also filter out time slots that are fully booked
+                    const fullyBookedTimes = walk.timeSlots
+                        .filter(slot => slot.bookedCount >= slot.maxBookings)
+                        .map(slot => slot.time);
+
+                    if (fullyBookedTimes.length > 0) {
+                        walk.availableTimes = walk.availableTimes.filter(time => !fullyBookedTimes.includes(time));
+                    }
+                }
+
+                // Only add if there are still available times
+                if (walk.availableTimes.length > 0) {
+                    filteredAvailableTimes.push(walk);
+                }
             }
         }
-
+        console.log(filteredAvailableTimes);
         res.status(200).json(filteredAvailableTimes);
     } catch (error) {
         console.error("Error fetching available times:", error);
@@ -189,12 +239,26 @@ router.post('/select-walk/:walkId', async (req, res) => {
             userId: userId,
             date: walk.date,
             time: timeSlot,
-            status: { $in: ['pending', 'completed'] } // Check for both pending and completed walks
+            status: { $in: ['completed', 'incomplete'] } // Only check for explicitly completed or incomplete walks
         });
 
         if (completedWalk) {
             return res.status(400).json({
                 error: "You have already completed a walk at this time slot. Please select a different time."
+            });
+        }
+
+        // Check if the user already has a scheduled walk for this specific date and time
+        const scheduledWalk = await UserWalk.findOne({
+            userid: userId,
+            date: walk.date,
+            time: timeSlot,
+            status: 'scheduled'
+        });
+
+        if (scheduledWalk) {
+            return res.status(400).json({
+                error: "You already have a scheduled walk at this time slot. Please select a different time."
             });
         }
 
@@ -258,34 +322,56 @@ router.post('/select-walk/:walkId', async (req, res) => {
             return res.status(400).json({ error: "This time slot is already fully booked" });
         }
 
-        // Increment the booking count
-        updatedTimeSlot.bookedCount += 1;
-
-        // Create a new walk record for this specific booking
-        const bookedWalk = new Walk({
-            userid: userId,
-            marshall: walk.marshall,
+        // Count how many UserWalk records already exist for this time slot
+        const existingBookings = await UserWalk.countDocuments({
+            walkId: walk._id,
             date: walk.date,
             time: timeSlot,
             status: 'scheduled'
         });
 
-        await bookedWalk.save();
+        console.log(`Found ${existingBookings} existing bookings for ${walk.date} at ${timeSlot}`);
+
+        // Set the booking count to match the actual number of bookings
+        updatedTimeSlot.bookedCount = existingBookings;
+
+        // Increment the booking count for the new booking
+        updatedTimeSlot.bookedCount += 1;
+
+        console.log(`Updated booking count for ${walk.date} at ${timeSlot} to ${updatedTimeSlot.bookedCount}/${updatedTimeSlot.maxBookings}`);
+
+        // Create a new UserWalk record for this specific booking
+        const userWalk = new UserWalk({
+            userid: userId,
+            marshall: walk.marshall,
+            walkId: walk._id,
+            date: walk.date,
+            time: timeSlot,
+            status: 'scheduled'
+        });
+
+        await userWalk.save();
 
         // Add the walk to the user's profile
-        user.walks.push(bookedWalk._id);
+        user.walks.push(userWalk._id);
         await user.save();
 
         // Add the walk to the marshall's profile too
         const marshall = await User.findById(walk.marshall);
-        if (!marshall.walks.includes(bookedWalk._id)) {
-            marshall.walks.push(bookedWalk._id);
+        if (!marshall.walks.includes(userWalk._id)) {
+            marshall.walks.push(userWalk._id);
             await marshall.save();
         }
 
-        // If this time slot is now fully booked, remove it from available times
+        // If this time slot is now fully booked, permanently remove it from available times
         if (updatedTimeSlot.bookedCount >= updatedTimeSlot.maxBookings) {
-            walk.availableTimes = walk.availableTimes.filter(t => t !== timeSlot);
+            // Use the permanentlyRemoveTimeSlot method to ensure it's properly tracked
+            walk.permanentlyRemoveTimeSlot(timeSlot);
+            console.log(`Time slot ${timeSlot} on ${walk.date} has been permanently removed due to being fully booked`);
+        } else {
+            // Keep the time slot in available times until it's fully booked
+            // This ensures it remains visible to other users who can still book it
+            console.log(`Time slot ${timeSlot} on ${walk.date} has ${updatedTimeSlot.bookedCount}/${updatedTimeSlot.maxBookings} bookings - keeping available`);
         }
 
         // Save the walk with updated booking count and available times
@@ -335,10 +421,28 @@ router.post('/select-walk/:walkId', async (req, res) => {
             }
         );
 
+        // Count how many UserWalk records exist for this time slot after booking
+        const actualBookings = await UserWalk.countDocuments({
+            walkId: walk._id,
+            date: walk.date,
+            time: timeSlot,
+            status: 'scheduled'
+        });
+
+        // Update the booking count to match the actual number of bookings
+        updatedTimeSlot.bookedCount = actualBookings;
+        await walk.save();
+
+        // Calculate the correct number of available slots
+        const availableSlots = updatedTimeSlot.maxBookings - updatedTimeSlot.bookedCount;
+
+        console.log(`Actual bookings for ${walk.date} at ${timeSlot}: ${actualBookings}`);
+        console.log(`Available slots for ${walk.date} at ${timeSlot}: ${availableSlots}`);
+
         res.status(200).json({
             message: "Walk successfully scheduled",
-            walk: bookedWalk,
-            availableSlots: updatedTimeSlot.maxBookings - updatedTimeSlot.bookedCount
+            walk: userWalk,
+            availableSlots: availableSlots
         });
     } catch (error) {
         console.error("Error selecting walk:", error);
@@ -350,95 +454,145 @@ router.post('/select-walk/:walkId', async (req, res) => {
 router.post('/complete/:walkId', async (req, res) => {
     try {
         const { userId } = req.body;
-        const walk = await Walk.findById(req.params.walkId).populate('userid', 'firstName lastName');
-        if (!walk) return res.status(404).json({ error: "Walk not found" });
 
-        if (walk.userid.toString() !== userId && walk.marshall.toString() !== userId) {
-            return res.status(403).json({ error: "Unauthorized to complete this walk" });
+        // First check if this is a UserWalk record
+        let userWalk = await UserWalk.findById(req.params.walkId);
+        let walk;
+
+        if (userWalk) {
+            // This is a UserWalk record
+            walk = await Walk.findById(userWalk.walkId);
+            if (!walk) {
+                // If the main Walk record doesn't exist, try to get user details directly
+                const user = await User.findById(userWalk.userid, 'firstName lastName');
+                userWalk.userid = user; // Populate the userid field manually
+            }
+        } else {
+            // Try to find it as a regular Walk record (for backward compatibility)
+            walk = await Walk.findById(req.params.walkId).populate('userid', 'firstName lastName');
+        }
+
+        if (!walk && !userWalk) return res.status(404).json({ error: "Walk not found" });
+
+        // Use either the UserWalk or the Walk record for the rest of the function
+        const walkRecord = userWalk || walk;
+
+        // Check authorization based on the record type
+        if (userWalk) {
+            if (userWalk.userid.toString() !== userId && userWalk.marshall.toString() !== userId) {
+                return res.status(403).json({ error: "Unauthorized to complete this walk" });
+            }
+        } else if (walk) {
+            if (walk.userid.toString() !== userId && walk.marshall.toString() !== userId) {
+                return res.status(403).json({ error: "Unauthorized to complete this walk" });
+            }
         }
 
         // Check if this time slot was fully booked before allowing it to be added back
         let isSlotFullyBooked = false;
-        if (walk.date && walk.time && walk.marshall) {
-            console.log(`Checking if time slot ${walk.date} ${walk.time} is fully booked`);
+        if (walkRecord.date && walkRecord.time && walkRecord.marshall) {
+            console.log(`Checking if time slot ${walkRecord.date} ${walkRecord.time} is fully booked`);
 
             // First check if this time slot was ever marked as fully booked in any walk log
             const fullyBookedLog = await WalkLog.findOne({
-                marshallId: walk.marshall,
-                date: walk.date,
-                time: walk.time,
+                marshallId: walkRecord.marshall,
+                date: walkRecord.date,
+                time: walkRecord.time,
                 isTimeSlotFullyBooked: true
             });
 
             if (fullyBookedLog) {
-                console.log(`Time slot ${walk.date} ${walk.time} was previously marked as fully booked`);
+                console.log(`Time slot ${walkRecord.date} ${walkRecord.time} was previously marked as fully booked`);
                 isSlotFullyBooked = true;
             } else {
-                // Check the current booking count
+                // Check if the time slot is marked as permanently removed in the Walk model
                 const originalWalk = await Walk.findOne({
-                    marshall: walk.marshall,
-                    date: walk.date,
+                    marshall: walkRecord.marshall,
+                    date: walkRecord.date,
                     status: { $in: ['available', 'filled'] }
                 });
 
-                if (originalWalk && originalWalk.timeSlots && originalWalk.timeSlots.length > 0) {
-                    const timeSlot = originalWalk.timeSlots.find(ts => ts.time === walk.time);
-                    if (timeSlot) {
-                        console.log(`Current booking count for ${walk.date} ${walk.time}: ${timeSlot.bookedCount}/${timeSlot.maxBookings}`);
-                        if (timeSlot.bookedCount >= timeSlot.maxBookings) {
-                            console.log(`Time slot ${walk.date} ${walk.time} is fully booked based on booking count`);
-                            isSlotFullyBooked = true;
+                if (originalWalk) {
+                    // Check if the time slot is permanently removed
+                    if (originalWalk.isTimeSlotPermanentlyRemoved(walkRecord.time)) {
+                        console.log(`Time slot ${walkRecord.date} ${walkRecord.time} is marked as permanently removed`);
+                        isSlotFullyBooked = true;
+                    } else if (originalWalk.timeSlots && originalWalk.timeSlots.length > 0) {
+                        const timeSlot = originalWalk.timeSlots.find(ts => ts.time === walkRecord.time);
+                        if (timeSlot) {
+                            console.log(`Current booking count for ${walkRecord.date} ${walkRecord.time}: ${timeSlot.bookedCount}/${timeSlot.maxBookings}`);
+                            if (timeSlot.bookedCount >= timeSlot.maxBookings) {
+                                console.log(`Time slot ${walkRecord.date} ${walkRecord.time} is fully booked based on booking count`);
+                                isSlotFullyBooked = true;
+
+                                // Permanently remove the time slot since it's fully booked
+                                originalWalk.permanentlyRemoveTimeSlot(walkRecord.time);
+                                await originalWalk.save();
+                                console.log(`Time slot ${walkRecord.time} on ${walkRecord.date} has been permanently removed due to being fully booked`);
+                            }
                         }
                     }
                 }
 
                 // Also check if there are already 4 or more walk logs for this time slot
                 const walkLogsCount = await WalkLog.countDocuments({
-                    marshallId: walk.marshall,
-                    date: walk.date,
-                    time: walk.time
+                    marshallId: walkRecord.marshall,
+                    date: walkRecord.date,
+                    time: walkRecord.time
                 });
 
-                console.log(`Walk logs count for ${walk.date} ${walk.time}: ${walkLogsCount}`);
+                console.log(`Walk logs count for ${walkRecord.date} ${walkRecord.time}: ${walkLogsCount}`);
                 if (walkLogsCount >= 3) { // 3 existing logs + this new one = 4 total
-                    console.log(`Time slot ${walk.date} ${walk.time} is fully booked based on walk logs count`);
+                    console.log(`Time slot ${walkRecord.date} ${walkRecord.time} is fully booked based on walk logs count`);
                     isSlotFullyBooked = true;
+
+                    // Also permanently remove the time slot in the Walk model
+                    if (originalWalk && !originalWalk.isTimeSlotPermanentlyRemoved(walkRecord.time)) {
+                        originalWalk.permanentlyRemoveTimeSlot(walkRecord.time);
+                        await originalWalk.save();
+                        console.log(`Time slot ${walkRecord.time} on ${walkRecord.date} has been permanently removed due to walk logs count`);
+                    }
                 }
             }
 
-            console.log(`Final determination for ${walk.date} ${walk.time}: isSlotFullyBooked = ${isSlotFullyBooked}`);
+            console.log(`Final determination for ${walkRecord.date} ${walkRecord.time}: isSlotFullyBooked = ${isSlotFullyBooked}`);
         }
 
         // Create walk log entry
         const walkLog = new WalkLog({
-            walkId: walk._id,
-            userId: walk.userid,
-            marshallId: walk.marshall,
-            date: walk.date,
-            time: walk.time,
-            status: 'pending',
+            walkId: userWalk ? userWalk.walkId : walkRecord._id,
+            userId: userWalk ? userWalk.userid : walkRecord.userid,
+            marshallId: walkRecord.marshall,
+            date: walkRecord.date,
+            time: walkRecord.time,
+            status: 'completed', // Set status to completed immediately
             isTimeSlotFullyBooked: isSlotFullyBooked // Track if the slot was fully booked
         });
         await walkLog.save();
 
         // Increment total walks for both the user and the marshall
-        await User.findByIdAndUpdate(walk.userid, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
-        await User.findByIdAndUpdate(walk.marshall, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
+        const userIdToUpdate = userWalk ? userWalk.userid : walkRecord.userid;
+        await User.findByIdAndUpdate(userIdToUpdate, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
+        await User.findByIdAndUpdate(walkRecord.marshall, { $inc: { totalWalks: 1 }, $pull: { walks: req.params.walkId } });
 
         // Remove walk from administrators' profiles
         await User.updateMany({ role: 'admin' }, { $pull: { walks: req.params.walkId } });
 
-        // Remove walk from Walk collection
-        await Walk.findByIdAndDelete(req.params.walkId);
+        // Remove walk from appropriate collection
+        if (userWalk) {
+            await UserWalk.findByIdAndDelete(req.params.walkId);
+        } else {
+            await Walk.findByIdAndDelete(req.params.walkId);
+        }
 
         // Create completion notifications
-        const userData = await User.findById(walk.userid, 'firstName lastName');
-        const marshallData = await User.findById(walk.marshall, 'firstName lastName');
+        const userData = await User.findById(userWalk ? userWalk.userid : walkRecord.userid, 'firstName lastName');
+        const marshallData = await User.findById(walkRecord.marshall, 'firstName lastName');
 
         // Notification for user with email
         await createSystemNotification(
-            walk.userid,
-            `Your walk on ${walk.date} at ${walk.time} has been marked as completed.`,
+            userWalk ? userWalk.userid : walkRecord.userid,
+            `Your walk on ${walkRecord.date} at ${walkRecord.time} has been marked as completed.`,
             'walk',
             walkLog._id,
             'WalkLog',
@@ -446,14 +600,14 @@ router.post('/complete/:walkId', async (req, res) => {
             true, // Send email
             {
                 action: 'completed',
-                walk: { date: walk.date, time: walk.time }
+                walk: { date: walkRecord.date, time: walkRecord.time }
             }
         );
 
         // Notification for marshall with email
         await createSystemNotification(
-            walk.marshall,
-            `The walk with ${userData.firstName} ${userData.lastName} on ${walk.date} at ${walk.time} has been marked as completed.`,
+            walkRecord.marshall,
+            `The walk with ${userData.firstName} ${userData.lastName} on ${walkRecord.date} at ${walkRecord.time} has been marked as completed.`,
             'walk',
             walkLog._id,
             'WalkLog',
@@ -461,7 +615,7 @@ router.post('/complete/:walkId', async (req, res) => {
             true, // Send email
             {
                 action: 'completed',
-                walk: { date: walk.date, time: walk.time }
+                walk: { date: walkRecord.date, time: walkRecord.time }
             }
         );
 
@@ -501,8 +655,24 @@ router.delete('/delete/:walkId', async (req, res) => {
         const { walkId } = req.params;
         const { userId, notifyUser, affectedUsers } = req.body;
 
-        // First, get the walk details before deletion to use for updating booking count
-        const walkToDelete = await Walk.findById(walkId).populate('userid', 'firstName lastName');
+        // First check if this is a UserWalk record
+        let userWalk = await UserWalk.findById(walkId);
+        let walkToDelete;
+
+        if (userWalk) {
+            // This is a UserWalk record
+            walkToDelete = await Walk.findById(userWalk.walkId);
+            if (!walkToDelete) {
+                // If the main Walk record doesn't exist, use the UserWalk record
+                const user = await User.findById(userWalk.userid, 'firstName lastName');
+                userWalk.userid = user; // Populate the userid field manually
+                walkToDelete = userWalk;
+            }
+        } else {
+            // Try to find it as a regular Walk record (for backward compatibility)
+            walkToDelete = await Walk.findById(walkId).populate('userid', 'firstName lastName');
+        }
+
         if (!walkToDelete) {
             return res.status(404).json({ error: "Walk not found" });
         }
@@ -536,6 +706,7 @@ router.delete('/delete/:walkId', async (req, res) => {
         // Find the original walk card with available times and decrement booking count
         if (walkToDelete.date && walkToDelete.time && walkToDelete.marshall) {
             // First, check if this time slot was ever fully booked and completed
+            // We need to check both the WalkLog and the Walk model
             const wasEverFullyBookedAndCompleted = await WalkLog.findOne({
                 marshallId: walkToDelete.marshall,
                 date: walkToDelete.date,
@@ -544,9 +715,18 @@ router.delete('/delete/:walkId', async (req, res) => {
                 status: 'completed'
             });
 
-            // If the time slot was ever fully booked and completed, don't reinstate it
-            if (wasEverFullyBookedAndCompleted) {
-                console.log(`Time slot ${walkToDelete.date} ${walkToDelete.time} was fully booked and completed. Not reinstating.`);
+            // Also check if the time slot is permanently removed in the Walk model
+            const originalWalkCheck = await Walk.findOne({
+                marshall: walkToDelete.marshall,
+                date: walkToDelete.date
+            });
+
+            const isPermanentlyRemoved = originalWalkCheck &&
+                originalWalkCheck.isTimeSlotPermanentlyRemoved(walkToDelete.time);
+
+            // If the time slot was ever fully booked and completed or is permanently removed, don't reinstate it
+            if (wasEverFullyBookedAndCompleted || isPermanentlyRemoved) {
+                console.log(`Time slot ${walkToDelete.date} ${walkToDelete.time} was fully booked and completed or permanently removed. Not reinstating.`);
             } else {
                 // Otherwise, proceed with normal cancellation logic
                 const originalWalk = await Walk.findOne({
@@ -561,19 +741,37 @@ router.delete('/delete/:walkId', async (req, res) => {
                         const timeSlot = originalWalk.timeSlots.find(ts => ts.time === walkToDelete.time);
 
                         if (timeSlot) {
-                            // Decrement booking count and make sure it doesn't go below 0
-                            timeSlot.bookedCount = Math.max(0, timeSlot.bookedCount - 1);
+                            // Count how many UserWalk records still exist for this time slot
+                            const remainingBookings = await UserWalk.countDocuments({
+                                walkId: originalWalk._id,
+                                date: walkToDelete.date,
+                                time: walkToDelete.time,
+                                status: 'scheduled'
+                            });
 
-                            console.log(`Decremented booking count for ${walkToDelete.date} ${walkToDelete.time} to ${timeSlot.bookedCount}`);
+                            console.log(`Found ${remainingBookings} remaining bookings for ${walkToDelete.date} at ${walkToDelete.time}`);
+
+                            // Set the booking count to match the actual number of bookings
+                            timeSlot.bookedCount = remainingBookings;
+
+                            console.log(`Updated booking count for ${walkToDelete.date} ${walkToDelete.time} to ${timeSlot.bookedCount}/${timeSlot.maxBookings}`);
 
                             // Check if this time slot was ever fully booked (reached 4 users)
-                            const wasEverFullyBooked = timeSlot.bookedCount >= timeSlot.maxBookings - 1; // It was 4, now it's 3 after decrement
+                            const wasEverFullyBooked = timeSlot.bookedCount >= timeSlot.maxBookings;
 
                             // If the time was removed from available times because it was fully booked,
                             // add it back ONLY if it was never fully booked with completed walks
-                            if (!wasEverFullyBooked && !originalWalk.availableTimes.includes(walkToDelete.time)) {
+                            // Also check if the time slot is not permanently removed
+                            if (!originalWalk.isTimeSlotPermanentlyRemoved(walkToDelete.time) &&
+                                !originalWalk.availableTimes.includes(walkToDelete.time)) {
                                 originalWalk.availableTimes.push(walkToDelete.time);
                                 console.log(`Added time ${walkToDelete.time} back to available times`);
+
+                                // Also make sure the permanentlyRemoved flag is set to false
+                                if (timeSlot.permanentlyRemoved) {
+                                    timeSlot.permanentlyRemoved = false;
+                                    console.log(`Marked time slot ${walkToDelete.time} as not permanently removed`);
+                                }
                             }
 
                             // Update status if needed
@@ -589,15 +787,25 @@ router.delete('/delete/:walkId', async (req, res) => {
             }
         }
 
-        // Delete the walk card from the Walk collection
-        await Walk.findByIdAndDelete(walkId);
+        // Delete the walk from the appropriate collection
+        if (userWalk) {
+            await UserWalk.findByIdAndDelete(walkId);
+        } else {
+            await Walk.findByIdAndDelete(walkId);
+        }
 
         // Create a more specific response for admin deletions
         const responseMessage = notifyUser
             ? `Walk canceled for ${walkToDelete.userid?.firstName} ${walkToDelete.userid?.lastName}`
             : "Walk card successfully removed from profile and deleted.";
 
-        res.status(200).json({ message: responseMessage });
+        // Return the updated booking count and time slot information
+        res.status(200).json({
+            message: responseMessage,
+            date: walkToDelete.date,
+            time: walkToDelete.time,
+            marshall: walkToDelete.marshall
+        });
     } catch (error) {
         console.error("Error removing walk from profile:", error);
         res.status(500).json({ error: "Failed to remove walk from profile" });
@@ -608,43 +816,75 @@ router.delete('/delete/:walkId', async (req, res) => {
 router.post('/incomplete/:walkId', async (req, res) => {
     try {
         const { userId } = req.body;
-        const walk = await Walk.findById(req.params.walkId).populate('userid', 'firstName lastName');
-        if (!walk) return res.status(404).json({ error: "Walk not found" });
 
-        if (walk.marshall.toString() !== userId) {
-            return res.status(403).json({ error: "Unauthorized to mark this walk as incomplete" });
+        // First check if this is a UserWalk record
+        let userWalk = await UserWalk.findById(req.params.walkId);
+        let walk;
+
+        if (userWalk) {
+            // This is a UserWalk record
+            walk = await Walk.findById(userWalk.walkId);
+            if (!walk) {
+                // If the main Walk record doesn't exist, try to get user details directly
+                const user = await User.findById(userWalk.userid, 'firstName lastName');
+                userWalk.userid = user; // Populate the userid field manually
+            }
+        } else {
+            // Try to find it as a regular Walk record (for backward compatibility)
+            walk = await Walk.findById(req.params.walkId).populate('userid', 'firstName lastName');
+        }
+
+        if (!walk && !userWalk) return res.status(404).json({ error: "Walk not found" });
+
+        // Use either the UserWalk or the Walk record for the rest of the function
+        const walkRecord = userWalk || walk;
+
+        // Check authorization based on the record type
+        if (userWalk) {
+            if (userWalk.marshall.toString() !== userId) {
+                return res.status(403).json({ error: "Unauthorized to mark this walk as incomplete" });
+            }
+        } else if (walk) {
+            if (walk.marshall.toString() !== userId) {
+                return res.status(403).json({ error: "Unauthorized to mark this walk as incomplete" });
+            }
         }
 
         // Create walk log entry with status "incomplete"
         const walkLog = new WalkLog({
-            walkId: walk._id,
-            userId: walk.userid,
-            marshallId: walk.marshall,
-            date: walk.date,
-            time: walk.time,
+            walkId: userWalk ? userWalk.walkId : walkRecord._id,
+            userId: userWalk ? userWalk.userid : walkRecord.userid,
+            marshallId: walkRecord.marshall,
+            date: walkRecord.date,
+            time: walkRecord.time,
             dogs: ["N/A"],
             status: 'incomplete'
         });
         await walkLog.save();
 
         // Remove walk from both user and marshall
-        await User.findByIdAndUpdate(walk.userid, { $pull: { walks: req.params.walkId } });
-        await User.findByIdAndUpdate(walk.marshall, { $pull: { walks: req.params.walkId } });
+        const userIdToUpdate = userWalk ? userWalk.userid : walkRecord.userid;
+        await User.findByIdAndUpdate(userIdToUpdate, { $pull: { walks: req.params.walkId } });
+        await User.findByIdAndUpdate(walkRecord.marshall, { $pull: { walks: req.params.walkId } });
 
         // Remove from admins
         await User.updateMany({ role: 'admin' }, { $pull: { walks: req.params.walkId } });
 
-        // Remove walk from Walk collection
-        await Walk.findByIdAndDelete(req.params.walkId);
+        // Remove walk from appropriate collection
+        if (userWalk) {
+            await UserWalk.findByIdAndDelete(req.params.walkId);
+        } else {
+            await Walk.findByIdAndDelete(req.params.walkId);
+        }
 
         // Create incomplete walk notifications
-        const userData = await User.findById(walk.userid, 'firstName lastName');
-        const marshallData = await User.findById(walk.marshall, 'firstName lastName');
+        const userData = await User.findById(userWalk ? userWalk.userid : walkRecord.userid, 'firstName lastName');
+        const marshallData = await User.findById(walkRecord.marshall, 'firstName lastName');
 
         // Notification for user with email
         await createSystemNotification(
-            walk.userid,
-            `Your walk on ${walk.date} at ${walk.time} has been marked as incomplete by the marshall.`,
+            userWalk ? userWalk.userid : walkRecord.userid,
+            `Your walk on ${walkRecord.date} at ${walkRecord.time} has been marked as incomplete by the marshall.`,
             'walk',
             walkLog._id,
             'WalkLog',
@@ -652,14 +892,14 @@ router.post('/incomplete/:walkId', async (req, res) => {
             true, // Send email
             {
                 action: 'canceled',
-                walk: { date: walk.date, time: walk.time }
+                walk: { date: walkRecord.date, time: walkRecord.time }
             }
         );
 
         // Notification for marshall with email
         await createSystemNotification(
-            walk.marshall,
-            `You have marked the walk with ${userData.firstName} ${userData.lastName} on ${walk.date} at ${walk.time} as incomplete.`,
+            walkRecord.marshall,
+            `You have marked the walk with ${userData.firstName} ${userData.lastName} on ${walkRecord.date} at ${walkRecord.time} as incomplete.`,
             'walk',
             walkLog._id,
             'WalkLog',
@@ -667,7 +907,7 @@ router.post('/incomplete/:walkId', async (req, res) => {
             true, // Send email
             {
                 action: 'canceled',
-                walk: { date: walk.date, time: walk.time }
+                walk: { date: walkRecord.date, time: walkRecord.time }
             }
         );
 
@@ -675,6 +915,21 @@ router.post('/incomplete/:walkId', async (req, res) => {
     } catch (error) {
         console.error("Error marking walk as incomplete:", error);
         res.status(500).json({ error: "Failed to mark walk as incomplete" });
+    }
+});
+
+// Route to get all walk logs
+router.get('/logs', async (req, res) => {
+    try {
+        const walkLogs = await WalkLog.find()
+            .populate('userId', 'firstName lastName')
+            .populate('marshallId', 'firstName lastName')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(walkLogs);
+    } catch (error) {
+        console.error('Error fetching walk logs:', error);
+        res.status(500).json({ error: 'Failed to fetch walk logs' });
     }
 });
 
@@ -690,7 +945,7 @@ router.post('/logs', async (req, res) => {
       date,
       time,
       dogs,
-      status: 'pending'
+      status: 'completed'
     });
 
     await walkLog.save();
@@ -770,9 +1025,15 @@ router.post('/restore-available-time', async (req, res) => {
             status: 'completed'
         });
 
+        // Check if there's already a walk record for this marshall and date
+        let walk = await Walk.findOne({ marshall: marshallId, date });
+
+        // Check if the time slot is permanently removed
+        const isPermanentlyRemoved = walk && walk.isTimeSlotPermanentlyRemoved(time);
+
         // If the time slot was ever fully booked AND completed (reached 4 users and walks were completed), don't restore it
-        if (isTimeSlotFullyBooked || wasEverFullyBookedAndCompleted) {
-            console.log(`Time slot ${date} ${time} was fully booked and completed. Not restoring.`);
+        if (isTimeSlotFullyBooked || wasEverFullyBookedAndCompleted || isPermanentlyRemoved) {
+            console.log(`Time slot ${date} ${time} was fully booked and completed or permanently removed. Not restoring.`);
             return res.status(200).json({
                 message: 'Time slot was fully booked (4 users) and will remain unavailable',
                 wasRestored: false
@@ -780,9 +1041,6 @@ router.post('/restore-available-time', async (req, res) => {
         }
 
         console.log(`Restoring time slot ${date} ${time} - not fully booked or not completed.`);
-
-        // Check if there's already a walk record for this marshall and date
-        let walk = await Walk.findOne({ marshall: marshallId, date });
 
         if (!walk) {
             // Create a new walk record if one doesn't exist
@@ -794,8 +1052,8 @@ router.post('/restore-available-time', async (req, res) => {
                 status: 'available'
             });
         } else {
-            // Add the time to the existing walk's available times if it doesn't already exist
-            if (!walk.availableTimes.includes(time)) {
+            // Add the time to the existing walk's available times if it doesn't already exist and isn't permanently removed
+            if (!walk.availableTimes.includes(time) && !walk.isTimeSlotPermanentlyRemoved(time)) {
                 walk.availableTimes.push(time);
 
                 // Find if this time slot already exists in the timeSlots array
@@ -803,8 +1061,9 @@ router.post('/restore-available-time', async (req, res) => {
                     walk.timeSlots.find(ts => ts.time === time) : null;
 
                 if (existingTimeSlot) {
-                    // Reset the booking count for this time slot
+                    // Reset the booking count for this time slot and ensure it's not marked as permanently removed
                     existingTimeSlot.bookedCount = 0;
+                    existingTimeSlot.permanentlyRemoved = false;
                 } else {
                     // Initialize the timeSlots array if needed
                     if (!walk.timeSlots) {
@@ -815,7 +1074,8 @@ router.post('/restore-available-time', async (req, res) => {
                     walk.timeSlots.push({
                         time,
                         bookedCount: 0,
-                        maxBookings: 4
+                        maxBookings: 4,
+                        permanentlyRemoved: false
                     });
                 }
             }
@@ -842,7 +1102,16 @@ router.post('/restore-available-time', async (req, res) => {
 // Route to get all active scheduled walks (for admin view)
 router.get('/active', async (req, res) => {
   try {
-    // Find all walks with status 'scheduled' that have both userid and marshall populated
+    // Find all UserWalk records with status 'scheduled'
+    const activeUserWalks = await UserWalk.find({
+      status: 'scheduled'
+    })
+    .populate('userid', 'firstName lastName')
+    .populate('marshall', 'firstName lastName')
+    .populate('walkId')
+    .sort({ date: 1, time: 1 }); // Sort by date and time
+
+    // For backward compatibility, also find old Walk records with status 'scheduled'
     const activeWalks = await Walk.find({
       status: 'scheduled',
       userid: { $exists: true, $ne: null } // Only walks that have a user assigned
@@ -851,11 +1120,111 @@ router.get('/active', async (req, res) => {
     .populate('marshall', 'firstName lastName')
     .sort({ date: 1, time: 1 }); // Sort by date and time
 
-    res.status(200).json(activeWalks);
+    // Combine both results
+    const allActiveWalks = [...activeUserWalks, ...activeWalks];
+
+    // Sort the combined results by date and time
+    allActiveWalks.sort((a, b) => {
+      // First compare dates
+      const dateComparison = new Date(a.date) - new Date(b.date);
+      if (dateComparison !== 0) return dateComparison;
+
+      // If dates are the same, compare times
+      const [aHour, aMinute] = a.time.split(':').map(Number);
+      const [bHour, bMinute] = b.time.split(':').map(Number);
+      const aTimeValue = (aHour * 60) + aMinute;
+      const bTimeValue = (bHour * 60) + bMinute;
+      return aTimeValue - bTimeValue;
+    });
+
+    res.status(200).json(allActiveWalks);
   } catch (error) {
     console.error('Error fetching active walks:', error);
     res.status(500).json({ error: 'Failed to fetch active walks' });
   }
+});
+
+// Helper function to recalculate booking counts for a walk
+async function recalculateBookingCounts(walkId) {
+    try {
+        const walk = await Walk.findById(walkId);
+        if (!walk || !walk.timeSlots || walk.timeSlots.length === 0) {
+            console.log(`No walk found with ID ${walkId} or no time slots`);
+            return null;
+        }
+
+        console.log(`Recalculating booking counts for walk ${walkId} on ${walk.date}`);
+
+        // For each time slot, count the actual number of bookings
+        for (const timeSlot of walk.timeSlots) {
+            const bookingCount = await UserWalk.countDocuments({
+                walkId: walk._id,
+                date: walk.date,
+                time: timeSlot.time,
+                status: 'scheduled'
+            });
+
+            // Update the booking count
+            timeSlot.bookedCount = bookingCount;
+            console.log(`Updated booking count for ${walk.date} at ${timeSlot.time} to ${bookingCount}/${timeSlot.maxBookings}`);
+
+            // Check if this time slot should be in availableTimes
+            if (bookingCount < timeSlot.maxBookings && !timeSlot.permanentlyRemoved) {
+                // Add to availableTimes if not already there
+                if (!walk.availableTimes.includes(timeSlot.time)) {
+                    walk.availableTimes.push(timeSlot.time);
+                    console.log(`Added time ${timeSlot.time} back to available times`);
+                }
+            } else if (bookingCount >= timeSlot.maxBookings) {
+                // Remove from availableTimes if fully booked
+                walk.availableTimes = walk.availableTimes.filter(t => t !== timeSlot.time);
+                console.log(`Removed time ${timeSlot.time} from available times (fully booked)`);
+            }
+        }
+
+        // Save the updated walk
+        await walk.save();
+        console.log(`Saved updated booking counts for walk ${walkId}`);
+
+        return walk;
+    } catch (error) {
+        console.error(`Error recalculating booking counts for walk ${walkId}:`, error);
+        return null;
+    }
+}
+
+// Route to recalculate booking counts for all walks
+router.post('/recalculate-booking-counts', async (req, res) => {
+    try {
+        // Get all walks with time slots
+        const walks = await Walk.find({ timeSlots: { $exists: true, $ne: [] } });
+        console.log(`Found ${walks.length} walks with time slots`);
+
+        // Recalculate booking counts for each walk
+        const results = [];
+        for (const walk of walks) {
+            const updatedWalk = await recalculateBookingCounts(walk._id);
+            if (updatedWalk) {
+                results.push({
+                    walkId: updatedWalk._id,
+                    date: updatedWalk.date,
+                    timeSlots: updatedWalk.timeSlots.map(ts => ({
+                        time: ts.time,
+                        bookedCount: ts.bookedCount,
+                        maxBookings: ts.maxBookings
+                    }))
+                });
+            }
+        }
+
+        res.status(200).json({
+            message: `Recalculated booking counts for ${results.length} walks`,
+            results
+        });
+    } catch (error) {
+        console.error('Error recalculating booking counts:', error);
+        res.status(500).json({ error: 'Failed to recalculate booking counts' });
+    }
 });
 
 module.exports = router;
