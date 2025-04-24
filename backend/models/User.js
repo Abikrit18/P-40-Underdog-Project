@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema({
     googleId: {
         type: String,
         sparse: true
+    },
+    profilePicture: {
+        url: { type: String, default: 'https://res.cloudinary.com/your-cloud-name/image/upload/v1/profile_pictures/default-avatar' },
+        public_id: { type: String }
     }
 });
 

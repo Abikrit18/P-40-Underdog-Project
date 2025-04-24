@@ -13,6 +13,11 @@ const Profile = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const walksPerPage = 9;
+    const [profilePicture, setProfilePicture] = useState({
+        url: "https://res.cloudinary.com/your-cloud-name/image/upload/v1/profile_pictures/default-avatar",
+        public_id: null
+    });
+    const [uploadLoading, setUploadLoading] = useState(false);
 
     const token = localStorage.getItem("token");
 
@@ -39,6 +44,10 @@ const Profile = () => {
                 },
             });
             setUser(response.data);
+            setProfilePicture(response.data.profilePicture || {
+                url: "https://res.cloudinary.com/your-cloud-name/image/upload/v1/profile_pictures/default-avatar",
+                public_id: null
+            });
 
             // Filter walks based on user role
             if (response.data.role === "admin") {
@@ -201,40 +210,195 @@ const Profile = () => {
 
     if (!user) return <div>Loading...</div>;
 
+    const handleProfilePictureChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please upload an image file');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image size must be less than 5MB');
+            return;
+        }
+
+        setUploadLoading(true);
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            // Log the request details
+            console.log('Sending upload request...');
+            console.log('Token:', token ? 'Present' : 'Missing');
+            
+            const uploadResponse = await axios.post(
+                'https://p-40-underdog-project-backend.onrender.com/api/upload',
+                formData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+
+            console.log('Upload successful:', uploadResponse.data);
+
+            // Update profile picture in database
+            const updateResponse = await axios.patch(
+                `https://p-40-underdog-project-backend.onrender.com/users/profile/${user._id}`,
+                {
+                    profilePicture: {
+                        url: uploadResponse.data.url,
+                        public_id: uploadResponse.data.public_id
+                    }
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            setProfilePicture({
+                url: uploadResponse.data.url,
+                public_id: uploadResponse.data.public_id
+            });
+
+            toast.success('Profile picture updated successfully!');
+            await fetchUserDetails(user._id);
+        } catch (error) {
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
+            
+            toast.error(error.response?.data?.error || 'Failed to update profile picture');
+        } finally {
+            setUploadLoading(false);
+        }
+    };
+
+    const handleRemoveProfilePicture = async () => {
+        if (!profilePicture.public_id) return;
+
+        try {
+            // Delete from Cloudinary
+            await axios.delete('https://p-40-underdog-project-backend.onrender.com/api/upload', {
+                data: { public_id: profilePicture.public_id },
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Update user profile
+            await axios.patch(
+                `https://p-40-underdog-project-backend.onrender.com/users/profile/${user._id}`,
+                {
+                    profilePicture: {
+                        url: "https://res.cloudinary.com/your-cloud-name/image/upload/v1/profile_pictures/default-avatar",
+                        public_id: null
+                    }
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            setProfilePicture({
+                url: "https://res.cloudinary.com/your-cloud-name/image/upload/v1/profile_pictures/default-avatar",
+                public_id: null
+            });
+            toast.success('Profile picture removed');
+        } catch (error) {
+            console.error('Error removing profile picture:', error);
+            toast.error('Failed to remove profile picture');
+        }
+    };
+
     return (
         <div className="p-6">
             <ToastContainer />
             {/* Profile Header */}
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold">Profile Details</h1>
-                <img
-                    src="profile.png"
-                    alt="Profile"
-                    className="w-24 h-24 object-cover rounded-full border-4 border-gray-300 shadow-md"
-                />
             </div>
             <hr className="my-4" />
 
-            <div className="mt-6 space-y-3 bg-white shadow-md rounded-lg p-6 border border-gray-200">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-800">User Information</h2>
-                    <PushNotificationManager />
-                </div>
-                <p><strong>Name:</strong> {user.firstName} {user.lastName}</p>
-                <p><strong>Email:</strong> {user.email}</p>
-                <p><strong>Role:</strong> {user.role}</p>
-                <p><strong>Total Walks:</strong> {user.totalWalks}</p>
-                {user.totalWalks === 0 && !user.waiverSigned && (
-                    <div className="mt-6 border border-red-300 bg-red-50 p-4 rounded-md shadow-sm text-center">
-                        <p className="text-red-700 font-semibold">You must sign the waiver before scheduling a walk.</p>
-                        <Link
-                            to="/waiver"
-                            className="mt-3 inline-block px-5 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition"
-                        >
-                            Sign Waiver
-                        </Link>
+            {/* Main Profile Section - Profile Picture and User Info side by side */}
+            <div className="flex gap-6">
+                {/* Left Side - Profile Picture */}
+                <div className="w-1/3 bg-white shadow-md rounded-lg p-6 border border-gray-200">
+                    <div className="flex flex-col items-center">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Profile Picture</h2>
+                        <div className="relative mb-4">
+                            <img
+                                src={profilePicture.url}
+                                alt="Profile"
+                                className="w-48 h-48 object-cover rounded-full border-4 border-gray-200"
+                            />
+                            {uploadLoading && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col w-full space-y-3">
+                            <label className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                Upload New Picture
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleProfilePictureChange}
+                                    disabled={uploadLoading}
+                                />
+                            </label>
+
+                            <button
+                                onClick={handleRemoveProfilePicture}
+                                className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors justify-center"
+                                disabled={!profilePicture.public_id}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Remove Picture
+                            </button>
+                        </div>
                     </div>
-                )}
+                </div>
+
+                {/* Right Side - User Information */}
+                <div className="w-2/3 bg-white shadow-md rounded-lg p-6 border border-gray-200">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold text-gray-800">User Information</h2>
+                        <PushNotificationManager />
+                    </div>
+                    <div className="space-y-4">
+                        <p><strong>Name:</strong> {user?.firstName} {user?.lastName}</p>
+                        <p><strong>Email:</strong> {user?.email}</p>
+                        <p><strong>Role:</strong> {user?.role}</p>
+                        <p><strong>Total Walks:</strong> {user?.totalWalks}</p>
+                        {user?.totalWalks === 0 && !user?.waiverSigned && (
+                            <div className="mt-6 border border-red-300 bg-red-50 p-4 rounded-md shadow-sm text-center">
+                                <p className="text-red-700 font-semibold">You must sign the waiver before scheduling a walk.</p>
+                                <Link
+                                    to="/waiver"
+                                    className="mt-3 inline-block px-5 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition"
+                                >
+                                    Sign Waiver
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <div className="mt-6">

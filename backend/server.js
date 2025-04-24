@@ -21,6 +21,7 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // MongoDB connection
 mongoose.connect(process.env.uri)
@@ -33,14 +34,14 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 app.use('/uploads', express.static(uploadDir));
 
 // Routes
+app.use('/api/upload', uploadRoutes);  // Make sure this is before the 404 handler
 app.use('/users', userRoutes);
 app.use('/dogs', dogRoutes);
-app.use('/api/upload', uploadRoutes);
 app.use('/walks', walkRoutes);
 app.use('/shelter-times', shelterTimeRoutes);
 app.use('/stats', dogStatsRoutes);
 app.use('/notifications', notificationRoutes);
-app.use('/notifications', pushNotificationRoutes); // Using the same base path for push notifications
+app.use('/notifications', pushNotificationRoutes);
 app.use('/api/email', emailRoutes);
 
 // 404 Handler
