@@ -10,7 +10,7 @@
 const axios = require('axios');
 
 // Configuration
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://p-40-underdog-project-backend.onrender.com';
 
 // Test users (these should exist in your database)
 const testUsers = [
