@@ -25,7 +25,11 @@ const userSchema = new mongoose.Schema({
     },
     walks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Walk' }],
     totalWalks: { type: Number, default: 0 },
-    waiverSigned: { type: Boolean, default: false }, 
+    waiverSigned: { type: Boolean, default: false },
+    googleId: {
+        type: String,
+        sparse: true
+    }
 });
 
 userSchema.methods.hasSignedWaiver = function() {
