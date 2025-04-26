@@ -22,9 +22,9 @@ const App = () => {
   return (
     <Router>
       <NotificationProvider>
-        <div className="flex flex-col min-h-screen bg-custom-bg">
+        <div className="flex flex-col min-h-screen">
           <Navbar />
-
+          <main className="flex-grow relative bg-custom-bg">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/dogs" element={<Dogs />} />
@@ -39,7 +39,7 @@ const App = () => {
               <Route path="/application" element={<Application />} />
               <Route path="/doglog" element={<DogLog />} />
             </Routes>
-
+          </main>
           <Footer />
         </div>
       </NotificationProvider>
