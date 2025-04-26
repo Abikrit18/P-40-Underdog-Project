@@ -38,8 +38,7 @@ router.post('/', upload.single('image'), (req, res) => {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
-        const imageUrl = `https://p-40-underdog-project-backend.onrender.com
-/uploads/${req.file.filename}`;
+        const imageUrl = `https://p-40-underdog-project-backend.onrender.com/uploads/${req.file.filename}`;
         // Return both URL and filename so frontend can request deletion if necessary.
         res.json({ url: imageUrl, filename: req.file.filename });
     } catch (error) {

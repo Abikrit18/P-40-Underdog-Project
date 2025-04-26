@@ -13,6 +13,7 @@ const Profile = () => {
     const [completedWalks, setCompletedWalks] = useState([]);
     const [activeTab, setActiveTab] = useState('scheduled'); // 'scheduled' or 'completed'
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
     const walksPerPage = 9;
 
     const token = localStorage.getItem("token");
@@ -146,7 +147,7 @@ const Profile = () => {
             // For admin, we need special handling to notify users
             if (user.role === 'admin') {
                 // Delete the walk
-                const response = await axios.delete(`https://p-40-underdog-project-backend.onrender.com/walks/delete/${walkId}`, {
+                await axios.delete(`https://p-40-underdog-project-backend.onrender.com/walks/delete/${walkId}`, {
                     data: {
                         userId: user._id,
                         notifyUser: true, // Flag to indicate this is an admin deletion
@@ -174,7 +175,7 @@ const Profile = () => {
                 }
             } else {
                 // Regular deletion for non-admin users
-                const response = await axios.delete(`https://p-40-underdog-project-backend.onrender.com/walks/delete/${walkId}`, {
+                await axios.delete(`https://p-40-underdog-project-backend.onrender.com/walks/delete/${walkId}`, {
                     data: { userId: user._id },
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -232,8 +233,17 @@ const Profile = () => {
     // Pagination Logic
     const indexOfLastWalk = currentPage * walksPerPage;
     const indexOfFirstWalk = indexOfLastWalk - walksPerPage;
-    const currentWalks = activeWalks.slice(indexOfFirstWalk, indexOfLastWalk);
-    const totalPages = Math.ceil(activeWalks.length / walksPerPage);
+    const filteredWalks = scheduledWalks.filter(walk => {
+        const search = searchQuery.toLowerCase();
+        const dateMatch = walk.date.toLowerCase().includes(search);
+        const userMatch =
+            walk.userid?.firstName?.toLowerCase().includes(search) ||
+            walk.userid?.lastName?.toLowerCase().includes(search);
+        return dateMatch || userMatch;
+    });
+
+    const currentWalks = filteredWalks.slice(indexOfFirstWalk, indexOfLastWalk);
+    const totalPages = Math.ceil(filteredWalks.length / walksPerPage);
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -276,22 +286,17 @@ const Profile = () => {
             </div>
 
             <div className="mt-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">My Walks</h2>
-                    <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-                        <button
-                            className={`px-4 py-2 ${activeTab === 'scheduled' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
-                            onClick={() => setActiveTab('scheduled')}
-                        >
-                            Scheduled
-                        </button>
-                        <button
-                            className={`px-4 py-2 ${activeTab === 'completed' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
-                            onClick={() => setActiveTab('completed')}
-                        >
-                            Completed
-                        </button>
-                    </div>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 space-y-2 md:space-y-0">
+                    <h2 className="text-xl font-semibold">Scheduled Walks</h2>
+                    {user.role === "admin" && (
+                    <input
+                            type="text"
+                            placeholder="Search by date or user..."
+                    className="shadow-lg focus:border-2 border-gray-300 px-5 py-3 rounded-xl w-68 transition-all focus:w-72 outline-none"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    )}
                 </div>
                 {currentWalks.length > 0 ? (
                     <>
@@ -372,7 +377,7 @@ const Profile = () => {
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
-                                                    Delete Walk
+                                                    Check In
                                                 </button>
                                             )}
 

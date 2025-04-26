@@ -193,7 +193,7 @@ const Walk = () => {
                 timeSlot,
             });
 
-            // After successful API call, fetch the updated available times to ensure data consistency
+            // Fetch the updated available times immediately
             const updatedTimesResponse = await axios.get("https://p-40-underdog-project-backend.onrender.com/walks/available-times");
             const updatedTimes = updatedTimesResponse.data;
             console.log('Updated available times:', updatedTimes);
@@ -311,8 +311,7 @@ const Walk = () => {
 
     const fetchShelterTimes = async () => {
         try {
-          // First, get all specific date shelter times
-          const specificResponse = await axios.get("https://p-40-underdog-project-backend.onrender.com/shelter-times", {
+          const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/shelter-times", {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
           });
 

@@ -300,66 +300,8 @@ const WalkLog = () => {
         }
 
         try {
-            await axios.put(`https://p-40-underdog-project-backend.onrender.com/walks/logs/${currentLogId}`, {
-                dogs: selectedDogs[currentLogId]
-            });
-
-            toast.success("Dogs updated successfully");
-
-            // Update local state to reflect changes
-            setWalkLogs(prev =>
-                prev.map(log =>
-                    log._id === currentLogId
-                        ? {
-                            ...log,
-                            dogs: selectedDogs[currentLogId]
-                        }
-                        : log
-                )
-            );
-
-            // Apply filters to ensure UI is updated
-            applyFilters();
-
-            // Close the modal
-            handleCloseModal();
-        } catch (error) {
-            console.error("Error updating dogs:", error);
-            toast.error("Failed to update dogs");
-        }
-    };
-
-    const handleSubmit = (logId) => {
-        // Check if dogs are selected
-        if (!selectedDogs[logId] || selectedDogs[logId].length === 0) {
-            toast.error("Please select at least one dog before completing the walk");
-            return;
-        }
-
-        // Find the log details for confirmation
-        const logToComplete = walkLogs.find(log => log._id === logId);
-        if (!logToComplete) {
-            toast.error("Could not find walk details");
-            return;
-        }
-
-        // Set confirmation details and show modal
-        setConfirmLogDetails({
-            id: logId,
-            date: logToComplete.date,
-            time: logToComplete.time,
-            user: logToComplete.userId ? `${logToComplete.userId.firstName} ${logToComplete.userId.lastName}` : "Unknown",
-            dogs: selectedDogs[logId]
-        });
-        setShowConfirmModal(true);
-    };
-
-    const handleConfirmComplete = async () => {
-        if (!confirmLogDetails) return;
-
-        try {
-            const logResponse = await axios.put(`https://p-40-underdog-project-backend.onrender.com/walks/logs/${confirmLogDetails.id}`, {
-                dogs: confirmLogDetails.dogs,
+            const logResponse = await axios.put(`https://p-40-underdog-project-backend.onrender.com/walks/logs/${logId}`, {
+                dogs: selectedDogs[logId],
                 status: 'completed'
             });
 
@@ -527,7 +469,7 @@ const WalkLog = () => {
         ).length : 0;
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-custom-bg py-8">
             <div className="container mx-auto px-4">
                 <ToastContainer />
 
