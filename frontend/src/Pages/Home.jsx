@@ -82,11 +82,80 @@ const Home = () => {
         </div>
         
         {/* Mission Statement */}
-        <div className="max-w-4xl mx-auto px-6 py-12 text-center">
-          <h2 className="text-3xl font-bold mb-6">Our Mission</h2>
-          <p className="text-lg mb-6">
-            We believe that all dogs deserve an opportunity to exercise and experience the world around them. Many dogs stay stuck in kennels for months and even years at a time. This is where you come in to help. Simply sign up, fill out a waiver, and start walking dogs!
-          </p>
+        <div className="w-full bg-gradient-to-b from-white to-orange-50 py-20">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              {/* Left side - Image collage */}
+              <div className="relative h-[400px] hidden md:block">
+                <div className="absolute top-0 left-0 w-2/3 h-2/3 rounded-lg overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                  <img 
+                    src="https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=800&auto=format&fit=crop" 
+                    alt="Happy dog" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="absolute bottom-0 right-0 w-2/3 h-2/3 rounded-lg overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                  <img 
+                    src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800&auto=format&fit=crop" 
+                    alt="Dog with volunteer" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1/2 h-1/2 bg-orange-700 rounded-full opacity-10 blur-3xl"></div>
+              </div>
+
+              {/* Right side - Mission content */}
+              <div className="space-y-6">
+                <div className="inline-block">
+                  <h2 className="text-4xl font-bold text-gray-900 mb-2">Our Mission</h2>
+                  <div className="h-1 w-20 bg-orange-700 rounded-full"></div>
+                </div>
+                
+                <p className="text-lg text-gray-700 leading-relaxed mb-6">
+                  We believe that all dogs deserve an opportunity to experience joy, love, and the world beyond their kennels. Many dogs spend months, even years, confined to shelter spaces – but you can change that.
+                </p>
+
+                <div className="space-y-4">
+                  {/* Mission points */}
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Make a Difference</h3>
+                      <p className="text-gray-600">Every walk brings joy and essential exercise to shelter dogs.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Simple Process</h3>
+                      <p className="text-gray-600">Sign up, complete a waiver, and start making a difference today.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6">
+                  <Link 
+                    to="/walk" 
+                    className="inline-flex items-center px-6 py-3 bg-orange-700 hover:bg-orange-800 text-white font-semibold rounded-full transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1"
+                  >
+                    Start Walking Dogs
+                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Feature Cards */}
@@ -218,7 +287,7 @@ const Home = () => {
         </div>
         
         {/* CTA Section */}
-        <div className="w-full bg-red-900 py-12">
+        <div className="w-full bg-red-900 py-12 mb-16 mx-4 md:mx-8 rounded-xl"> {/* Added mx-4 md:mx-8 and rounded-xl */}
           <div className="max-w-4xl mx-auto px-6 text-center">
             <h2 className="text-3xl font-bold text-white mb-6">Ready to Make a Difference?</h2>
             <p className="text-xl text-white mb-8">

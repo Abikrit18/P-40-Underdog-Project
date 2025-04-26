@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+#root {
+  background-color: #FDEFE6;
+  min-height: 100vh;
+}
 
 .calendar-container {
     padding: 24px 10px;

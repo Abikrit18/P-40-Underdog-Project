@@ -1,101 +1,69 @@
-import { Facebook, Twitter, Instagram, LinkedIn } from "@mui/icons-material";
-import { Code, Group, Layers, LocationOn } from "@mui/icons-material";
+import { Facebook, Twitter, Instagram, LinkedIn, Email, Phone, LocationOn } from "@mui/icons-material";
 
 const Footer = () => {
   return (
-    <footer className="bg-[#1E1E1E] text-white py-8 mt-auto">
-      <div className="container mx-auto flex flex-col md:flex-row items-start gap-10 px-6">
-        
-        {/* Social Media Icons */}
-        <div className="flex flex-row space-x-4">
-          <div className="text-orange-400 hover:text-pink-400 cursor-pointer">
-            <Facebook fontSize="large" />
+    <footer className="bg-black text-white py-4">
+      <div className="container mx-auto px-4">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Logo and Mission */}
+          <div className="flex items-center space-x-2">
+            <img src="/image.png" alt="Logo" className="h-8 w-auto" />
+            <p className="text-xs text-gray-300">Connecting hearts, one paw at a time.</p>
           </div>
-          <div className="text-orange-400 hover:text-pink-400 cursor-pointer">
-            <Twitter fontSize="large" />
+
+          {/* Quick Links */}
+          <div className="text-center">
+            <h3 className="text-xs font-bold mb-2">Quick Links</h3>
+            <div className="text-xs space-x-3">
+              <a href="#" className="text-gray-400 hover:text-white">Dogs</a>
+              <a href="#" className="text-gray-400 hover:text-white">Adopt</a>
+              <a href="#" className="text-gray-400 hover:text-white">Volunteer</a>
+            </div>
           </div>
-          <div className="text-orange-400 hover:text-pink-400 cursor-pointer">
-            <Instagram fontSize="large" />
+
+          {/* Contact Info */}
+          <div className="text-center">
+            <h3 className="text-xs font-bold mb-2">Contact</h3>
+            <div className="text-xs text-gray-400 flex flex-col items-center">
+              <p>
+                <LocationOn className="w-3 h-3 inline mr-1" />
+                700 University Ave, Monroe LA
+              </p>
+              <p>
+                <Email className="w-3 h-3 inline mr-1" />
+                info@p40underdogs.com
+              </p>
+            </div>
+          </div>
+
+          {/* Social Links */}
+          <div className="flex justify-center space-x-4 items-center">
+            <a href="#" className="text-gray-400 hover:text-white">
+              <Facebook className="w-4 h-4" />
+            </a>
+            <a href="#" className="text-gray-400 hover:text-white">
+              <Twitter className="w-4 h-4" />
+            </a>
+            <a href="#" className="text-gray-400 hover:text-white">
+              <Instagram className="w-4 h-4" />
+            </a>
+            <a href="#" className="text-gray-400 hover:text-white">
+              <LinkedIn className="w-4 h-4" />
+            </a>
           </div>
         </div>
 
-        {/* Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 flex-grow">
-          
-          {/* Explore Section */}
-          <div>
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Code fontSize="small" /> Links
-            </h3>
-            <ul className="mt-2 space-y-1 text-sm">
-              <li>
-                <a href="#" className="text-yellow-400 text-decoration-none hover:text-pink-400 hover:no-underline">
-                  Design
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-yellow-400 text-decoration-none hover:text-pink-400 hover:no-underline">
-                  Prototyping
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-yellow-400 text-decoration-none hover:text-pink-400 hover:no-underline">
-                  Development Features
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-yellow-400 text-decoration-none hover:no-underline">
-                  Design Systems
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Location Section */}
-          <div className="text-left">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <LocationOn fontSize="small" className="text-green-400" /> Location
-            </h3>
-            <p className="mt-2 text-sm text-yellow-400">
-              700 University Avenue,Monroe LA
-            </p>
-          </div>
-
-          {/* Support Section */}
-          <div>
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Group fontSize="small" className="text-red-400"/> Support
-            </h3>
-            <ul className="mt-2 space-y-1 text-sm">
-              <li>
-                <a href="#" className="text-yellow-400 text-decoration-none hover:text-pink-400 hover:no-underline">
-                  Developers
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-yellow-400 text-decoration-none hover:text-pink-400 hover:no-underline">
-                  Resource Library
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* About Us Section */}
-          <div className="text-center md:text-left">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Layers fontSize="small" className="text-green-400" /> About Us
-            </h3>
-            <p className="mt-2 text-sm text-white-400 text-justify">
-              P-40 Underdogs is a shelter dog support platform dedicated to helping rescue dogs find loving homes. We offer scheduling for dog walks, adoption support, and resources for dog lovers.
-            </p>
-          </div>
-
+        {/* Copyright */}
+        <div className="text-center mt-4 pt-2 border-t border-gray-700">
+          <p className="text-xs text-gray-400">
+            &copy; {new Date().getFullYear()} P-40 Underdogs
+            <span className="mx-2">|</span>
+            <a href="#" className="hover:text-white">Privacy</a>
+            <span className="mx-2">|</span>
+            <a href="#" className="hover:text-white">Terms</a>
+          </p>
         </div>
-      </div>
-
-      {/* Copyright Section */}
-      <div className="mt-2 border-t border-gray-700 pt-4 text-center text-sm">
-        <p>&copy; {new Date().getFullYear()} Underdogs | All rights reserved.</p>
       </div>
     </footer>
   );

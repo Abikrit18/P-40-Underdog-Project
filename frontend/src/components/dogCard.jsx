@@ -196,7 +196,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
         </motion.button>
       )}
 
-      {/* Image Gallery with vignette overlay */}
+      {/* Image Gallery with navigation arrows */}
       <div 
         className="relative h-64 overflow-hidden group cursor-pointer" 
         onClick={() => !isEditing && setShowFullDetails(!showFullDetails)}
@@ -216,37 +216,54 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
               transition={{ duration: 0.3 }}
             />
             
-            {/* Subtle vignette overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60"></div>
-            
-            {/* Image gallery navigation with improved visibility */}
+            {/* Enhanced navigation arrows */}
             {images.length > 1 && !isEditing && (
               <>
+                {/* Left Arrow */}
                 <motion.button 
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 text-amber-800 rounded-full p-2 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/90 text-amber-800 rounded-full w-8 h-8 flex items-center justify-center shadow-lg focus:outline-none group-hover:opacity-100 opacity-0 transition-all duration-300 hover:bg-white"
                   onClick={handlePrevImage}
-                  whileHover={{ scale: 1.1, backgroundColor: "#ffffff" }}
+                  whileHover={{ scale: 1.1, x: -2 }}
                   whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                 >
-                  <ArrowBackIosIcon style={{ fontSize: 16 }} />
+                  <ArrowBackIosIcon style={{ fontSize: 20, marginLeft: 4 }} />
                 </motion.button>
+
+                {/* Right Arrow */}
                 <motion.button 
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 text-amber-800 rounded-full p-2 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/90 text-amber-800 rounded-full w-8 h-8 flex items-center justify-center shadow-lg focus:outline-none group-hover:opacity-100 opacity-0 transition-all duration-300 hover:bg-white"
                   onClick={handleNextImage}
-                  whileHover={{ scale: 1.1, backgroundColor: "#ffffff" }}
+                  whileHover={{ scale: 1.1, x: 2 }}
                   whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                 >
-                  <ArrowForwardIosIcon style={{ fontSize: 16 }} />
+                  <ArrowForwardIosIcon style={{ fontSize: 20, marginLeft: 2 }} />
                 </motion.button>
-                
-                {/* Image indicator dots with animation */}
+
+                {/* Image counter */}
+                <div className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                  {currentImageIndex + 1} / {images.length}
+                </div>
+
+                {/* Enhanced dot indicators */}
                 <div className="absolute bottom-3 left-0 right-0 flex justify-center space-x-2 z-10">
                   {images.map((_, index) => (
-                    <motion.div 
-                      key={index} 
-                      className={`h-2.5 w-2.5 rounded-full border border-white ${
-                        currentImageIndex === index ? 'bg-white' : 'bg-white/40'
+                    <motion.button
+                      key={index}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(index);
+                      }}
+                      className={`h-2 w-2 rounded-full border border-white transition-all duration-300 ${
+                        currentImageIndex === index 
+                          ? 'bg-white w-4' 
+                          : 'bg-white/40 hover:bg-white/60'
                       }`}
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
                       initial={false}
                       animate={currentImageIndex === index ? 
                         { scale: 1.2, opacity: 1 } : 
