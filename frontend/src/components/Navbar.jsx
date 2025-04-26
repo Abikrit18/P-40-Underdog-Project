@@ -180,7 +180,7 @@ export default function Navbar() {
                                             {isLoggedIn ? (
                                                 <>
                                                     <MenuItem>
-                                                        <a href="/profile" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
+                                                        <a href="/profile" className="block px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md text-decoration-none">
                                                             Profile
                                                         </a>
                                                     </MenuItem>
@@ -188,7 +188,7 @@ export default function Navbar() {
                                                     {/* Admin-only Settings 2 */}
                                                     {userRole === 'admin' && (
                                                         <MenuItem>
-                                                            <a href="/users" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
+                                                            <a href="/users" className="block px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md text-decoration-none">
                                                                 Users
                                                             </a>
                                                         </MenuItem>
@@ -196,7 +196,7 @@ export default function Navbar() {
 
                                                     {(userRole === 'admin' || userRole === 'Marshall') && (
                                                         <MenuItem>
-                                                            <a href="/doglog" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
+                                                            <a href="/doglog" className="block px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md text-decoration-none">
                                                                 dogLog
                                                             </a>
                                                         </MenuItem>
@@ -204,7 +204,7 @@ export default function Navbar() {
                                                     <MenuItem>
                                                         <button
                                                             onClick={handleLogout}
-                                                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-900 rounded-md"
+                                                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md"
                                                         >
                                                             Log out
                                                         </button>
@@ -212,7 +212,7 @@ export default function Navbar() {
                                                 </>
                                             ) : (
                                                 <MenuItem>
-                                                    <a href="/login" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
+                                                    <a href="/login" className="block px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md text-decoration-none">
                                                         Log in
                                                     </a>
                                                 </MenuItem>

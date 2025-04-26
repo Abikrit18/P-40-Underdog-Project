@@ -31,13 +31,13 @@
 }
 
 .fc-button {
-    background-color: #7e22ce;
+    background-color: #ea580c !important; /* orange-600 */
     border: none;
     color: white;
 }
 
 .fc-button:hover {
-    background-color: #6a1b9a;
+    background-color: #c2410c !important; /* orange-700 */
     text-decoration: none;
 }
 
@@ -46,7 +46,7 @@
 }
 
 .fc-day-today {
-    background-color: #35a540 !important;
+    background-color: #fed7aa !important; /* orange-200 */
     border-radius: 4px;
 }
 
@@ -96,7 +96,7 @@
     padding: 10px;
     border: none;
     border-radius: 4px;
-    background-color: #7e22ce;
+    background-color: #ea580c; /* orange-600 */
     color: white;
     cursor: pointer;
 }
@@ -107,7 +107,7 @@
 }
 
 .form-button:hover {
-    background-color: #6a1b9a;
+    background-color: #c2410c; /* orange-700 */
 }
 
 @media (min-width: 600px) {
