@@ -24,9 +24,11 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
 
   // Prepare image array for the gallery
   const allImages = [
-    dog.picture, 
+    // Ensure main picture is always included, fallback to placeholder if not available
+    dog.picture || "https://via.placeholder.com/300x200?text=No+Image",
+    // Add additional images if they exist
     ...(dog.additionalImages || [])
-  ].filter(Boolean);  // Filter out undefined or empty URLs
+  ].filter(url => url && url.trim() !== '');  // More robust filtering
   
   // Default image if no images are available
   const images = allImages.length > 0 
@@ -214,6 +216,9 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
               initial={{ opacity: 0.8 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
+              onError={(e) => {
+                e.target.src = "https://via.placeholder.com/300x200?text=No+Image";
+              }}
             />
             
             {/* Enhanced navigation arrows */}
