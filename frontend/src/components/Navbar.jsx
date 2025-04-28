@@ -152,7 +152,7 @@ export default function Navbar() {
                                                         'rounded-md px-3 py-2 text-sm font-medium text-decoration-none'
                                                     )}
                                                 >
-                                                    Walk Logs
+                                                    WalkLogs
                                                 </button>
                                             )}
                                         </div>
@@ -197,7 +197,7 @@ export default function Navbar() {
                                                     {(userRole === 'admin' || userRole === 'Marshall') && (
                                                         <MenuItem>
                                                             <a href="/doglog" className="block px-4 py-2 text-sm text-white hover:bg-purple-900 rounded-md text-decoration-none">
-                                                                dogLog
+                                                                DogLogs
                                                             </a>
                                                         </MenuItem>
                                                     )}
