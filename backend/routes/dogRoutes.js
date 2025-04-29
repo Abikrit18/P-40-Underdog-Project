@@ -65,7 +65,25 @@ router.get('/names', async (req, res) => {
 });
 
 // POST: Add a new dog (admin only)
-router.post('/', verifyToken, async (req, res) => {
+/*router.post('/', verifyToken, async (req, res) => {
+  try {
+    const collection = mongoose.connection.db.collection('dogs');
+
+    // Destructure dog info from request body
+    const { name, age, color, picture } = req.body;
+    if (!name || !age || !color || !picture)
+      return res.status(400).json({ error: 'All fields are required.' });
+
+    const newDog = { name, age, color, picture };
+    const result = await collection.insertOne(newDog);
+
+    res.json({ ...newDog, _id: result.insertedId.toString() });
+  } catch (error) {
+    console.error('Error adding dog:', error);
+    res.status(500).json({ error: 'Failed to add dog.' });
+  }
+});*/
+router.post('/', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const collection = mongoose.connection.db.collection('dogs');
 
@@ -83,6 +101,7 @@ router.post('/', verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to add dog.' });
   }
 });
+
 
 // --------------------------
 // DELETE: Remove a dog by ID (admin only)
