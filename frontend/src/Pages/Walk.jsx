@@ -60,7 +60,7 @@ const Walk = () => {
 
         setIsLoadingCompletedWalks(true);
         try {
-            const response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/walks/logs`);
+            const response = await axios.get(`http://localhost:3000/walks/logs`);
 
             // Filter walk logs for the current user - only include walks that have been explicitly marked as completed or incomplete
             const userCompletedWalks = response.data.filter(walkLog =>
@@ -95,7 +95,7 @@ const Walk = () => {
         if (!userId) return;
 
         try {
-            const response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/users/profile/${userId}`);
+            const response = await axios.get(`http://localhost:3000/users/profile/${userId}`);
             if (response.data && response.data.walks) {
                 setScheduledUserWalks(response.data.walks);
             }
@@ -129,7 +129,7 @@ const Walk = () => {
     const handleSelectWalk = async (walkId, timeSlot) => {
         try {
             // Check waiver status
-            const waiverResponse = await axios.get(`https://p-40-underdog-project-backend.onrender.com/users/profile/${user.id}`);
+            const waiverResponse = await axios.get(`http://localhost:3000/users/profile/${user.id}`);
             if (!waiverResponse.data.waiverSigned) {
                 alert("You must sign the waiver before scheduling a walk.");
                 navigate("/waiver");
@@ -188,13 +188,13 @@ const Walk = () => {
             }
 
             // Proceed to select the walk if waiver is signed
-            await axios.post(`https://p-40-underdog-project-backend.onrender.com/walks/select-walk/${walkId}`, {
+            await axios.post(`http://localhost:3000/walks/select-walk/${walkId}`, {
                 userId: user.id,
                 timeSlot,
             });
 
-            // Fetch the updated available times immediately
-            const updatedTimesResponse = await axios.get("https://p-40-underdog-project-backend.onrender.com/walks/available-times");
+            // After successful API call, fetch the updated available times to ensure data consistency
+            const updatedTimesResponse = await axios.get("http://localhost:3000/walks/available-times");
             const updatedTimes = updatedTimesResponse.data;
             console.log('Updated available times:', updatedTimes);
             setAvailableTimesData(updatedTimes);
@@ -241,7 +241,7 @@ const Walk = () => {
             // Clear existing events first to prevent duplicates
             setEvents([]);
 
-            const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/walks/available-times");
+            const response = await axios.get("http://localhost:3000/walks/available-times");
             const walks = response.data;
 
             // Process the walks data to include availability information
@@ -311,12 +311,13 @@ const Walk = () => {
 
     const fetchShelterTimes = async () => {
         try {
-          const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/shelter-times", {
+          // First, get all specific date shelter times
+          const specificResponse = await axios.get("http://localhost:3000/shelter-times", {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
           });
 
           // Then, get default shelter times
-          const defaultsResponse = await axios.get("https://p-40-underdog-project-backend.onrender.com/shelter-times/defaults", {
+          const defaultsResponse = await axios.get("http://localhost:3000/shelter-times/defaults", {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
           });
 
@@ -476,7 +477,7 @@ const Walk = () => {
         }
 
         try {
-            await axios.post("https://p-40-underdog-project-backend.onrender.com/walks/add-time", {
+            await axios.post("http://localhost:3000/walks/add-time", {
                 marshall: user.id,
                 date: availableDate,
                 time: availableTime,
@@ -503,7 +504,7 @@ const Walk = () => {
     const handleEditTime = (walk, timeSlot) => {
         const newTime = prompt("Enter new time:", timeSlot);
         if (newTime && newTime !== timeSlot) {
-            axios.put(`https://p-40-underdog-project-backend.onrender.com/walks/update-time/${walk._id}`, {
+            axios.put(`http://localhost:3000/walks/update-time/${walk._id}`, {
                 oldTime: timeSlot,
                 newTime: newTime
             })
@@ -522,7 +523,7 @@ const Walk = () => {
         const confirmDelete = window.confirm("Are you sure you want to delete this time?");
         if (confirmDelete) {
             try {
-                await axios.delete(`https://p-40-underdog-project-backend.onrender.com/walks/delete-time/${walkId}`, {
+                await axios.delete(`http://localhost:3000/walks/delete-time/${walkId}`, {
                     data: { time: timeSlot }
                 });
                 alert("Time deleted successfully!");
@@ -550,7 +551,7 @@ const Walk = () => {
 
         try {
           await axios.post(
-            "https://p-40-underdog-project-backend.onrender.com/shelter-times",
+            "http://localhost:3000/shelter-times",
             {
               date: shelterDate,
               startTime: shelterIsClosed ? "00:00" : shelterStartTime,
@@ -597,7 +598,7 @@ const Walk = () => {
 
         try {
           await axios.post(
-            "https://p-40-underdog-project-backend.onrender.com/shelter-times/defaults",
+            "http://localhost:3000/shelter-times/defaults",
             {
               dayOfWeek: defaultDayOfWeek,
               startTime: defaultIsClosed ? "00:00" : defaultStartTime,
@@ -635,7 +636,7 @@ const Walk = () => {
 
         try {
           await axios.post(
-            "https://p-40-underdog-project-backend.onrender.com/shelter-times/initialize-defaults",
+            "http://localhost:3000/shelter-times/initialize-defaults",
             {
               createdBy: user?.id
             },
@@ -655,7 +656,7 @@ const Walk = () => {
     const handleDeleteShelterTime = async (id) => {
         if (window.confirm("Are you sure you want to delete these shelter hours?")) {
           try {
-            await axios.delete(`https://p-40-underdog-project-backend.onrender.com/shelter-times/${id}`, {
+            await axios.delete(`http://localhost:3000/shelter-times/${id}`, {
               headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
             });
             toast.success("Shelter hours deleted");
@@ -733,7 +734,7 @@ const Walk = () => {
         let normalizedDate = normalizeDateString(date);
         // Just for debugging purposes - trying to see what happens with date + 1
         const nextDay = new Date(date);
-        nextDay.setDate(nextDay.getDate());
+        nextDay.setDate(nextDay.getDate() + 1);
         const nextDayNormalized = normalizeDateString(nextDay.toISOString().split('T')[0]);
         console.log('Current date:', date, 'Next day:', nextDay.toISOString().split('T')[0]);
         normalizedDate = nextDayNormalized;
