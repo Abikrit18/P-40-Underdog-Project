@@ -89,6 +89,7 @@ router.post('/', verifyToken, async (req, res) => {
 // --------------------------
 router.delete('/:id', verifyToken, async (req, res) => {
   try {
+    console.log('Deleting dog with ID:', req.params.id);
     // Validate ID
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: 'Invalid Dog ID' });
