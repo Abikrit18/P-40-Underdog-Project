@@ -16,8 +16,8 @@ const Footer = () => {
           <div className="text-center">
             <h3 className="text-xs font-bold mb-2">Quick Links</h3>
             <div className="text-xs space-x-3">
-              <a href="#" className="text-gray-400 hover:text-white">Dogs</a>
-              <a href="#" className="text-gray-400 hover:text-white">Adopt</a>
+              <a href="https://p-40-underdog-project-blond.vercel.app/dogs" className="text-gray-400 hover:text-white">Dogs</a>
+              <a href="https://p-40-underdog-project-blond.vercel.app/adoption" className="text-gray-400 hover:text-white">Adopt</a>
               <a href="#" className="text-gray-400 hover:text-white">Volunteer</a>
             </div>
           </div>
