@@ -74,7 +74,7 @@ const Home = () => {
               <p className="text-xl md:text-2xl text-white mb-8 max-w-3xl">
                 Helping rescue dogs find joy, exercise, and forever homes.
               </p>
-              <Link to="/dogs" className="bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform duration-300 hover:scale-105 text-decoration-none">
+              <Link to="/dogs" className="bg-red-850 hover:bg-red-950 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform duration-300 hover:scale-105 text-decoration-none">
                 Meet Our Dogs
               </Link>
             </div>
@@ -101,14 +101,14 @@ const Home = () => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1/2 h-1/2 bg-red-700 rounded-full opacity-10 blur-3xl"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1/2 h-1/2 bg-red-900 rounded-full opacity-10 blur-3xl"></div>
               </div>
 
               {/* Right side - Mission content */}
               <div className="space-y-6">
                 <div className="inline-block">
                   <h2 className="text-4xl font-bold text-zinc-900 mb-2">Our Mission</h2>
-                  <div className="h-1 w-20 bg-red-700 rounded-full"></div>
+                  <div className="h-1 w-20 bg-red-900 rounded-full"></div>
                 </div>
                 
                 <p className="text-lg text-zinc-700 leading-relaxed mb-6">
@@ -309,7 +309,7 @@ const Home = () => {
       {user && user.role !== 'admin' && scheduledWalks.length > 0 && (
         <button 
           onClick={toggleTimeline}
-          className="hidden md:flex fixed right-[300px] top-1/2 -translate-y-1/2 z-20 items-center justify-center w-8 h-20 bg-red-700 hover:bg-red-800 text-white rounded-l-lg shadow-lg transform transition-all duration-300"
+          className="hidden md:flex fixed right-[300px] top-1/2 -translate-y-1/2 z-20 items-center justify-center w-8 h-20 bg-red-900 hover:bg-red-800 text-white rounded-l-lg shadow-lg transform transition-all duration-300"
           style={{ right: timelineVisible ? '300px' : '0' }}
           aria-label={timelineVisible ? "Hide upcoming walks" : "Show upcoming walks"}
         >
@@ -346,10 +346,10 @@ const Home = () => {
                 return (
                   <div key={walk._id} className="relative pl-8 group">
                     {/* Timeline Node */}
-                    <div className="absolute left-[0.5px] top-1.5 w-7 h-7 rounded-full bg-white border-4 border-red-700 z-10 transform transition-transform duration-300 group-hover:scale-110"></div>
+                    <div className="absolute left-[0.5px] top-1.5 w-7 h-7 rounded-full bg-white border-4 border-red-900 z-10 transform transition-transform duration-300 group-hover:scale-110"></div>
                     
                     {/* Timeline Content */}
-                    <div className="bg-white rounded-lg shadow-md p-3 border-l-4 border-red-700 transform transition-all duration-300 group-hover:-translate-y-1">
+                    <div className="bg-white rounded-lg shadow-md p-3 border-l-4 border-red-900 transform transition-all duration-300 group-hover:-translate-y-1">
                       <p className="font-bold text-red-900">{formattedDate}</p>
                       <p className="text-zinc-800 font-medium">{formatTimeForDisplay(walk.time)}</p>
                       <div className="mt-2 text-sm">
@@ -371,7 +371,7 @@ const Home = () => {
           
           {/* Only show Manage Walks button for Marshall role */}
           {user && user.role === 'Marshall' && (
-            <Link to="/profile" className="mt-4 block text-center bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+            <Link to="/profile" className="mt-4 block text-center bg-red-900 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
               Manage Your Walks
             </Link>
           )}
@@ -384,7 +384,7 @@ const Home = () => {
           <h2 className="text-xl font-bold text-red-900 border-b-2 border-red-200 pb-2 mb-4">Your Upcoming Walks</h2>
           <div className="space-y-4">
             {sortedWalks.slice(0, 3).map((walk) => (
-              <div key={walk._id} className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-700">
+              <div key={walk._id} className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-900">
                 <p className="font-bold text-red-900">{new Date(walk.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                 <p className="text-zinc-800 font-medium">{walk.time}</p>
                 <p className="text-zinc-700 text-sm">
@@ -399,7 +399,7 @@ const Home = () => {
             )}
             {/* Only show View All Walks button for Marshall role */}
             {user && user.role === 'Marshall' && (
-              <Link to="/profile" className="block text-center bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+              <Link to="/profile" className="block text-center bg-red-900 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
                 View All Walks
               </Link>
             )}
