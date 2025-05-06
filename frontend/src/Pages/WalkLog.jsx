@@ -548,7 +548,7 @@ const WalkLog = () => {
                     <div className="flex flex-col md:flex-row justify-between items-center">
                         <div className="flex items-center mb-4 md:mb-0">
                             <FaClipboardList className="text-blue-600 text-3xl mr-4" />
-                            <h1 className="text-2xl font-bold text-gray-800">Walk Logs</h1>
+                            <h1 className="text-2xl font-bold text-gray-800">Walk Log</h1>
                         </div>
                         {user?.role === 'admin' && (
                             <button
