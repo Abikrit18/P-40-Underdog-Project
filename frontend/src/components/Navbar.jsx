@@ -197,7 +197,7 @@ export default function Navbar() {
                                                     {(userRole === 'admin' || userRole === 'Marshall') && (
                                                         <MenuItem>
                                                             <a href="/doglog" className="block px-4 py-2 text-sm text-white hover:bg-red-900 rounded-md text-decoration-none">
-                                                                dogLog
+                                                                Dog Log
                                                             </a>
                                                         </MenuItem>
                                                     )}
