@@ -67,7 +67,7 @@ const WalkLog = () => {
     const fetchDogs = async () => {
         try {
             // Fetch dogs data
-            const response = await axios.get("http://localhost:3000/dogs");
+            const response = await axios.get("https://p-40-underdog-project-backend.onrender.com/dogs");
             // Extract just the dog names from the dog objects
             const dogNames = response.data.map(dog => dog.name);
             setAvailableDogs(dogNames);
@@ -88,9 +88,9 @@ const WalkLog = () => {
             let response;
 
             if (role === 'admin') {
-                response = await axios.get(`http://localhost:3000/walks/logs?sortOrder=${sortOrder}`);
+                response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/walks/logs?sortOrder=${sortOrder}`);
             } else if (role === 'Marshall') {
-                response = await axios.get(`http://localhost:3000/walks/logs/marshall/${userId}?sortOrder=${sortOrder}`);
+                response = await axios.get(`https://p-40-underdog-project-backend.onrender.com/walks/logs/marshall/${userId}?sortOrder=${sortOrder}`);
             }
 
             const logs = response.data;
@@ -300,7 +300,7 @@ const WalkLog = () => {
         }
 
         try {
-            await axios.put(`http://localhost:3000/walks/logs/${currentLogId}`, {
+            await axios.put(`https://p-40-underdog-project-backend.onrender.com/walks/logs/${currentLogId}`, {
                 dogs: selectedDogs[currentLogId]
             });
 
@@ -358,7 +358,7 @@ const WalkLog = () => {
         if (!confirmLogDetails) return;
 
         try {
-            const logResponse = await axios.put(`http://localhost:3000/walks/logs/${confirmLogDetails.id}`, {
+            const logResponse = await axios.put(`https://p-40-underdog-project-backend.onrender.com/walks/logs/${confirmLogDetails.id}`, {
                 dogs: confirmLogDetails.dogs,
                 status: 'completed'
             });
@@ -370,7 +370,7 @@ const WalkLog = () => {
 
             // Restore the time slot for the marshall to make it available again
             try {
-                const restoreResponse = await axios.post('http://localhost:3000/walks/restore-available-time', {
+                const restoreResponse = await axios.post('https://p-40-underdog-project-backend.onrender.com/walks/restore-available-time', {
                     marshallId: completedLog.marshallId,
                     date: completedLog.date,
                     time: completedLog.time,
