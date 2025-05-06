@@ -39,10 +39,11 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
       case 'brown': return 'from-amber-400 to-amber-600';
       case 'black': return 'from-gray-700 to-gray-900';
       case 'white': return 'from-gray-100 to-gray-300';
-      case 'golden': return 'from-yellow-300 to-amber-500';
+      case 'gold': return 'from-yellow-300 to-amber-500';
       case 'cream': return 'from-orange-100 to-yellow-200';
       case 'tan': return 'from-yellow-600 to-amber-700';
       case 'red': return 'from-red-400 to-red-600';
+      case 'maroon': return 'from-red-800 to-red-900';
       case 'gray': return 'from-gray-400 to-gray-600';
       default: return 'from-orange-400 to-red-500';
     }
