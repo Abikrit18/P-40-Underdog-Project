@@ -527,7 +527,7 @@ const WalkLog = () => {
         ).length : 0;
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-50 py-8">
             <div className="container mx-auto px-4">
                 <ToastContainer />
 
