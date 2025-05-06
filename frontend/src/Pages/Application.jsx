@@ -3,6 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { FaDog, FaUser, FaEnvelope, FaPhone, FaHome, FaBook, FaHeart, FaPaw } from "react-icons/fa";
 
 const Application = () => {
+  return (
+    <div className="w-full h-screen">
+      <iframe
+        src="https://petstablished.com/adoptions/personal-information?application_type=Adopt&donation_section=false&form_id=13973&form_type=generic&generic_form_id=13973&pet_id=263621&section=1&selected_pets=false"
+        title="Adoption Application"
+        width="100%"
+        height="100%"
+        style={{ border: "none" }}
+      />
+    </div>
+  );
+};
+
+export default Application;
+
+/* const Application = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
@@ -88,7 +104,7 @@ const Application = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-100 to-red-50 py-12 px-4 sm:px-6 lg:px-8 relative">
-      {/* Decorative elements from Login.jsx */}
+     
       <div className="absolute -top-10 -left-10 w-40 h-40 bg-orange-200 rounded-full filter blur-3xl opacity-40"></div>
       <div className="absolute top-1/2 right-10 w-60 h-60 bg-red-200 rounded-full filter blur-3xl opacity-40"></div>
 
@@ -211,4 +227,8 @@ const Application = () => {
   );
 };
 
+
+
 export default Application;
+
+*/
