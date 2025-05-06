@@ -16,6 +16,7 @@ const WalkLog = () => {
     const [loading, setLoading] = useState(true);
     const [selectedDogs, setSelectedDogs] = useState({});
     const [availableDogs, setAvailableDogs] = useState([]);
+    const [filteredDogsList, setFilteredDogsList] = useState([]);
     const [showDogModal, setShowDogModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [currentLogId, setCurrentLogId] = useState(null);
@@ -71,14 +72,15 @@ const WalkLog = () => {
             // Extract just the dog names from the dog objects
             const dogNames = response.data.map(dog => dog.name);
             setAvailableDogs(dogNames);
+            setFilteredDogsList(dogNames); // Initialize filtered list with all dogs
         } catch (error) {
             console.error("Error fetching dogs:", error);
             toast.error("Failed to fetch dogs");
 
             // Fallback to hardcoded dogs if fetching fails
-            setAvailableDogs([
-                "Max"
-            ]);
+            const fallbackDogs = ["Max"];
+            setAvailableDogs(fallbackDogs);
+            setFilteredDogsList(fallbackDogs);
         }
     };
 
@@ -285,6 +287,7 @@ const WalkLog = () => {
 
     const handleSelectDogModal = (logId) => {
         setCurrentLogId(logId);
+        setFilteredDogsList(availableDogs); // Reset filtered list to show all dogs
         setShowDogModal(true);
     };
 
@@ -414,12 +417,16 @@ const WalkLog = () => {
 
     // Function to handle printing the report
     const handlePrint = () => {
-
         // Create a new window for printing
         const printWindow = window.open('', '_blank', 'height=600,width=800');
 
-        // Generate the content to print - we'll create a simplified version of the table
-        printWindow.document.write(`
+        if (!printWindow) {
+            toast.error("Unable to open print window. Please check your popup blocker settings.");
+            return;
+        }
+
+        // Generate the HTML content
+        const htmlContent = `
             <!DOCTYPE html>
             <html>
             <head>
@@ -494,15 +501,20 @@ const WalkLog = () => {
                 </table>
             </body>
             </html>
-        `);
+        `;
+
+        // Use document.open() and document.write() in a safer way
+        printWindow.document.open();
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
 
         // Trigger print dialog
-        printWindow.document.close();
         printWindow.focus();
-        // Wait a moment for content to load before printing
         setTimeout(() => {
             printWindow.print();
-        }, 250);
+            // Close the window after printing (or after a delay)
+            setTimeout(() => printWindow.close(), 500);
+        }, 500);
     };
 
     if (loading) return (
@@ -1015,22 +1027,95 @@ const WalkLog = () => {
 
                         <div className="mb-4">
                             <p className="text-sm text-gray-600 mb-2">Select one or more dogs that were walked:</p>
-                            <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto p-2 border border-gray-200 rounded-md">
-                                {availableDogs.map(dog => (
-                                    <div
-                                        key={dog}
-                                        onClick={() => handleDogSelection(currentLogId, dog)}
-                                        className={`cursor-pointer px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                                            selectedDogs[currentLogId]?.includes(dog)
-                                                ? 'bg-blue-600 text-white shadow-sm'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                        <FaDog className="inline-block mr-1 text-xs" />
-                                        {dog}
-                                    </div>
-                                ))}
+
+                            {/* Search input for dogs */}
+                            <div className="mb-3">
+                                <div className="relative">
+                                    <FaSearch className="absolute left-3 top-2.5 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search dogs..."
+                                        className="pl-10 pr-4 py-2 w-full border rounded-lg text-sm bg-gray-50 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                        onChange={(e) => {
+                                            // Filter dogs based on search input
+                                            const searchTerm = e.target.value.toLowerCase();
+                                            const filtered = availableDogs.filter(dog =>
+                                                dog.toLowerCase().includes(searchTerm)
+                                            );
+                                            // Update the filtered dogs list
+                                            setFilteredDogsList(filtered);
+                                        }}
+                                    />
+                                </div>
                             </div>
+
+                            {/* Selected dogs section */}
+                            {selectedDogs[currentLogId]?.length > 0 && (
+                                <div className="mb-3">
+                                    <p className="text-xs font-medium text-gray-700 mb-1">Selected Dogs:</p>
+                                    <div className="flex flex-wrap gap-1.5 p-2 bg-blue-50 border border-blue-100 rounded-md">
+                                        {selectedDogs[currentLogId].map(dog => (
+                                            <div
+                                                key={dog}
+                                                onClick={() => handleDogSelection(currentLogId, dog)}
+                                                className="cursor-pointer px-2.5 py-1 rounded-full text-xs font-medium bg-blue-600 text-white shadow-sm flex items-center"
+                                            >
+                                                <FaDog className="mr-1 text-xs" />
+                                                {dog}
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* All dogs scrollable section */}
+                            <div className="border border-gray-200 rounded-md">
+                                <div className="max-h-60 overflow-y-auto p-2 dog-selection-container">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        {filteredDogsList.map(dog => (
+                                            <div
+                                                key={dog}
+                                                onClick={() => handleDogSelection(currentLogId, dog)}
+                                                className={`cursor-pointer px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
+                                                    selectedDogs[currentLogId]?.includes(dog)
+                                                        ? 'bg-blue-600 text-white shadow-sm'
+                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                <FaDog className="mr-2 text-xs flex-shrink-0" />
+                                                <span className="truncate">{dog}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="p-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 flex justify-between items-center">
+                                    <span>{filteredDogsList.length} of {availableDogs.length} dogs shown</span>
+                                    <span>{selectedDogs[currentLogId]?.length || 0} selected</span>
+                                </div>
+                            </div>
+
+                            {/* Add custom CSS for better scrolling */}
+                            <style jsx="true">{`
+                                .dog-selection-container {
+                                    scrollbar-width: thin;
+                                    scrollbar-color: #CBD5E0 #EDF2F7;
+                                }
+                                .dog-selection-container::-webkit-scrollbar {
+                                    width: 8px;
+                                }
+                                .dog-selection-container::-webkit-scrollbar-track {
+                                    background: #EDF2F7;
+                                    border-radius: 4px;
+                                }
+                                .dog-selection-container::-webkit-scrollbar-thumb {
+                                    background-color: #CBD5E0;
+                                    border-radius: 4px;
+                                    border: 2px solid #EDF2F7;
+                                }
+                            `}</style>
                         </div>
 
                         <div className="flex justify-end gap-3">
