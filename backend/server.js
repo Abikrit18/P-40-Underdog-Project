@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const path = require('path');
-const fs = require('fs');
 require('dotenv').config();
 
 const userRoutes = require('./routes/userRoutes');
@@ -26,10 +24,7 @@ mongoose.connect(process.env.uri)
     .then(() => console.log('MongoDB connected successfully'))
     .catch((error) => console.error('MongoDB connection failed:', error));
 
-// Serve uploads directory
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-app.use('/uploads', express.static(uploadDir));
+// Cloudinary is used for image storage instead of local uploads
 
 // Routes
 app.use('/users', userRoutes);

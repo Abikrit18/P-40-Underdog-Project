@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { CircularProgress } from '@mui/material';
 import axios from 'axios';
 import { motion } from "framer-motion";
-import { 
+import {
   Favorite as FavoriteIcon,
   FavoriteBorder as FavoriteBorderIcon,
   ArrowBackIos as ArrowBackIosIcon,
@@ -24,13 +24,13 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
 
   // Prepare image array for the gallery
   const allImages = [
-    dog.picture, 
+    dog.picture,
     ...(dog.additionalImages || [])
   ].filter(Boolean);  // Filter out undefined or empty URLs
-  
+
   // Default image if no images are available
-  const images = allImages.length > 0 
-    ? allImages 
+  const images = allImages.length > 0
+    ? allImages
     : ["https://via.placeholder.com/300x200?text=No+Image"];
 
   // Generate a gradient based on dog color
@@ -58,18 +58,20 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     setUploadLoading(true);
     const formData = new FormData();
     formData.append('image', file);
-    
+
     try {
       const response = await axios.post('http://localhost:3000/api/upload', formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-      
+
+      // Use the URL from the response (which should be the secure Cloudinary URL)
+      console.log('Cloudinary upload response:', response.data);
       setEditedDog({ ...editedDog, picture: response.data.url });
       toast.success('Image uploaded successfully!', {
         position: "top-center",
@@ -89,24 +91,27 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
   const handleAdditionalImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     setUploadLoading(true);
     const formData = new FormData();
     formData.append('image', file);
-    
+
     try {
       const response = await axios.post('http://localhost:3000/api/upload', formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-      
+
+      // Log the response to see what we're getting
+      console.log('Cloudinary additional image upload response:', response.data);
+
       const currentAdditionalImages = editedDog.additionalImages || [];
       setEditedDog({
         ...editedDog,
         additionalImages: [...currentAdditionalImages, response.data.url]
       });
-      
+
       toast.success('Additional image uploaded!', {
         position: "top-center",
         autoClose: 2000
@@ -146,30 +151,30 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
   // Card container animation variants
   const cardVariants = {
     hidden: { opacity: 0, y: 30, scale: 0.9 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
+    visible: {
+      opacity: 1,
+      y: 0,
       scale: 1,
-      transition: { 
+      transition: {
         type: "spring",
         stiffness: 300,
         damping: 20,
-        duration: 0.5 
-      } 
+        duration: 0.5
+      }
     },
-    hover: { 
-      y: -12, 
-      boxShadow: "0 25px 30px -12px rgba(0, 0, 0, 0.2)", 
-      transition: { 
-        type: "spring", 
-        stiffness: 400, 
-        damping: 15 
+    hover: {
+      y: -12,
+      boxShadow: "0 25px 30px -12px rgba(0, 0, 0, 0.2)",
+      transition: {
+        type: "spring",
+        stiffness: 400,
+        damping: 15
       }
     }
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="max-w-xs relative rounded-2xl overflow-hidden shadow-xl bg-white border-2 border-amber-200"
       variants={cardVariants}
       initial="hidden"
@@ -179,7 +184,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
     >
       {/* Decorative accent based on dog color */}
       <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${colorGradient}`}></div>
-      
+
       {/* Favorite button */}
       {!isEditing && (
         <motion.button
@@ -197,8 +202,8 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
       )}
 
       {/* Image Gallery with vignette overlay */}
-      <div 
-        className="relative h-64 overflow-hidden group cursor-pointer" 
+      <div
+        className="relative h-64 overflow-hidden group cursor-pointer"
         onClick={() => !isEditing && setShowFullDetails(!showFullDetails)}
       >
         {uploadLoading ? (
@@ -215,14 +220,14 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             />
-            
+
             {/* Subtle vignette overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60"></div>
-            
+
             {/* Image gallery navigation with improved visibility */}
             {images.length > 1 && !isEditing && (
               <>
-                <motion.button 
+                <motion.button
                   className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 text-amber-800 rounded-full p-2 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   onClick={handlePrevImage}
                   whileHover={{ scale: 1.1, backgroundColor: "#ffffff" }}
@@ -230,7 +235,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 >
                   <ArrowBackIosIcon style={{ fontSize: 16 }} />
                 </motion.button>
-                <motion.button 
+                <motion.button
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-70 text-amber-800 rounded-full p-2 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   onClick={handleNextImage}
                   whileHover={{ scale: 1.1, backgroundColor: "#ffffff" }}
@@ -238,18 +243,18 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 >
                   <ArrowForwardIosIcon style={{ fontSize: 16 }} />
                 </motion.button>
-                
+
                 {/* Image indicator dots with animation */}
                 <div className="absolute bottom-3 left-0 right-0 flex justify-center space-x-2 z-10">
                   {images.map((_, index) => (
-                    <motion.div 
-                      key={index} 
+                    <motion.div
+                      key={index}
                       className={`h-2.5 w-2.5 rounded-full border border-white ${
                         currentImageIndex === index ? 'bg-white' : 'bg-white/40'
                       }`}
                       initial={false}
-                      animate={currentImageIndex === index ? 
-                        { scale: 1.2, opacity: 1 } : 
+                      animate={currentImageIndex === index ?
+                        { scale: 1.2, opacity: 1 } :
                         { scale: 1, opacity: 0.7 }
                       }
                       transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -260,7 +265,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
             )}
           </div>
         )}
-        
+
         {/* Dog name badge overlaying the image */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
           <h3 className="font-bold text-xl text-white drop-shadow-md">
@@ -286,7 +291,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 placeholder="Name"
               />
             </div>
-            
+
             <div>
               <label className="block text-gray-700 text-sm font-bold mb-1" htmlFor="age">
                 Age
@@ -302,7 +307,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 min="0"
               />
             </div>
-            
+
             <div>
               <label className="block text-gray-700 text-sm font-bold mb-1" htmlFor="color">
                 Color
@@ -317,7 +322,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 placeholder="Color"
               />
             </div>
-            
+
             <div>
               <label className="block text-gray-700 text-sm font-bold mb-1" htmlFor="description">
                 Description
@@ -332,7 +337,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 rows="2"
               />
             </div>
-            
+
             {/* Main image upload */}
             <div>
               <label className="block text-gray-700 text-sm font-bold mb-1">
@@ -342,7 +347,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500 
+                className="block w-full text-sm text-gray-500
                           file:mr-4 file:py-2 file:px-4
                           file:rounded-md file:border-0
                           file:text-sm file:font-semibold
@@ -351,7 +356,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 disabled={uploadLoading}
               />
             </div>
-            
+
             {/* Additional image upload */}
             <div>
               <label className="block text-gray-700 text-sm font-bold mb-1">
@@ -361,7 +366,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 type="file"
                 accept="image/*"
                 onChange={handleAdditionalImageChange}
-                className="block w-full text-sm text-gray-500 
+                className="block w-full text-sm text-gray-500
                           file:mr-4 file:py-2 file:px-4
                           file:rounded-md file:border-0
                           file:text-sm file:font-semibold
@@ -370,7 +375,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 disabled={uploadLoading}
               />
             </div>
-            
+
             {/* Display additional images with delete option */}
             {editedDog.additionalImages && editedDog.additionalImages.length > 0 && (
               <div className="mt-2">
@@ -408,15 +413,15 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                   Age: {dog.age} {dog.age === 1 ? 'year' : 'years'}
                 </p>
               </div>
-              
-              <motion.span 
+
+              <motion.span
                 className={`bg-gradient-to-r ${colorGradient} text-white text-xs px-3 py-1 rounded-full font-medium shadow-sm`}
                 whileHover={{ scale: 1.05 }}
               >
                 {dog.color}
               </motion.span>
             </div>
-            
+
             <motion.div
               initial={false}
               animate={showFullDetails ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
@@ -426,31 +431,31 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
               <p className="text-gray-700 text-sm mt-3 bg-white/80 p-3 rounded-lg border border-amber-100">
                 {dog.description || "No additional information available for this dog."}
               </p>
-              
+
               {/* Dog traits/tags with improved visuals */}
               <div className="mt-4 flex flex-wrap gap-2">
-                <motion.span 
+                <motion.span
                   className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full border border-blue-200 shadow-sm"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.97 }}
                 >
                   Friendly
                 </motion.span>
-                <motion.span 
+                <motion.span
                   className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full border border-green-200 shadow-sm"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.97 }}
                 >
                   Healthy
                 </motion.span>
-                <motion.span 
+                <motion.span
                   className="bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full border border-purple-200 shadow-sm"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.97 }}
                 >
                   Playful
                 </motion.span>
-                <motion.span 
+                <motion.span
                   className="bg-rose-100 text-rose-800 text-xs px-3 py-1 rounded-full border border-rose-200 shadow-sm"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.97 }}
@@ -462,15 +467,15 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
           </div>
         )}
       </div>
-      
+
       <div className={`px-5 pt-2 pb-5 ${!isEditing ? 'bg-gradient-to-br from-amber-50 to-white' : ''}`}>
         {role === "admin" ? (
           <div className="flex justify-between items-center">
             <motion.button
               onClick={() => setIsEditing(!isEditing)}
               className={`flex items-center gap-1 py-2 px-4 rounded-lg text-sm font-medium shadow-md ${
-                isEditing 
-                  ? "bg-gray-200 text-gray-800 hover:bg-gray-300" 
+                isEditing
+                  ? "bg-gray-200 text-gray-800 hover:bg-gray-300"
                   : "bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700"
               }`}
               whileHover={{ scale: 1.05, y: -2 }}
@@ -487,7 +492,7 @@ const DogCard = ({ dog, onDelete, onEdit, role, onToggleFavorite, isFavorite }) 
                 </>
               )}
             </motion.button>
-            
+
             {isEditing ? (
               <motion.button
                 onClick={handleEditSubmit}
