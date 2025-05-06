@@ -83,7 +83,7 @@ const Profile = () => {
     // We'll now get completed walks directly from the user profile response
 
     const handleCompleteWalk = async (walkId) => {
-        const confirmComplete = window.confirm("Mark this walk as completed?");
+        const confirmComplete = window.confirm("Check In This User?");
         if (!confirmComplete) return;
 
         try {
