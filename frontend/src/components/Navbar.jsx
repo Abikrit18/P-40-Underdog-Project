@@ -135,7 +135,7 @@ export default function Navbar() {
                                                     className={classNames(
                                                         activeNav === item.name
                                                             ? 'text-white font-bold'
-                                                            : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]',
+                                                            : 'text-white hover:bg-red-900 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]',
                                                         'rounded-md px-3 py-2 text-sm font-medium text-decoration-none'
                                                     )}
                                                 >
@@ -148,7 +148,7 @@ export default function Navbar() {
                                                     className={classNames(
                                                         activeNav === 'Walk Logs'
                                                             ? 'text-white font-bold'
-                                                            : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]',
+                                                            : 'text-white hover:bg-red-900 hover:text-black transform transition-transform duration-300 ease-in-out hover:translate-y-[-5px]',
                                                         'rounded-md px-3 py-2 text-sm font-medium text-decoration-none'
                                                     )}
                                                 >
@@ -176,11 +176,11 @@ export default function Navbar() {
                                                 />
                                             </MenuButton>
                                         </div>
-                                        <MenuItems className="absolute right-0 z-10 mt-3 w-48 origin-top-right rounded-md bg-gray-900 py-1 ring-1 shadow-lg ring-black/5 focus:outline-none">
+                                        <MenuItems className="absolute right-0 z-10 mt-3 w-48 origin-top-right rounded-md bg-zinc-900 py-1 ring-1 shadow-lg ring-black/5 focus:outline-none">
                                             {isLoggedIn ? (
                                                 <>
                                                     <MenuItem>
-                                                        <a href="/profile" className="block px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md text-decoration-none">
+                                                        <a href="/profile" className="block px-4 py-2 text-sm text-white hover:bg-red-900 rounded-md text-decoration-none">
                                                             Profile
                                                         </a>
                                                     </MenuItem>
@@ -188,7 +188,7 @@ export default function Navbar() {
                                                     {/* Admin-only Settings 2 */}
                                                     {userRole === 'admin' && (
                                                         <MenuItem>
-                                                            <a href="/users" className="block px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md text-decoration-none">
+                                                            <a href="/users" className="block px-4 py-2 text-sm text-white hover:bg-red-900 rounded-md text-decoration-none">
                                                                 Users
                                                             </a>
                                                         </MenuItem>
@@ -196,7 +196,7 @@ export default function Navbar() {
 
                                                     {(userRole === 'admin' || userRole === 'Marshall') && (
                                                         <MenuItem>
-                                                            <a href="/doglog" className="block px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md text-decoration-none">
+                                                            <a href="/doglog" className="block px-4 py-2 text-sm text-white hover:bg-red-900 rounded-md text-decoration-none">
                                                                 dogLog
                                                             </a>
                                                         </MenuItem>
@@ -204,7 +204,7 @@ export default function Navbar() {
                                                     <MenuItem>
                                                         <button
                                                             onClick={handleLogout}
-                                                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md"
+                                                            className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-900 rounded-md"
                                                         >
                                                             Log out
                                                         </button>
@@ -212,7 +212,7 @@ export default function Navbar() {
                                                 </>
                                             ) : (
                                                 <MenuItem>
-                                                    <a href="/login" className="block px-4 py-2 text-sm text-white hover:bg-orange-700 rounded-md text-decoration-none">
+                                                    <a href="/login" className="block px-4 py-2 text-sm text-white hover:bg-red-900 rounded-md text-decoration-none">
                                                         Log in
                                                     </a>
                                                 </MenuItem>
@@ -220,7 +220,7 @@ export default function Navbar() {
                                         </MenuItems>
                                     </Menu>
 
-                                    <Disclosure.Button className="sm:hidden group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:ring-2 focus:ring-white focus:outline-none focus:ring-inset">
+                                    <Disclosure.Button className="sm:hidden group relative inline-flex items-center justify-center rounded-md p-2 text-zinc-400 hover:bg-zinc-700 hover:text-white focus:ring-2 focus:ring-white focus:outline-none focus:ring-inset">
                                         <span className="sr-only">Open main menu</span>
                                         {open ? <XMarkIcon className="block h-6 w-6" aria-hidden="true" /> : <Bars3Icon className="block h-6 w-6" aria-hidden="true" />}
                                     </Disclosure.Button>
@@ -242,7 +242,7 @@ export default function Navbar() {
                                         className={classNames(
                                             activeNav === item.name
                                                 ? 'text-white font-bold'
-                                                : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:rounded-md text-decoration-none',
+                                                : 'text-white hover:bg-red-900 hover:text-black transform transition-transform duration-300 ease-in-out hover:rounded-md text-decoration-none',
                                             'block rounded-md px-3 py-2 text-base font-medium'
                                         )}
                                     >
@@ -260,7 +260,7 @@ export default function Navbar() {
                                         className={classNames(
                                             activeNav === 'Walk Logs'
                                                 ? 'text-white font-bold'
-                                                : 'text-white hover:bg-orange-700 hover:text-black transform transition-transform duration-300 ease-in-out hover:rounded-md text-decoration-none',
+                                                : 'text-white hover:bg-red-900 hover:text-black transform transition-transform duration-300 ease-in-out hover:rounded-md text-decoration-none',
                                             'block rounded-md px-3 py-2 text-base font-medium'
                                         )}
                                     >
