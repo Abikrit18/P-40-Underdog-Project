@@ -375,7 +375,7 @@ const DogList = () => {
       >
         <Typography variant="h3" component="h1" align="center" gutterBottom sx={{
           fontWeight: 'bold',
-          color: '#8B4513',
+          color: '#82181A',
           mb: 4
         }}>
           Our Adoptable Dogs
