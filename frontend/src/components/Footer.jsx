@@ -39,13 +39,13 @@ const Footer = () => {
 
           {/* Social Links */}
           <div className="flex justify-center space-x-4 items-center">
-            <a href="#" className="text-gray-400 hover:text-white">
+            <a href="https://www.facebook.com/profile.php?id=61569583151092" className="text-gray-400 hover:text-white">
               <Facebook className="w-4 h-4" />
             </a>
             <a href="#" className="text-gray-400 hover:text-white">
               <Twitter className="w-4 h-4" />
             </a>
-            <a href="#" className="text-gray-400 hover:text-white">
+            <a href="https://www.instagram.com/ulm_p40underdogs/" className="text-gray-400 hover:text-white">
               <Instagram className="w-4 h-4" />
             </a>
             <a href="#" className="text-gray-400 hover:text-white">
