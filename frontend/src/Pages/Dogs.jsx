@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import DogCard from '../components/dogCard';
-import { 
-  Box, 
-  Button, 
-  TextField, 
-  CircularProgress, 
-  Container, 
-  Pagination, 
+import {
+  Box,
+  Button,
+  TextField,
+  CircularProgress,
+  Container,
+  Pagination,
   FormControl,
   InputLabel,
   Select,
@@ -19,9 +19,9 @@ import {
   Divider,
   Paper
 } from '@mui/material';
-import { 
-  Sort as SortIcon, 
-  FilterList as FilterIcon, 
+import {
+  Sort as SortIcon,
+  FilterList as FilterIcon,
   Search as SearchIcon,
   Favorite as FavoriteIcon
 } from '@mui/icons-material';
@@ -50,7 +50,7 @@ const DogList = () => {
   const dogsPerPage = 9; // Updated to 9 dogs per page
   const [favorites, setFavorites] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Filter states
   const [filters, setFilters] = useState({
     name: '',
@@ -58,7 +58,7 @@ const DogList = () => {
     maxAge: '',
     color: ''
   });
-  
+
   // Sort state
   const [sortOption, setSortOption] = useState('none');
 
@@ -70,7 +70,7 @@ const DogList = () => {
     if (savedFavorites) {
       setFavorites(JSON.parse(savedFavorites));
     }
-    
+
     if (token) {
       try {
         const decodedToken = jwtDecode(token);
@@ -101,20 +101,23 @@ const DogList = () => {
     setUploadLoading(true);
     const formData = new FormData();
     formData.append('image', file);
-    
+
     try {
-      const response = await axios.post('https://p-40-underdog-project-backend.onrender.com/api/upload', formData, {
+      const response = await axios.post('http://localhost:3000/api/upload', formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-      
+
+      // Log the Cloudinary response to debug
+      console.log('Cloudinary upload response in Dogs.jsx:', response.data);
+
       if (isAdditional) {
         // Add to additional images array
         const currentAdditionalImages = newDog.additionalImages || [];
-        setNewDog({ 
-          ...newDog, 
-          additionalImages: [...currentAdditionalImages, response.data.url] 
+        setNewDog({
+          ...newDog,
+          additionalImages: [...currentAdditionalImages, response.data.url]
         });
         toast.success('Additional image uploaded!', {
           position: "top-center",
@@ -137,37 +140,20 @@ const DogList = () => {
 
   const fetchDogs = async () => {
     try {
-      const response = await axios.get('https://p-40-underdog-project-backend.onrender.com/dogs', {
+      const response = await axios.get('http://localhost:3000/dogs', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
-      // For demo purposes, we'll add some mock additional images and descriptions
-      const enhancedDogs = response.data.map((dog, index) => {
-        if (index % 3 === 0) {
-          return {
-            ...dog,
-            additionalImages: [
-              "https://images.unsplash.com/photo-1543466835-00a7907e9de1",
-              "https://images.unsplash.com/photo-1587300003388-59208cc962cb"
-            ],
-            description: "A loving and playful dog who enjoys long walks and cuddles."
-          };
-        } else if (index % 3 === 1) {
-          return {
-            ...dog,
-            additionalImages: [
-              "https://images.unsplash.com/photo-1561037404-61cd46aa615b"
-            ],
-            description: "Very friendly with children and other pets. Loves playing fetch!"
-          };
-        }
-        return dog;
-      });
-      
-      setDogs(enhancedDogs);
-      setFilteredDogs(enhancedDogs);
+
+      // Log the response to see what we're getting from the server
+      console.log('Dogs from server:', response.data);
+
+      // Use the actual data from the server without modifications
+      const dogsData = response.data;
+
+      setDogs(dogsData);
+      setFilteredDogs(dogsData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching dogs:', error);
@@ -186,28 +172,28 @@ const DogList = () => {
   // Apply filters and sorting whenever dogs array or filter/sort options change
   useEffect(() => {
     let result = [...dogs];
-    
+
     // Apply filters
     if (filters.name) {
-      result = result.filter(dog => 
+      result = result.filter(dog =>
         dog.name.toLowerCase().includes(filters.name.toLowerCase())
       );
     }
-    
+
     if (filters.minAge) {
       result = result.filter(dog => dog.age >= Number(filters.minAge));
     }
-    
+
     if (filters.maxAge) {
       result = result.filter(dog => dog.age <= Number(filters.maxAge));
     }
-    
+
     if (filters.color) {
-      result = result.filter(dog => 
+      result = result.filter(dog =>
         dog.color.toLowerCase() === filters.color.toLowerCase()
       );
     }
-    
+
     // Apply sorting
     switch(sortOption) {
       case 'name-asc':
@@ -225,7 +211,7 @@ const DogList = () => {
       default:
         // No sorting
     }
-    
+
     setFilteredDogs(result);
     setPage(1); // Reset to first page when filters change
   }, [dogs, filters, sortOption]);
@@ -258,7 +244,7 @@ const DogList = () => {
       return;
     }
     try {
-      const response = await axios.post('https://p-40-underdog-project-backend.onrender.com/dogs', newDog,
+      const response = await axios.post('http://localhost:3000/dogs', newDog,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -281,18 +267,18 @@ const DogList = () => {
 
   const handleDelete = async (dog) => {
     try {
-      await axios.delete(`https://p-40-underdog-project-backend.onrender.com/dogs/${dog._id}`, {
+      await axios.delete(`http://localhost:3000/dogs/${dog._id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       });
       setDogs(prevDogs => prevDogs.filter((d) => d._id !== dog._id));
-      
+
       // Also remove from favorites if present
       if (favorites.includes(dog._id)) {
         handleToggleFavorite(dog);
       }
-      
+
       toast.success('Dog deleted successfully!', {
         position: "top-center",
         autoClose: 3000
@@ -308,7 +294,7 @@ const DogList = () => {
 
   const handleEdit = async (updatedDog) => {
     try {
-      await axios.put(`https://p-40-underdog-project-backend.onrender.com/dogs/${updatedDog._id}`, updatedDog, {
+      await axios.put(`http://localhost:3000/dogs/${updatedDog._id}`, updatedDog, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -330,7 +316,7 @@ const DogList = () => {
   const handleToggleFavorite = (dog) => {
     const dogId = dog._id;
     let newFavorites;
-    
+
     if (favorites.includes(dogId)) {
       // Remove from favorites
       newFavorites = favorites.filter(id => id !== dogId);
@@ -346,7 +332,7 @@ const DogList = () => {
         autoClose: 2000
       });
     }
-    
+
     setFavorites(newFavorites);
     localStorage.setItem('favoriteDogs', JSON.stringify(newFavorites));
   };
@@ -381,14 +367,14 @@ const DogList = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <ToastContainer />
-      
+
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Typography variant="h3" component="h1" align="center" gutterBottom sx={{ 
-          fontWeight: 'bold', 
+        <Typography variant="h3" component="h1" align="center" gutterBottom sx={{
+          fontWeight: 'bold',
           color: '#8B4513',
           mb: 4
         }}>
@@ -417,18 +403,18 @@ const DogList = () => {
               placeholder="Search by name..."
             />
           </Grid>
-          
+
           <Grid item xs={12} md={6}>
             <Box display="flex" gap={1}>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 startIcon={<FilterIcon />}
                 onClick={() => setShowFilters(!showFilters)}
                 sx={{ flexGrow: 1 }}
               >
                 {showFilters ? 'Hide Filters' : 'Show Filters'}
               </Button>
-              
+
               <FormControl variant="outlined" sx={{ minWidth: 150, flexGrow: 1 }}>
                 <InputLabel>Sort By</InputLabel>
                 <Select
@@ -444,15 +430,15 @@ const DogList = () => {
                   <MenuItem value="age-desc">Age (Old-Young)</MenuItem>
                 </Select>
               </FormControl>
-              
+
               {favorites.length > 0 && (
                 <Button
                   variant="outlined"
                   color="secondary"
                   startIcon={<FavoriteIcon />}
                   onClick={() => {
-                    document.getElementById('favorites-section')?.scrollIntoView({ 
-                      behavior: 'smooth' 
+                    document.getElementById('favorites-section')?.scrollIntoView({
+                      behavior: 'smooth'
                     });
                   }}
                 >
@@ -491,7 +477,7 @@ const DogList = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                
+
                 <Grid item xs={6} md={4}>
                   <TextField
                     fullWidth
@@ -503,7 +489,7 @@ const DogList = () => {
                     InputProps={{ inputProps: { min: 0 } }}
                   />
                 </Grid>
-                
+
                 <Grid item xs={6} md={4}>
                   <TextField
                     fullWidth
@@ -516,10 +502,10 @@ const DogList = () => {
                   />
                 </Grid>
               </Grid>
-              
+
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button 
-                  variant="text" 
+                <Button
+                  variant="text"
                   onClick={resetFilters}
                   sx={{ mr: 1 }}
                 >
@@ -529,47 +515,47 @@ const DogList = () => {
             </Box>
           </motion.div>
         )}
-        
+
         {/* Active filter chips */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
           {filters.name && (
-            <Chip 
-              label={`Name: ${filters.name}`} 
+            <Chip
+              label={`Name: ${filters.name}`}
               onDelete={() => setFilters({...filters, name: ''})}
               color="primary"
               size="small"
             />
           )}
-          
+
           {filters.color && (
-            <Chip 
+            <Chip
               label={`Color: ${filters.color}`}
               onDelete={() => setFilters({...filters, color: ''})}
               color="primary"
               size="small"
             />
           )}
-          
+
           {filters.minAge && (
-            <Chip 
+            <Chip
               label={`Min Age: ${filters.minAge}`}
               onDelete={() => setFilters({...filters, minAge: ''})}
               color="primary"
               size="small"
             />
           )}
-          
+
           {filters.maxAge && (
-            <Chip 
+            <Chip
               label={`Max Age: ${filters.maxAge}`}
               onDelete={() => setFilters({...filters, maxAge: ''})}
               color="primary"
               size="small"
             />
           )}
-          
+
           {sortOption !== 'none' && (
-            <Chip 
+            <Chip
               label={`Sorting: ${sortOption}`}
               onDelete={() => setSortOption('none')}
               color="secondary"
@@ -578,14 +564,14 @@ const DogList = () => {
           )}
         </Box>
       </Paper>
-      
+
       {/* Results count */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="body2" color="text.secondary">
           Showing {filteredDogs.length} {filteredDogs.length === 1 ? 'dog' : 'dogs'}
         </Typography>
       </Box>
-      
+
       {/* Admin Add Dog Form */}
       {role === "admin" && (
         <motion.div
@@ -597,7 +583,7 @@ const DogList = () => {
             <Typography variant="h5" gutterBottom>
               Add New Dog
             </Typography>
-            
+
             <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={4}>
@@ -609,7 +595,7 @@ const DogList = () => {
                     required
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={4}>
                   <TextField
                     label="Age"
@@ -621,7 +607,7 @@ const DogList = () => {
                     InputProps={{ inputProps: { min: 0 } }}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={4}>
                   <TextField
                     label="Color"
@@ -646,9 +632,9 @@ const DogList = () => {
                       onChange={handleImageChange}
                     />
                     <label htmlFor="image-upload" style={{ width: '100%' }}>
-                      <Button 
-                        variant="contained" 
-                        component="span" 
+                      <Button
+                        variant="contained"
+                        component="span"
                         fullWidth
                         disabled={uploadLoading}
                         startIcon={uploadLoading && <CircularProgress size={20} />}
@@ -660,10 +646,10 @@ const DogList = () => {
 
                   {newDog.picture && (
                     <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
-                      <img 
-                        src={newDog.picture} 
-                        alt="Preview" 
-                        style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px' }} 
+                      <img
+                        src={newDog.picture}
+                        alt="Preview"
+                        style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px' }}
                       />
                     </Box>
                   )}
@@ -679,9 +665,9 @@ const DogList = () => {
                       onChange={handleAdditionalImageChange}
                     />
                     <label htmlFor="additional-image-upload" style={{ width: '100%' }}>
-                      <Button 
-                        variant="outlined" 
-                        component="span" 
+                      <Button
+                        variant="outlined"
+                        component="span"
                         fullWidth
                         disabled={uploadLoading}
                       >
@@ -699,17 +685,17 @@ const DogList = () => {
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                         {newDog.additionalImages.map((img, index) => (
                           <Box key={index} sx={{ position: 'relative', width: 80, height: 80 }}>
-                            <img 
-                              src={img} 
-                              alt={`Additional ${index}`} 
-                              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} 
+                            <img
+                              src={img}
+                              alt={`Additional ${index}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
                             />
-                            <IconButton 
+                            <IconButton
                               size="small"
-                              sx={{ 
-                                position: 'absolute', 
-                                top: -10, 
-                                right: -10, 
+                              sx={{
+                                position: 'absolute',
+                                top: -10,
+                                right: -10,
                                 bgcolor: 'error.main',
                                 color: 'white',
                                 '&:hover': { bgcolor: 'error.dark' },
@@ -727,7 +713,7 @@ const DogList = () => {
                     </Box>
                   )}
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <Button
                     type="submit"
@@ -744,13 +730,13 @@ const DogList = () => {
           </Paper>
         </motion.div>
       )}
-      
+
       {/* No results message */}
       {filteredDogs.length === 0 ? (
-        <Box sx={{ 
-          py: 8, 
-          display: 'flex', 
-          flexDirection: 'column', 
+        <Box sx={{
+          py: 8,
+          display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center'
         }}>
@@ -800,18 +786,18 @@ const DogList = () => {
               showLastButton
             />
           </Box>
-          
+
           {/* Favorites section */}
           {favorites.length > 0 && (
             <div id="favorites-section">
               <Divider sx={{ my: 6 }}>
-                <Chip 
-                  icon={<FavoriteIcon />} 
-                  label="Your Favorites" 
+                <Chip
+                  icon={<FavoriteIcon />}
+                  label="Your Favorites"
                   color="secondary"
                 />
               </Divider>
-              
+
               <Grid container spacing={3}>
                 {dogs
                   .filter(dog => favorites.includes(dog._id))
