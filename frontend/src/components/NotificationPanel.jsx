@@ -70,7 +70,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 flex justify-between items-center shadow-sm">
+      <div className="bg-gradient-to-r from-red-800 to-red-850 text-white p-4 flex justify-between items-center shadow-sm">
         <h3 className="font-semibold text-lg flex items-center">
           Notifications
           {unreadCount > 0 && (

@@ -47,7 +47,7 @@ const NotificationBell = () => {
   return (
     <div className="relative flex items-center" ref={bellRef}>
       <button
-        className={`relative p-2 text-white rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center ${hasNewNotifications ? 'animate-pulse' : ''}`}
+        className={`relative p-2 text-white rounded-full hover:bg-red-900 transition-colors flex items-center justify-center ${hasNewNotifications ? 'animate-pulse' : ''}`}
         onClick={togglePanel}
         aria-label="Notifications"
         title={`${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`}
