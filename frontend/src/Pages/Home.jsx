@@ -74,7 +74,7 @@ const Home = () => {
               <p className="text-xl md:text-2xl text-white mb-8 max-w-3xl">
                 Helping rescue dogs find joy, exercise, and forever homes.
               </p>
-              <Link to="/dogs" className="bg-red-850 hover:bg-red-950 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform duration-300 hover:scale-105 text-decoration-none">
+              <Link to="/dogs" className="bg-red-900 hover:bg-red-950 text-white font-bold py-3 px-8 rounded-full text-lg transition-transform duration-300 hover:scale-105 text-decoration-none">
                 Meet Our Dogs
               </Link>
             </div>
@@ -145,7 +145,7 @@ const Home = () => {
                 <div className="pt-6">
                   <Link 
                     to="/walk" 
-                    className="inline-flex items-center px-6 py-3 bg-red-700 hover:bg-red-800 text-white font-semibold rounded-full transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1"
+                    className="inline-flex items-center px-6 py-3 bg-red-900 hover:bg-red-950 text-white font-semibold rounded-full transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1"
                   >
                     Start Walking Dogs
                     <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,7 +159,7 @@ const Home = () => {
         </div>
 
         {/* Feature Cards */}
-        <div className="w-full bg-zinc-100 py-16">
+        <div className="w-full bg-red-50 py-16">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-3xl font-bold text-center mb-12">How You Can Help</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
