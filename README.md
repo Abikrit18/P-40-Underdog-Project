@@ -190,4 +190,3 @@ deployment:<br>
 - test-available-slots-fix.js<br>
 - test-booking-count-fix.js<br>
 - test-walk-slot-booking.js<br>
-- Implementation and Deployment Plan for P40Underdog-Project 7<br>
